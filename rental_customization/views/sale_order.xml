@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_line_rental_form" model="ir.ui.view">
+        <field name="name">sale.order.line.rental.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']//list//field[@name='tax_id']" position="after">
+                <field name="rental_start_date" column_invisible=" not parent.is_rental_order"/>
+                <field name="rental_end_date" column_invisible=" not parent.is_rental_order"/>
+                <field name="next_bill_date" column_invisible=" not parent.is_rental_order"/>
+                <field name="rental_status"
+                        widget="label" width="120px"/>
+                <field name="parent_line" column_invisible="True"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
+                <field name="is_sale" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                       widget="toggle"/>
+            </xpath>
+
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="bill_terms" column_invisible=" not is_rental_order" required="1"/>
+                <field name="recurring_plan_id" column_invisible=" not is_rental_order" required="1"/>
+                <field name="show_update_button" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='validity_date']" position="attributes">
+                <attribute name="invisible">is_rental_order</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='rental_start_date']" position="after">
+                <div/>
+                <div class="oe_inline">
+                    <button name="update_dates" type="object"
+                            string="Apply in order lines"
+                            help="Re-assign dates in the order lines"
+                            class="btn-link mb-1 px-0" icon="fa-refresh"
+                            invisible="show_update_button != True"/>
+                </div>
+            </xpath>
+
+            <xpath expr="//button[@name='action_open_pickup']" position="after">
+                <button name="action_add_sale_order" string="Sale Order" type="object" class="btn-primary"
+                        invisible="state != 'sale' or not is_rental_order"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Date Details">
+                    <field name="date_records_line">
+<!--                        <list create="false" edit="false" editable="bottom">-->
+                        <list editable="bottom">
+                            <field name="product_id" string="Product"  width="150px"/>
+                            <field name="serial_number" string="Serial No." width="50px"/>
+                            <field name="per_day_charge" string="Per day charge"/>
+                            <field name="delivery_date" string="Delivery Date" />
+                            <field name="return_date" string="Return Date"/>
+                            <field name="total_days" string="Total Days"/>
+                            <field name="total_price" string="Total Price"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- To hide the rental status at the header level -->
+    <record id="view_order_rental_form" model="ir.ui.view">
+        <field name="name">sale.order.rental.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('text-bg-success')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-danger')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-warning')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-default')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

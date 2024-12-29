@@ -1,0 +1,65 @@
+<odoo>
+    <record id="view_crm_lead_form_signature_request" model="ir.ui.view">
+        <field name="name">crm.lead.form.signature.request</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_open_sign_requests" type="object"
+                        class="oe_stat_button" icon="fa-pencil"
+                        groups="sign.group_sign_user"
+                        invisible="sign_request_count == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="sign_request_count"/>
+                        </span>
+                        <span class="o_stat_text">Signature Requests</span>
+                    </div>
+                </button>
+                <button name="action_get_commission_invoice_record" type="object"
+                        class="oe_stat_button" icon="fa-paper">
+                        <span class="o_stat_text"> Commission Invoice</span>
+                </button>
+            </div>
+            <xpath expr="//header" position="inside">
+                <button name="action_signature_request_wizard"
+                        string="Send Signature Request" type="object"
+                        groups="sign.group_sign_user" class="btn-primary"
+                        invisible="is_signed or not is_calculate_commission"/>
+                <button name="create_invoice"
+                        string="Create Invoice" type="object"
+                        groups="sign.group_sign_user" class="btn-primary"
+                        invisible="is_invoice_created or not is_calculate_commission"/>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="is_signed" invisible="not is_calculate_commission"/>
+                <field name="is_invoice_created" invisible="not is_calculate_commission"/>
+                <field name="signed_document" invisible="not is_calculate_commission"/>
+            </xpath>
+            <xpath expr="//field[@name='total_amount']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='total_commission']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='omissions_insurance']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='is_apply_transaction_coordinator_fee']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='inside_sale_fee']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='referral_fee']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//field[@name='flat_fee']" position="attributes">
+                <attribute name="readonly">is_signed</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_commission']" position="attributes">
+                <attribute name="invisible">is_signed or not is_calculate_commission</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

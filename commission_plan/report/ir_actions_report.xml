@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_crm_lead" model="ir.actions.report">
+        <field name="name">Commission Report</field>
+        <field name="model">crm.lead</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">commission_plan.report_commission</field>
+        <field name="report_file">commission_plan.report_commission</field>
+        <field name="print_report_name">'Commission Report - %s' % (object
+            .name)
+        </field>
+        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_preview_report_crm_lead" model="ir.actions.report">
+        <field name="name">Commission Report</field>
+        <field name="model">crm.lead</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">commission_plan.report_commission_preview</field>
+        <field name="report_file">commission_plan.report_commission_preview</field>
+        <field name="print_report_name">'Commission Report - %s' % (object
+            .name)
+        </field>
+        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

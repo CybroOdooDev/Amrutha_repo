@@ -1,0 +1,21 @@
+{
+    "name": "Commission Plan",
+    "depends": ["base",'crm'],
+    "category": "Sales/CRM",
+    "version": "1.0",
+    "data": [
+        # "security/ir.model.access.csv",
+        # "security/security.xml",
+        # "views/tier_menu_views.xml",
+        # "views/commission_plan_views.xml",
+        # "views/crm_lead_views.xml",
+        # "views/eo_insurance_tier_views.xml",
+        # "views/res_config_settings_views.xml",
+        # "report/commission_report.xml",
+        # "report/ir_actions_report.xml",
+    ],
+    "license": "LGPL-3",
+    "summary": "Lange Real Estate (RE) Residential and Commercial Commissions",
+    "application": False,
+    "installable": True,
+}

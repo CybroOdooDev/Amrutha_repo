@@ -27,7 +27,6 @@ class SaleOrderLine(models.Model):
                                      string="Rental Status",
                                      compute='_compute_rental_status',
                                      store=False)
-
     active = fields.Boolean(default=True)
     is_sale = fields.Boolean()
     parent_line = fields.Integer()
@@ -144,7 +143,6 @@ class SaleOrderLine(models.Model):
     @api.onchange('qty_delivered', 'qty_returned')
     def _onchange_quantities(self):
         """ Rental Start Date and Next Bill Date Validation """
-        # print(self.pickedup_lot_ids,self.returned_lot_ids,'oiu')
         if self.order_id.is_rental_order and self.product_template_id and self.order_id.state != "draft":
             if not self.is_sale and  not self.next_bill_date:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
@@ -270,63 +268,3 @@ class SaleOrderLine(models.Model):
         """ Setting the per day charge of the product as its unit price """
         if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge and not self.is_sale:
             self.price_unit = self.product_template_id.per_day_charge
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -12,18 +12,20 @@ from odoo import models, fields
 class ProductReturnDates(models.Model):
     _name = 'product.return.dates'
 
+
     order_id = fields.Many2one(
         comodel_name='sale.order',
         string="Order Reference",
         required=True, ondelete='cascade', index=True, copy=False)
     product_id = fields.Many2one('product.product',required=True)
-    serial_number = fields.Many2one('stock.lot')
+    serial_number = fields.Many2one('stock.lot', domain="[('product_id', '=', product_id)]")
     quantity = fields.Integer()
     per_day_charge = fields.Float('Per Day Charge')
     total_days = fields.Integer('Total Days',compute='_compute_total_days_price',)
     total_price = fields.Float('Total Price',compute='_compute_total_days_price',)
     delivery_date = fields.Date('Delivery Date')
     return_date = fields.Date('Return Date')
+    invoice_count = fields.Integer(string="Invoice Count", default=0)
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
@@ -46,4 +48,3 @@ class ProductReturnDates(models.Model):
                 record.total_days = (today - delivery).days
 
             record.total_price = record.quantity * record.total_days * record.per_day_charge
-

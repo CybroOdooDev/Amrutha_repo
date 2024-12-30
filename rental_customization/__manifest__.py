@@ -1,7 +1,7 @@
 {
     'name': 'Rental Customization',
     'version': '18.0.1.0.0',
-    'description': """ Customisation for Rental module""",
+    'description': """ Customisation for Rental module """,
     'depends': ['base','product','sale_management', 'sale_project', 'account'],
     'installable': True,
 

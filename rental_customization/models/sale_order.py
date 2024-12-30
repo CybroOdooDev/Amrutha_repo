@@ -52,9 +52,10 @@ class SaleOrder(models.Model):
         self.header_return_date = self.rental_return_date
 
         for order_line in self.order_line:
-            if self.header_start_date and self.header_return_date and not order_line.is_sale :
+            if self.header_start_date and self.header_return_date :
                     order_line.rental_start_date = self.header_start_date.astimezone(pytz.utc).replace(tzinfo=None)
-                    order_line.rental_end_date = self.header_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                    if not order_line.is_sale:
+                        order_line.rental_end_date = self.header_return_date.astimezone(pytz.utc).replace(tzinfo=None)
                     self.show_update_button = False
             if not self.header_start_date and self.header_return_date:
                 raise ValueError("Start Date and End Date must be set on the order before updating lines.")
@@ -104,10 +105,13 @@ class SaleOrder(models.Model):
         for line in self.order_line:
             if line.is_sale:
                 line.is_rental = False
+            if line.product_template_id.charges_ok and not line.price_unit:
+                raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
         self.order_line._action_launch_stock_rule()
         return super(SaleOrder, self)._action_confirm()
 
     def action_add_sale_order(self):
+        """ Adding sale order inside Rental order line """
         for line in self.order_line:
             if line.is_sale:
                 line.is_rental = False
@@ -115,6 +119,7 @@ class SaleOrder(models.Model):
         return super(SaleOrder, self)._action_confirm()
 
     def action_open_pickup(self):
+        """ Pick-Up button validation """
         for line in self.order_line:
             if not line.is_sale and not line.next_bill_date:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
@@ -165,6 +170,7 @@ class SaleOrder(models.Model):
                 'company_id': sale_order.company_id.id,
                 'invoice_line_ids': [],
                 'user_id': sale_order.user_id.id,
+                'name': '/'
             }
 
             # Adding all the order lines to the invoice
@@ -183,16 +189,38 @@ class SaleOrder(models.Model):
                             ))
 
                         if not line.is_sale and line.product_template_id.charges_ok == False:
-                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                line._prepare_invoice_line(
-                                    # name=f"Rental for {line.product_id.name}",
-                                    name=f"Rental",
-                                    product_id=line.product_id.id,
-                                    price_unit=line.price_unit,
-                                    quantity=line.qty_delivered - line.qty_returned,
-                                )
-                            ))
-                            main_prod = line.product_id.name
+                            if sale_order.bill_terms == 'advance'or not line.product_template_id.is_per_day_charge:
+                                invoice_vals['invoice_line_ids'].append(Command.create(
+                                    line._prepare_invoice_line(
+                                        # name=f"Rental for {line.product_id.name}",
+                                        name=f"Rental",
+                                        product_id=line.product_id.id,
+                                        price_unit=line.price_unit,
+                                        quantity=line.qty_delivered - line.qty_returned,
+                                    )
+                                ))
+                                main_prod = line.product_id.name
+                            if sale_order.bill_terms == 'late' and line.product_template_id.is_per_day_charge:
+                                if line['pickedup_lot_ids']:
+                                    for lot in line['pickedup_lot_ids']:
+                                        date_lines = self.env['product.return.dates'].search([
+                                            ('order_id', '=', sale_order.id),
+                                            ('serial_number', '=', lot.id),
+                                        ])
+                                        if date_lines and date_lines.return_date:
+                                            date_lines.invoice_count += 1
+                                        if date_lines.invoice_count <= 1:
+                                            invoice_vals['invoice_line_ids'].append(Command.create(
+                                                line._prepare_invoice_line(
+                                                    # name=f"Rental for {line.product_id.name}",
+                                                    name=f"Rental with Per Day Charge - {lot.name}",
+                                                    product_id=date_lines.product_id.id,
+                                                    price_unit=date_lines.total_price,
+                                                    quantity=1,
+                                                )
+                                            ))
+                                main_prod = line.product_id.name
+
                         if not line.is_sale and line.product_template_id.charges_ok == True:
                             invoice_vals['invoice_line_ids'].append(Command.create(
                                 line._prepare_invoice_line(
@@ -206,32 +234,27 @@ class SaleOrder(models.Model):
                         if line.product_template_id.name == "Rental Delivery" or line.product_template_id.name == "Rental Pick-Up":
                             line.qty_delivered = 0
 
-            # Removing lines with zero qty from the invoice
+            # Removing lines with zero qty and zero price from the invoice
             invoice_vals['invoice_line_ids'] = [
                 vals for vals in invoice_vals['invoice_line_ids']
-                if vals[2].get('quantity', 0.0) != 0.0
+                if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
             ]
-
             invoice = self.env['account.move'].create(invoice_vals)
-
         # Updating the Next bill date
             if invoice:
                 sale_order = invoice.line_ids.sale_line_ids.order_id
                 for lines in invoice.line_ids.sale_line_ids:
-                    if not  lines.product_template_id.charges_ok:
+                    if not lines.product_template_id.charges_ok:
                         start_date = lines.next_bill_date
-                        if start_date:
-                            if sale_order.recurring_plan_id.billing_period_unit == "days":
-                                lines.next_bill_date = date_utils.add(start_date,
-                                                                      days=sale_order.recurring_plan_id.billing_period_value)
-                            if sale_order.recurring_plan_id.billing_period_unit == "month":
-                                lines.next_bill_date = date_utils.add(start_date,
-                                                                      months=sale_order.recurring_plan_id.billing_period_value)
-                            if sale_order.recurring_plan_id.billing_period_unit == "year":
-                                lines.next_bill_date = date_utils.add(start_date,
-                                                                      years=sale_order.recurring_plan_id.billing_period_value)
 
+                        billing_period_unit = sale_order.recurring_plan_id.billing_period_unit
+                        billing_period_value = sale_order.recurring_plan_id.billing_period_value
 
-
-
-
+                        if billing_period_unit == "days":
+                            lines.next_bill_date = date_utils.add(start_date, days=billing_period_value)
+                        elif billing_period_unit == "month":
+                            lines.next_bill_date = date_utils.add(start_date, months=billing_period_value)
+                        elif billing_period_unit == "year":
+                            lines.next_bill_date = date_utils.add(start_date, years=billing_period_value)
+                        else:
+                            raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")

@@ -39,3 +39,4 @@ class RentalOrderWizardLine(models.TransientModel):
                             })
 
         return res
+

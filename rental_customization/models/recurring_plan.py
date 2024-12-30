@@ -37,7 +37,7 @@ class RentalRecurringPlan(models.Model):
         """Smart Button view"""
         return {
             'name': _('Subscriptions'),
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('recurring_plan_id', 'in', self.ids), ('is_rental_order', '=', True),
                        ('state', 'in', ['sent', 'sale'])],
             'res_model': 'sale.order',

@@ -19,43 +19,45 @@
                                 <field name="other_phone"/>
                                 <field name="birth_date"/>
                                 <field name="assistant"/>
+                                 <field name="description"/>
+                                <field name="salutation"/>
+                                <field name="secondary_email"/>
                             </group>
                              <group>
                                 <field name="mailing_street"/>
                                 <field name="other_street"/>
                                 <field name="mailing_city"/>
                                 <field name="other_city"/>
-                                <field name="mailing_state"/>
-                                <field name="other_state"/>
+                                <field name="mailing_state_id"/>
+                                <field name="other_state_id"/>
                                 <field name="mailing_zip"/>
                                 <field name="other_zip"/>
-                                <field name="mailing_country"/>
-                                <field name="other_country"/>
-                            </group>
-                            <group>
-                                <field name="description"/>
-                                <field name="salutation"/>
-                                <field name="secondary_email"/>
-                                <field name="tag"/>
-                                <field name="residence_zip"/>
-                                <field name="notes"/>
-                                <field name="subject"/>
-                                <field name="business_type"/>
-                                <field name="bussiness_state"/>
-                                <field name="bussiness_street_address"/>
-                                <field name="fien_number"/>
+                                <field name="mailing_country_id"/>
+                                <field name="other_country_id"/>
                             </group>
                             <group>
                                 <field name="time_in_business"/>
                                 <field name="industry_experience"/>
                                 <field name="annual_revanue"/>
                                 <field name="employee_count"/>
+                                 <field name="tag"/>
+                                <field name="residence_zip"/>
+                                <field name="notes"/>
+                                <field name="subject"/>
+                                <field name="business_type"/>
+                                <field name="bussiness_state_id"/>
+                            </group>
+                            <group>
+                                <field name="bussiness_street_address"/>
+                                <field name="fien_number"/>
                                 <field name="owner_legal_name"/>
                                 <field name="social_security_number"/>
                                 <field name="residence_address"/>
-                                <field name="residance_state"/>
+                                <field name="residance_state_id"/>
                                 <field name="residance_city"/>
                                 <field name="business_zip"/>
+                                  <field name="equipment_description"/>
+                                <field name="equipment_cost"/>
                             </group>
                             <group>
                                 <field name="equipment_description"/>
@@ -65,6 +67,23 @@
                                 <field name="equipment_dealer_phone"/>
                                 <field name="preferred_name"/>
                                 <field name="industry"/>
+                                  <field name="account_owner_id"/>
+                                <field name="account_site"/>
+                                <field name="fax"/>
+                            </group>
+                             <group>
+                                <field name="account_type"/>
+                                <field name="ownership"/>
+                                <field name="sic_code"/> <field name="billing_street"/>
+                                <field name="shipping_street"/>
+                                <field name="billing_city"/>
+                                <field name="shipping_city"/>
+                                <field name="billing_state_id"/>
+                                <field name="shipping_state_id"/>
+                                <field name="billing_code"/>
+                                <field name="shipping_code"/>
+                                   <field name="billing_country_id"/>
+                                <field name="shipping_country_id"/>
                             </group>
                         </group>
                     </sheet>

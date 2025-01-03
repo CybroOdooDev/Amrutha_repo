@@ -272,9 +272,9 @@ class SaleOrderLine(models.Model):
         """ Setting the per day charge of the product as its unit price """
         if (self.product_template_id or self.product_id):
             if (not self.rental_start_date or self.rental_end_date):
-                self.name = f"{self.order_id.rental_start_date.strftime('%m/%d/%Y')}  to  {self.order_id.rental_return_date.strftime('%m/%d/%Y')}"
+                self.name = " "
             else:
-                self.name = f"{self.rental_start_date}  to  {self.rental_end_date}"
+                self.name = " "
 
         if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge and not self.is_sale:
             self.price_unit = self.product_template_id.per_day_charge

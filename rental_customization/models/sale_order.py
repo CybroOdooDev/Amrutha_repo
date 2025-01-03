@@ -18,8 +18,8 @@ class SaleOrder(models.Model):
     bill_terms = fields.Selection(selection=[('advance', "Advance Bill"),('late', "Late Bill")],
                                   string="Bill Terms",default='late')
     show_update_button = fields.Boolean(string="Show Update Button", default=False, store=True)
-    header_start_date = fields.Datetime(help="Header level start date for lines")
-    header_return_date = fields.Datetime(help="Header level end date for lines")
+    header_start_date = fields.Date(help="Header level start date for lines")
+    header_return_date = fields.Date(help="Header level end date for lines")
     date_records_line = fields.One2many(
         comodel_name='product.return.dates',
         inverse_name='order_id',
@@ -48,14 +48,14 @@ class SaleOrder(models.Model):
 
     def update_dates(self):
         """ 'Update Button' action - To apply changes in header level start date to the line level dates"""
-        self.header_start_date = self.rental_start_date
-        self.header_return_date = self.rental_return_date
+        self.header_start_date = self.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+        self.header_return_date = self.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
 
         for order_line in self.order_line:
             if self.header_start_date and self.header_return_date :
-                    order_line.rental_start_date = self.header_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                    order_line.rental_start_date = self.header_start_date
                     if not order_line.is_sale:
-                        order_line.rental_end_date = self.header_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                        order_line.rental_end_date = self.header_return_date
                     self.show_update_button = False
             if not self.header_start_date and self.header_return_date:
                 raise ValueError("Start Date and End Date must be set on the order before updating lines.")
@@ -123,6 +123,8 @@ class SaleOrder(models.Model):
         for line in self.order_line:
             if not line.is_sale and not line.next_bill_date:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
+            if line.product_template_id.charges_ok and not line.price_unit :
+                raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
 
         return super().action_open_pickup()
 
@@ -133,7 +135,7 @@ class SaleOrder(models.Model):
         lines_to_invoice = self.env['sale.order.line'].search([])
 
         filtered_order_lines = lines_to_invoice.filtered(
-            lambda line: (line.next_bill_date and line.next_bill_date.date() <= today) or line.is_sale
+            lambda line: (line.next_bill_date and line.next_bill_date <= today) or line.is_sale
         )
 
         # Group order lines by sale order
@@ -180,7 +182,6 @@ class SaleOrder(models.Model):
                         if line.is_sale and line.product_template_id.charges_ok== False :
                             invoice_vals['invoice_line_ids'].append(Command.create(
                                 line._prepare_invoice_line(
-                                    # name=f"Sale for {line.product_id.name}",
                                     name=f"Sale",
                                     product_id=line.product_id.id,
                                     price_unit=line.price_unit,
@@ -192,7 +193,6 @@ class SaleOrder(models.Model):
                             if sale_order.bill_terms == 'advance'or not line.product_template_id.is_per_day_charge:
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
-                                        # name=f"Rental for {line.product_id.name}",
                                         name=f"Rental",
                                         product_id=line.product_id.id,
                                         price_unit=line.price_unit,
@@ -212,7 +212,6 @@ class SaleOrder(models.Model):
                                         if date_lines.invoice_count <= 1:
                                             invoice_vals['invoice_line_ids'].append(Command.create(
                                                 line._prepare_invoice_line(
-                                                    # name=f"Rental for {line.product_id.name}",
                                                     name=f"Rental with Per Day Charge - {lot.name}",
                                                     product_id=date_lines.product_id.id,
                                                     price_unit=date_lines.total_price,

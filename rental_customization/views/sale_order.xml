@@ -46,7 +46,7 @@
             </xpath>
 
             <xpath expr="//notebook" position="inside">
-                <page string="Date Details">
+                <page string="Date Details" invisible="bill_terms == 'advance'">
                     <field name="date_records_line">
 <!--                        <list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">
@@ -55,7 +55,6 @@
                             <field name="per_day_charge" string="Per day charge"/>
                             <field name="delivery_date" string="Delivery Date" />
                             <field name="return_date" string="Return Date"/>
-<!--                            <field name="invoice_count" />-->
                             <field name="total_days" string="Total Days"/>
                             <field name="total_price" string="Total Price"/>
                         </list>

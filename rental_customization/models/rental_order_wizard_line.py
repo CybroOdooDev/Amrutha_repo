@@ -24,7 +24,7 @@ class RentalOrderWizardLine(models.TransientModel):
                             'product_id': product.id,
                             'serial_number': lot.id,
                             'quantity': 1,
-                            'per_day_charge': product.per_day_charge,
+                            'per_day_charge': lines.order_line_id.price_unit,
                             'delivery_date': fields.Date.today(),
                         }])
                 if lines.returned_lot_ids and lines['status'] == 'return':
@@ -39,4 +39,3 @@ class RentalOrderWizardLine(models.TransientModel):
                             })
 
         return res
-

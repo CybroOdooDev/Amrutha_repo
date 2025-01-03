@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from email.policy import default
 from itertools import product
+from venv import create
+from datetime import datetime
+
 
 from odoo import api, fields, models
 import pytz
@@ -12,9 +15,9 @@ from odoo.fields import Command
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    rental_start_date = fields.Datetime(string="Rental Start Date", tracking=True)
-    rental_end_date = fields.Datetime(string="Rental End Date", tracking=True)
-    next_bill_date = fields.Datetime(compute="_compute_next_bill_date", string="Next Bill Date", store=True,
+    rental_start_date = fields.Date(string="Rental Start Date", tracking=True)
+    rental_end_date = fields.Date(string="Rental End Date", tracking=True)
+    next_bill_date = fields.Date(compute="_compute_next_bill_date", string="Next Bill Date", store=True,
                                      readonly=False)
     rental_status = fields.Selection(selection=[('draft', "Quotation"),
                                                 ('sent', "Quotation Sent"),
@@ -91,7 +94,8 @@ class SaleOrderLine(models.Model):
         for rec in self:
             if rec.order_id.bill_terms == "late":
                 if rec.rental_start_date:
-                    start_date = rec.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                    start_date = rec.rental_start_date
+
                     # by default, next_bill_date = today+28days
                     if not rec.order_id.recurring_plan_id:
                         rec.next_bill_date = date_utils.add(start_date, days=28)
@@ -110,7 +114,7 @@ class SaleOrderLine(models.Model):
             else:
                 if rec.rental_start_date:
                     if rec.qty_invoiced == 0:
-                        start_date = rec.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                        start_date = rec.rental_start_date
                         rec.next_bill_date = start_date
 
     @api.depends('qty_delivered', 'qty_invoiced', 'qty_returned', 'state','is_sale')
@@ -266,5 +270,11 @@ class SaleOrderLine(models.Model):
     @api.onchange('product_template_id', 'product_id')
     def _onchange_products(self):
         """ Setting the per day charge of the product as its unit price """
+        if (self.product_template_id or self.product_id):
+            if (not self.rental_start_date or self.rental_end_date):
+                self.name = f"{self.order_id.rental_start_date.strftime('%m/%d/%Y')}  to  {self.order_id.rental_return_date.strftime('%m/%d/%Y')}"
+            else:
+                self.name = f"{self.rental_start_date}  to  {self.rental_end_date}"
+
         if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge and not self.is_sale:
             self.price_unit = self.product_template_id.per_day_charge

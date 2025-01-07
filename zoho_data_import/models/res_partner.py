@@ -36,7 +36,7 @@ class ResPartner(models.Model):
     tag = fields.Char(string='Tag', help='Contact Tag')
     residence_zip = fields.Char(string='Residence Zip',
                                 help='Residance Zip of Contact')
-    notes = fields.Char(string='Notes', help='Notes')
+    notes = fields.Char(string='Zoho Notes', help='Notes')
     subject = fields.Char('Subject', help='Subject')
     business_type = fields.Char('Type of Business', help='Type of Business')
     bussiness_state_id = fields.Many2one('res.country.state',

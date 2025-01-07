@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Added fields for accessible location -->
+    <record id="view_mail_form_inherit" model="ir.ui.view">
+        <field name="name">view.mail.form.form.inherit.zoho.data.import</field>
+        <field name="model">mail.mail</field>
+        <field name="mode">extension</field>
+        <field name="inherit_id" ref="mail.view_mail_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='attachments']" position="after">
+                <page name="zoho_data" string="Zoho Information's">
+                    <group>
+                        <field name="zoho_reference"/>
+                        <field name="file_reference"/>
+                        <field name="bcc"/>
+                        <field name="bounce_reason"/>
+                        <field name="source"/>
+                        <field name="sent_from"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

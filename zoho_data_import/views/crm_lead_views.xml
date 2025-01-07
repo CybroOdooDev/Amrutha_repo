@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        <record id="crm_lead_view_form_inherit_zoho_data_import" model="ir.ui.view">
+            <field name="name">crm.lead.inherit.zoho.data.import</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='lead']" position="after">
+                    <page string="Zoho Information's" name="assigned_partner">
+                        <group>
+                            <group >
+                                <field name="zoho_record_reference"/>
+                                <field name="deal_owner_id"/>
+                                <field name="amount"/>
+                                <field name="business_type"/>
+                                <field name="next_step"/>
+                                <field name="zoho_lead_source"/>
+                                <field name="forcast_category"/>
+                                <field name="revenue"/>
+                                <field name="principle_reduction"/>
+                                <field name="deal_rate"/>
+                                <field name="lease_fee"/>
+                            </group>
+                            <group >
+                                <field name="lease_payment"/>
+                                <field name="lease_no"/>
+                                <field name="term"/>
+                                <field name="industry"/>
+                                <field name="listed_title"/>
+                                <field name="mo_return_rate"/>
+                                <field name="initial_payment"/>
+                                <field name="date_reply_required"/>
+                                <field name="quote_description"/>
+                                <field name="accounting_status"/>
+                            </group>
+                            <group >
+                                <field name="residual_payment"/>
+                                <field name="lease_start_date"/>
+                                <field name="dealer"/>
+                                <field name="wire_sent_date"/>
+                                <field name="dealer_contact"/>
+                                <field name="dealer_phone"/>
+                                <field name="dealer_email"/>
+                                <field name="signing_status"/>
+                                <field name="funding_source"/>
+                                <field name="second_initial_payment"/>
+                                <field name="invoice_amount"/>
+                            </group>
+                            <group >
+                                <field name="total_downpayment"/>
+                                <field name="payment_due"/>
+                                <field name="lost_reason"/>
+                                <field name="business_name"/>
+                                <field name="bank_rate"/>
+                                <field name="equipment"/>
+                                <field name="guarantor"/>
+                                <field name="quote_lease_fee"/>
+                                <field name="total_cost"/>
+                                <field name="quote_rate"/>
+                                <field name="quote_lease_term"/>
+                            </group>
+                            <group >
+                                <field name="quote_number_of_mon_down"/>
+                                <field name="quote_principal_reduction"/>
+                                <field name="quote_notes"/>
+                                <field name="quote_monthly_payment"/>
+                                <field name="quote_initial_payment"/>
+                                <field name="quote_total_receivable"/>
+                                <field name="quote_monthly_lease_spread"/>
+                                <field name="total_lease_profit"/>
+                                <field name="rate_of_return"/>
+                                <field name="insurance_expiration"/>
+                                <field name="insurance_expires"/>
+                                <field name="sales_tax"/>
+                            </group>
+                             <group >
+                                <field name="dealer_address"/>
+                                <field name="total_advance"/>
+                                <field name="total_mo_payment_including_tax"/>
+                                <field name="serial_no"/>
+                                <field name="account_address"/>
+                                <field name="qty"/>
+                                <field name="make_model"/>
+                                <field name="internal_notes"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+</odoo>

@@ -27,6 +27,9 @@
                     <setting help="Referral Fee Rate" >
                         <field name="referral_fee_rate" company_dependent="1" />
                     </setting>
+                    <setting help="Referral Fee Rate" >
+                        <field name="co_agent_fee_rate" company_dependent="1" />
+                    </setting>
                 </block>
             </block>
         </field>

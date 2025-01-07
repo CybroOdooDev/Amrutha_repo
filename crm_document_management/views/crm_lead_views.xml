@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_crm_lead_form_documents" model="ir.ui.view">
+        <field name="name">crm.lead.form.documents</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button"
+                        type="object"
+                        icon="fa-file-pdf"
+                        string="Lead Documents"
+                        name="action_view_documents">
+                    <field name="document_count"/>
+                </button>
+            </div>
+
+            <xpath expr="//header" position="inside">
+                <button name="send_all_documents" string="Send All"
+                        type="object"
+                        class="btn btn-primary me-1"/>
+            </xpath>
+
+            <xpath expr="//notebook/page[@name='extra']" position="after">
+                <page string="Documents" name="documents">
+                    <group>
+                        <!-- Approvers -->
+                        <field name="agent_id"/>
+                        <field name="seller_buyer_id"/>
+                        <field name="transaction_cordinator_id"/>
+                        <field name="property_admin_id"/>
+
+                        <!-- Residential Sale -->
+                        <field name="enable_residential_sale"/>
+                        <field name="residential_sale_docs"
+                               invisible="not enable_residential_sale">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+                        <!-- Residential Purchase -->
+                        <field name="enable_residential_purchase"/>
+                        <field name="residential_purchase_docs"
+                               invisible="not enable_residential_purchase">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+                        <!-- Commercial Sale -->
+                        <field name="enable_commercial_sale"/>
+                        <field name="commercial_sale_docs"
+                               invisible="not enable_commercial_sale">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+                        <!-- commercial_purchase_docs -->
+                        <field name="enable_commercial_purchase"/>
+                        <field name="commercial_purchase_docs"
+                               invisible="not enable_commercial_purchase">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+
+                        <!-- auction_sale_docs -->
+                        <field name="enable_auction_sale"/>
+                        <field name="auction_sale_docs"
+                               invisible="not enable_auction_sale">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+
+                        <!-- auction_purchase_docs -->
+                        <field name="enable_auction_purchase"/>
+                        <field name="auction_purchase_docs"
+                               invisible="not enable_auction_purchase">
+                            <list editable="bottom">
+                                <field name="is_selected"/>
+                                <field name="is_static"/>
+                                <field name="static_template_id"/>
+                                <field name="name"/>
+                                <field name="uploaded_file"/>
+                                <field name="stage"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </list>
+                        </field>
+
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

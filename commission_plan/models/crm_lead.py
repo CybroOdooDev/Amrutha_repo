@@ -65,8 +65,6 @@ class Lead(models.Model):
                                                help="Add attachment file")
     pdf_report = fields.Binary('PDF')
 
-
-
     @api.onchange('omissions_insurance')
     def _onchange_omissions_insurance(self):
         self.is_manual_omissions_insurance = True
@@ -102,7 +100,7 @@ class Lead(models.Model):
         if self.stage_id.is_won:
             last_year_date = datetime.now() - timedelta(days=365)
             # Get the partner associated with the user
-            if self.user_id.secondary_related_partner_id :
+            if self.user_id.secondary_related_partner_id:
                 partner = self.user_id.secondary_related_partner_id
             else:
                 partner = self.user_id.partner_id
@@ -202,14 +200,14 @@ class Lead(models.Model):
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')
-
+        print(base64.b64encode(pdf_content),"base64.b64encode(pdf_content)")
         # Create the attachment with the PDF content
         attachment = self.env['ir.attachment'].create({
             'name': attachment_name,
             'type': 'binary',
-            'datas': base64.b64encode(pdf_content),
+            'datas': base64.b64encode(pdf_content).decode('utf-8'),
             # Odoo expects base64 encoded binary data
-            'mimetype': 'application/pdf',
+            'mimetype': 'application/x-pdf',
             'res_model': self._name,
             # Link the attachment to this record's model
             'res_id': self.id,  # Link the attachment to this specific record

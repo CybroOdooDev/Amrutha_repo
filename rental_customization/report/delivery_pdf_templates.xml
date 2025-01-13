@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="delivery_pdf_templates">
+        <t t-call="web.html_container">
+            <t t-name="module_name.report_bill_of_lading">
+                <t t-foreach="docs" t-as="doc">
+                    <div style="margin-top: 1px;">
+                        <!-- Header Section -->
+                        <header style="margin-top:2px;margin-bottom: 30px;">
+                            <table style="width: 100%; border-none; margin-bottom: 20px;">
+                                <tr style="text-align: center;">
+                                    <td>
+                                        <div style="text-align: center;">
+                                            <img t-if="logo" t-att-src="image_data_uri(logo)"
+                                                 style="max-width: 75px; max-height: 75px; margin-left:3px"/>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="text-align: center;">
+                                            <h3>UNIFORM STRAIGHT BILL OF LADING Original - Not Negotiable -
+                                                Domestic
+                                            </h3>
+                                            <p>www.siteboxstorage.com | Lot Phone: 316-247-5858 | Fax Number:
+                                                316-247-5858
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </header>
+                        <!--Ticket and Driver Information -->
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <tr>
+                                <td style="width:30%; border: 1px solid #000; padding: 10px;">
+                                    <strong>Ticket Number:</strong>
+                                    <p t-esc="ticket_no"/>
+                                </td>
+                                <td style="width:30%; border: 1px solid #000; padding: 10px;">
+                                    <strong>Date:</strong>
+                                    <t t-if="docs.delivery_date">
+                                        <p t-if="docs.delivery_date" t-esc="docs.delivery_date"/>
+                                    </t>
+                                </td>
+                                <td style="width:30%; border: 1px solid #000; padding: 10px;">
+                                    <strong>Driver:</strong>
+                                    <t t-if="docs.delivery_driver">
+                                        <p t-esc="docs.delivery_driver.name"/>
+                                    </t>
+                                </td>
+                            </tr>
+                        </table>
+                        <!--Note-->
+                        <div style="flex: 1;border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+                            <p class="p-1">
+                                <b>RECEIVED</b>, subject to the classifications and tariffs in effect on the date of the
+                                issue of
+                                this Bill of Lading. The property described below, in
+                                apparent good order, except as noted (contents and condition of contents of package
+                                unknown)
+                                marked, consigned and destined as shown
+                                below, which said company (the word company being understood throughout this contract as
+                                meaning any person or corporation in possession of
+                                the property under the contract) agrees to carry to its usual place of delivery at said
+                                destination, if on its own railroad, water line, highway route or
+                                routes, or within the territory of its highway operations, otherwise to deliver to
+                                another
+                                carrier on the route to said destination. It is mutually
+                                agreed, as to each carrier of all or any of said property over all or any portion of
+                                said
+                                route to destination, and as to each party at any time
+                                interested in all of any of said property, that every service to be performed hereunder
+                                shall be subject to all the condition not prohibited by law,
+                                whether printed or written, herein contained, which are hereby agreed to by the shipper
+                                and
+                                accepted for himself and his assigns.
+                            </p>
+                        </div>
+                        <!-- From and To Information -->
+                        <table style="width: 100%;height:25%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #000; padding: 5px;">From</th>
+                                    <th style="border: 1px solid #000; padding: 5px;">To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:50%;height:50%; border: 1px solid #000; padding: 10px;">
+                                        <b><t t-esc="location.name"/><br/></b>
+                                        <t t-esc="location.partner_id.street"/><br/>
+                                        <t t-esc="location.partner_id.street2"/><br/>
+                                        <t t-esc="location.partner_id.city"/><br/>
+                                        <t t-esc="location.partner_id.state_id.name"/><br/>
+                                        <t t-esc="location.partner_id.zip"/><br/>
+                                        <t t-esc="location.partner_id.country_id.name"/>
+                                    </td>
+                                    <td style="width:50%; border: 1px solid #000; padding: 10px;">
+                                        <b><t t-esc="docs.order_id.partner_id.name"/><br/></b>
+                                        <t t-esc="docs.order_id.partner_id.street"/><br/>
+                                        <t t-esc="docs.order_id.partner_id.street2"/><br/>
+                                        <t t-esc="docs.order_id.partner_id.city"/><br/>
+                                        <t t-esc="docs.order_id.partner_id.state_id.name"/><br/>
+                                        <t t-esc="docs.order_id.partner_id.zip"/><br/>
+                                        <t t-esc="docs.order_id.partner_id.country_id.name"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <!-- Arrival time -->
+                                    <td style="width:50%; border: 1px solid #000; padding: 10px;">
+                                        <p>Arrival Time:
+                                        </p>
+                                    </td>
+                                    <td style="width:50%; border: 1px solid #000; padding: 10px;">
+                                        <p>Arrival Time:
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <!-- Departure time -->
+                                    <td style="width:50%; border: 1px solid #000; padding: 10px;">
+                                        <p>Departure Time:
+                                        </p>
+                                    </td>
+                                    <td style="width:50%; border: 1px solid #000; padding: 10px;">
+                                        <p>Departure Time:
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- Unit Details Table -->
+                        <table style="width: 100%;height:5%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #000; padding: 5px;">Serial no.</th>
+                                    <th style="border: 1px solid #000; padding: 5px;">Product</th>
+                                    <th style="border: 1px solid #000; padding: 5px;">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid #000; padding: 10px;">
+                                        <t t-esc="docs.serial_number.name"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 10px;">
+                                        <t t-esc="docs.product_id.name"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 5px;">
+                                        <t t-esc="1"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- Signature Section -->
+                        <table style="width: 100%;border: 1px solid #000; padding: 10px; margin-bottom: 20px;">
+                            <tr style="text-align: center;border-none;">
+                                <td>
+                                    <p>
+                                        <strong>Driver Signature:</strong>
+                                        ________________________
+                                    </p>
+                                </td>
+                                <td>
+                                    <p>
+                                        <strong>Date:</strong>
+                                        ________________________
+                                    </p>
+                                </td>
+                            </tr>
+
+                        </table>
+                        <!-- Notes Section -->
+                        <div style="border: 1px solid #000; padding: 10px;">
+                            <p>
+                                <strong>Notes:</strong>
+                            </p>
+                            <p>
+                                <t t-esc="notes"/><br/>
+                            </p>
+                        </div>
+                        <!--Note-->
+                        <div style="flex: 1;border: 1px solid #000; padding: 10px; margin-bottom: 20px;text-align: center">
+                            <p class="p-1">
+                                List Individual Contents AND Estimated Weight Inside Mobile Office/Storage Building.
+                                'MISCELLANEOUS' DESCRIPTION NOT ACCEPTABLE. Hazardous Materials and Household Goods NOT
+                                Accepted.
+                            </p>
+                        </div>
+                        <p style="text-align: center">Terms and Conditions are located on the SiteBox Storage website:
+                            siteboxstorage.com/terms.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

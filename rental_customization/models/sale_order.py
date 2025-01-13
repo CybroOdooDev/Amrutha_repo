@@ -7,6 +7,7 @@ from odoo import api,models, fields, Command
 import pytz
 from odoo.tools import date_utils
 from odoo.exceptions import ValidationError
+import base64
 
 
 class SaleOrder(models.Model):
@@ -25,6 +26,8 @@ class SaleOrder(models.Model):
         inverse_name='order_id',
         string="Date Records Lines",
         copy=True, auto_join=True)
+    description = fields.Html(string='Description', translate=True)
+
 
     def _get_default_recurring_plan(self):
         """Get the default recurring plan (e.g., monthly)."""
@@ -257,3 +260,4 @@ class SaleOrder(models.Model):
                             lines.next_bill_date = date_utils.add(start_date, years=billing_period_value)
                         else:
                             raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")
+

@@ -10,9 +10,13 @@
         'security/ir.model.access.csv',
         'security/security_rules.xml',
         'data/ir_cron_data.xml',
+        'data/paperformat.xml',
         'views/product_template.xml',
         'views/sale_order.xml',
         'views/recurring_plan.xml',
+        'report/delivery_pdf_templates.xml',
+        'report/pickup_pdf_templates.xml',
+        'report/manage_reports_action.xml',
     ],
 
 }

@@ -99,39 +99,62 @@ class Lead(models.Model):
     def compute_commission(self):
         if self.stage_id.is_won:
             last_year_date = datetime.now() - timedelta(days=365)
+
             # Get the partner associated with the user
             if self.user_id.secondary_related_partner_id:
                 partner = self.user_id.secondary_related_partner_id
             else:
                 partner = self.user_id.partner_id
 
-            # Search for vendor payments to this partner within the last year
-            # payments = self.env['account.payment'].search([
-            #     ('partner_id', '=', partner.id),
-            #     ('payment_type', '=', 'outbound'),
-            #     # Assuming 'outbound' indicates a vendor payment
-            #     ('state', '=', 'posted'),  # Only consider posted payments
-            #     ('create_date', '>=', last_year_date)
-            # ])
-            # Search for the product
-            product = self.env['product.product'].search(
-                [('name', '=', 'Commission'),
-                 ('default_code', '=', 'COMMISSION')], limit=1)
+            # Check if the user belongs to a sales team
+            sales_team = self.env['crm.team'].search([
+                ('crm_team_member_ids', 'in', self.user_id.id)
+            ], limit=1)
 
-            if product:
-                # Search for account.move.line with the specified conditions
-                payments = self.env['account.move.line'].search([
-                    ('product_id', '=', product.id),
-                    ('move_id.move_type', '=', 'in_invoice'),
-                    ('move_id.partner_id', '=', partner.id),
-                    ('create_date', '>=', last_year_date),
-                    ('move_id.state', '=', 'posted')
-                ])
-            total_amount_past_year = sum(
-                payment.price_total for payment in payments)
+            if sales_team:
+                # Get all members of the sales team
+                team_members = sales_team.crm_team_member_ids
+                total_amount_past_year = 0.0
+
+                for member in team_members:
+                    partner = member.partner_id or member.secondary_related_partner_id
+                    if not partner:
+                        continue
+
+                    # Search for account.move.line related to the team member
+                    product = self.env['product.product'].search(
+                        [('name', '=', 'Commission'),
+                         ('default_code', '=', 'COMMISSION')], limit=1)
+
+                    if product:
+                        payments = self.env['account.move.line'].search([
+                            ('product_id', '=', product.id),
+                            ('move_id.move_type', '=', 'in_invoice'),
+                            ('move_id.partner_id', '=', partner.id),
+                            ('create_date', '>=', last_year_date),
+                            ('move_id.state', '=', 'posted')
+                        ])
+                        total_amount_past_year += sum(
+                            payment.price_total for payment in payments)
+            else:
+                # Individual calculation if the user does not belong to a sales team
+                product = self.env['product.product'].search(
+                    [('name', '=', 'Commission'),
+                     ('default_code', '=', 'COMMISSION')], limit=1)
+
+                if product:
+                    payments = self.env['account.move.line'].search([
+                        ('product_id', '=', product.id),
+                        ('move_id.move_type', '=', 'in_invoice'),
+                        ('move_id.partner_id', '=', partner.id),
+                        ('create_date', '>=', last_year_date),
+                        ('move_id.state', '=', 'posted')
+                    ])
+                    total_amount_past_year = sum(
+                        payment.price_total for payment in payments)
+
+            # Calculate the commission rate based on the total
             commission_rate = self.get_commission_rate(total_amount_past_year)
-            # self.tier = commission_rate
-            # print(self.tier)
             self.total_commission = self.total_amount * commission_rate
 
             # E&O Insurance calculation (skip if manually set)
@@ -190,8 +213,6 @@ class Lead(models.Model):
             self.generate_pdf_attachment()
             # self._create_approvals()
 
-
-
     def generate_pdf_attachment(self):
         # Use the report rendering method to generate the PDF
         pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
@@ -220,14 +241,25 @@ class Lead(models.Model):
         self.compute_commission()
 
     def get_commission_rate(self, total_amount):
-        """Fetch the correct commission rate based on total amount from tier.tier."""
+        """Fetch the correct commission rate based on total amount from tier.tier,
+        and enforce minimum commission percentage for the salesperson."""
+
         tiers = self.env['tier.tier'].search(
             [('company_id', '=', self.company_id.id)], order='amount asc')
+
+        # Default commission rate from tiers
         commission_rate = 0.0
         for tier in tiers:
             if total_amount >= tier.amount:
                 commission_rate = tier.commission_percentage / 100.0
                 self.tier = tier.commission_percentage
+
+        # Enforce minimum commission rate for the salesperson
+        min_commission_percentage = self.user_id.min_commission_percentage or 0.0  # Assume 0.0 if not set
+        min_commission_rate = min_commission_percentage / 100.0
+
+        if commission_rate < min_commission_rate:
+            commission_rate = min_commission_rate
+            self.tier = min_commission_percentage  # Update tier to reflect the enforced minimum
+
         return commission_rate
-
-

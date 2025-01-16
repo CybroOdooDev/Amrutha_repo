@@ -92,7 +92,7 @@ class CrmLead(models.Model):
         return {
             'type': 'ir.actions.act_window',
             'name': 'Commission Invoices',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'res_model': 'account.move',
             'domain': [('crm_lead_id', '=', self.id)],
             'context': "{'create': False}"

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+   <record id="rental_product_pricelist_view" model="ir.ui.view">
+        <field name="name">product.pricelist.form.inherit.rental_customization</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="sale_renting.product_pricelist_view"/>
+        <field name="arch" type="xml">
+            <page name="product_pricing_ids" position="after">
+                <page string="Distance Details" invisible="not context.get('rental_order')">
+                    <field name="distance_range_line_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="name" widget="many2many_tags" width="10px"/>
+                            <field name="distance_begin" width="10px"/>
+                            <field name="distance_end" width="10px"/>
+                            <field name="transportation_rate" width="100px"/>
+                        </list>
+                    </field>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

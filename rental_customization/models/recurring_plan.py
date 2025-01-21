@@ -14,7 +14,7 @@ class RentalRecurringPlan(models.Model):
     company_id = fields.Many2one('res.company',default=lambda self: self.env.company, required=True, string="Company")
 
     billing_period_value = fields.Integer(string="Duration", required=True, default=1)
-    billing_period_unit = fields.Selection([("days","Days"), ("month", "Months"), ('year', 'Years')],
+    billing_period_unit = fields.Selection([("day","Days"), ("month", "Months"), ('year', 'Years')],
                                            string="Unit", required=True, default='month')
     billing_period_display = fields.Char(compute='_compute_billing_period_display',string="Billing Period")
     active_rental_count = fields.Integer(compute="_compute_active_rental_count", string="Subscriptions")

@@ -40,5 +40,30 @@
             <field name="purchase_ok">False</field>
         </record>
 
+        <!-- to create default product for Delivery Fuel Surcharge-->
+        <record id="delivery_fuel_surcharge_product" model="product.product">
+            <field name="name">Delivery Fuel Surcharge</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="charges_ok">True</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+        <!-- to create default product for Pick up Fuel Surcharge-->
+        <record id="pickup_fuel_surcharge_product" model="product.product">
+            <field name="name">Pick Up Fuel Surcharge</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="charges_ok">True</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
     </data>
 </odoo>

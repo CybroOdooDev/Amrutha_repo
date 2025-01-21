@@ -19,10 +19,10 @@
                        widget="toggle"/>
             </xpath>
 
-            <xpath expr="//field[@name='payment_term_id']" position="after">
-                <field name="bill_terms" column_invisible=" not is_rental_order" required="1"/>
-                <field name="recurring_plan_id" column_invisible=" not is_rental_order" required="1"/>
-                <field name="show_update_button" invisible="1"/>
+            <xpath expr="//field[@name='payment_term_id']" position="after" invisible="not is_rental_order">
+                <field name="bill_terms" invisible="not is_rental_order" required="1"/>
+                <field name="recurring_plan_id" invisible=" not is_rental_order" required="1"/>
+                <field name="show_update_button" invisible="1 or not is_rental_order"/>
             </xpath>
 
             <xpath expr="//field[@name='validity_date']" position="attributes">
@@ -36,7 +36,7 @@
                             string="Apply in order lines"
                             help="Re-assign dates in the order lines"
                             class="btn-link mb-1 px-0" icon="fa-refresh"
-                            invisible="show_update_button != True"/>
+                            invisible="show_update_button != True or not is_rental_order"/>
                 </div>
             </xpath>
 
@@ -47,24 +47,30 @@
             </xpath>
 
             <xpath expr="//notebook" position="inside">
-                <page string="Date Details">
+                <page string="Date Details" invisible="not is_rental_order">
                     <field name="date_records_line">
                         <!--                        <list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">
                             <field name="product_id" string="Product" width="150px"/>
                             <field name="serial_number" string="Serial No." width="100px"/>
-                            <field name="per_day_charge" string="Per day charge" width="100px" column_invisible="parent.bill_terms == 'advance'"/>
+                            <field name="per_day_charge" string="Per day charge" width="100px"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
                             <field name="delivery_date" string="Delivery Date" width="120px"/>
                             <field name="return_date" string="Return Date" width="120px"/>
                             <field name="delivery_driver" width="120px"/>
                             <field name="pickup_driver" width="120px"/>
-                            <field name="total_days" string="Total Days" column_invisible="parent.bill_terms == 'advance'"/>
-                            <field name="total_price" string="Total Price" column_invisible="parent.bill_terms == 'advance'"/>
-                            <button  name="action_send_delivery_signature" string="Delivery Signature" type="object" class="btn-primary"
-                                     invisible="signature_status != 'initial' or not parent.is_rental_order"/>
+                            <field name="total_days" string="Total Days"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
+                            <field name="total_price" string="Total Price"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
+                            <button name="action_send_delivery_signature" string="Delivery Signature" type="object"
+                                    class="btn-primary"
+                                    invisible="signature_status != 'initial' or not parent.is_rental_order"/>
                             <button name="action_send_pickup_signature" string="Pick-Up Signature" type="object"
-                                    class="btn-primary" invisible="signature_status != 'delivery' or not parent.is_rental_order"/>
-                            <button name="action_signature_msg" string="Sent for Signatures" type="object" class="btn-secondary"
+                                    class="btn-primary"
+                                    invisible="signature_status != 'delivery' or not parent.is_rental_order"/>
+                            <button name="action_signature_msg" string="Sent for Signatures" type="object"
+                                    class="btn-secondary"
                                     invisible="signature_status in ['initial','delivery'] or not parent.is_rental_order"/>
                         </list>
                     </field>
@@ -75,6 +81,20 @@
                 <page string="BOL Notes" name="bol_notes">
                     <field name="description" placeholder="Add a description..." options="{'collaborative': true}"/>
                 </page>
+            </xpath>
+
+            <xpath expr="//field[@name='date_order']" position="after">
+                <label for="mileage"/>
+                <div>
+                    <tr>
+                        <td>
+                            <field name="mileage"/>
+                        </td>
+                        <td>
+                            <field name="mileage_unit"/>
+                        </td>
+                    </tr>
+                </div>
             </xpath>
         </field>
     </record>
@@ -106,4 +126,34 @@
             </xpath>
         </field>
     </record>
+
+    <record id="rental_product_pricelist_action" model="ir.actions.act_window">
+        <field name="name">Pricelists</field>
+        <field name="res_model">product.pricelist</field>
+        <field name="view_mode">list,kanban,form</field>
+<!--        <field name="search_view_id" ref="product_pricelist_view_search" />-->
+        <field name="context">{"rental_order":True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+            Create a new pricelist
+            </p><p>
+            A price is a set of sales prices or rules to compute the price of sales order lines based on products, product categories, dates and ordered quantities.
+            This is the perfect tool to handle several pricings, seasonal discounts, etc.
+            </p><p>
+            You can assign pricelists to your customers or select one when creating a new sales quotation.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="rental_menu_pricelist_main"
+              name="Pricelists"
+              action="rental_customization.rental_product_pricelist_action"
+              groups="product.group_product_pricelist"
+              parent="sale_renting.menu_rental_products"
+              sequence="35"/>
+    <menuitem id="menu_rental_products"
+              name="Products"
+              action="sale_renting.rental_product_template_action"
+              parent="sale_renting.menu_rental_products"
+              sequence="4"/>
 </odoo>

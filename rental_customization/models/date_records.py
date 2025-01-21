@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from importlib.metadata import requires
-
 from google.auth import default
 from odoo import api, models, fields, _, Command
 from odoo.exceptions import ValidationError
 from datetime import datetime
 import base64
 from bs4 import BeautifulSoup
-
 from odoo import models, fields
 
 

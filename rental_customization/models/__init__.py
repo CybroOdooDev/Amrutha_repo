@@ -6,3 +6,5 @@ from . import product_template
 from . import date_records
 from . import rental_order_wizard_line
 from . import account_move
+from . import product_pricelist
+from . import distance_range_line

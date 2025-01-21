@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
+
 from email.policy import default
 from itertools import product
 from venv import create
 from datetime import datetime
-
-
 from odoo import api, fields, models
 import pytz
 from odoo.tools import date_utils
@@ -38,12 +37,34 @@ class SaleOrderLine(models.Model):
     def create(self, vals_list):
         """Supering Create function of sale order lines"""
         res = super().create(vals_list)
+        # to calculate the main product's unit price based on PL
+        for line in res:
+            if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
+                for vals in vals_list:
+                    if vals['display_type'] != 'line_section':
+                        product_template_id = vals.get('product_template_id')
+                        product = self.env['product.template'].search([('id', '=', product_template_id)])
+                    # to check the price list and the pricing rule
+                        if product and product.transportation_rate and line.order_id.pricelist_id and line.order_id.pricelist_id.product_pricing_ids:
+                            for range in line.order_id.pricelist_id.product_pricing_ids:
+                                if range.product_template_id == product:
+                                    #Check the rental period in the pricelist and recurring plan in the order
+                                    pricelist_period_duration = range.recurrence_id.duration
+                                    pricelist_period_unit = range.recurrence_id.unit
+                                    order_recurring_duration = line.order_id.recurring_plan_id.billing_period_value
+                                    order_recurring_unit = line.order_id.recurring_plan_id.billing_period_unit
+                                    if (pricelist_period_duration==order_recurring_duration) and (pricelist_period_unit==order_recurring_unit):
+                                        line.price_unit = range.price
+                        else:
+                            if product.is_per_day_charge:
+                                line.price_unit = product.per_day_charge
+                            else:
+                                line.price_unit = product.list_price
         if res.order_id.is_rental_order:
             # Checking various validations and notifying errors
             line_section_count = sum(1 for vals in vals_list if vals.get('display_type') == 'line_section')
             if line_section_count > 1:
                 raise ValidationError("Create one section with one Product,at a time")
-
             for vals in vals_list:
                 # Ensuring section name is unique
                 if vals.get('display_type') == 'line_section' and vals.get('name'):
@@ -60,17 +81,46 @@ class SaleOrderLine(models.Model):
                             f"The section name '{vals.get('name')}' must be unique within the sale order."
                         )
 
-                # Adding service charges while saving
                 product_template_id = vals.get('product_template_id')
-                product = self.env['product.template'].search([('id', '=', product_template_id)]).name
+                product = self.env['product.template'].search([('id', '=', product_template_id)])
                 is_sale = vals.get('is_sale')
+                prod_price = 0
+                # to check the price list and the distance range
+                if product and res.order_id.pricelist_id and res.order_id.pricelist_id.distance_range_line_ids:
+                    mileage = res.order_id.mileage
+                    for range in res.order_id.pricelist_id.distance_range_line_ids:
+                        delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
+                        pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
+                        if delivery_product_name in range.name.mapped( 'name') or pickup_product_name in range.name.mapped('name'):
+                            # if range.name.name == self.env.ref('rental_customization.default_delivery_product').name:
+                            if range.distance_end != 0:
+                                if range.distance_begin<= mileage <= range.distance_end :
+                                    prod_price = range.transportation_rate
+                            else:
+                                if  range.distance_begin<= mileage:
+                                    prod_price = mileage*range.transportation_rate
+
+                # Adding service charges while saving
                 if product_template_id and not is_sale:
                     product_charges = self.env['product.template'].search([('id', '=', product_template_id)]).charges_ids
+                    # Delivery and Pick-Up charge
                     if product_charges:
                         sale_order = self.env['sale.order'].search([('id', '=', res.order_id.id)])
                         for prod in product_charges:
-                            sale_order.order_line.create({
-                                'name': f"For {product}",
+                            if prod.name in ('Rental Delivery','Rental Pick-Up'):
+                                sale_order.order_line.create({
+                                    'name': f"For {product.name}",
+                                    'sequence': vals.get('sequence') + 1,
+                                    'order_id': sale_order.id,
+                                    'product_id': prod.id,
+                                    'product_uom_qty': vals.get('product_uom_qty'),
+                                    'price_unit': prod_price,
+                                    'display_type': False,
+                                    'parent_line': vals.get('sequence')
+                                })
+                            else:
+                                sale_order.order_line.create({
+                                'name': f"For {product.name}",
                                 'sequence': vals.get('sequence')+1,
                                 'order_id': sale_order.id,
                                 'product_id': prod.id,
@@ -78,6 +128,23 @@ class SaleOrderLine(models.Model):
                                 'price_unit': 0.00,
                                 'display_type': False,
                                 'parent_line' : vals.get('sequence')
+                            })
+                    # Fuel Surcharges
+                    if prod_price>0:
+                        products = [
+                            self.env.ref('rental_customization.delivery_fuel_surcharge_product'),
+                            self.env.ref('rental_customization.pickup_fuel_surcharge_product')
+                        ]
+                        for prod in products:
+                            sale_order.order_line.create({
+                                'name': f"For {product.name}",
+                                'sequence': vals.get('sequence') + 1,
+                                'order_id': sale_order.id,
+                                'product_id': prod.id,
+                                'product_uom_qty': vals.get('product_uom_qty'),
+                                'price_unit': (prod_price*15)/100,
+                                'display_type': False,
+                                'parent_line': vals.get('sequence')
                             })
 
             # To apply the header level dates to the newly created line
@@ -100,7 +167,7 @@ class SaleOrderLine(models.Model):
                     if not rec.order_id.recurring_plan_id:
                         rec.next_bill_date = date_utils.add(start_date, days=28)
 
-                    if rec.order_id.recurring_plan_id.billing_period_unit == "days":
+                    if rec.order_id.recurring_plan_id.billing_period_unit == "day":
                         rec.next_bill_date = date_utils.add(start_date,
                                                             days=rec.order_id.recurring_plan_id.billing_period_value)
 
@@ -160,7 +227,6 @@ class SaleOrderLine(models.Model):
                 # Find the section this product belongs to
                 for section, order_line in section_prod.items():
                     if line in order_line and not line.product_template_id.charges_ok:
-
                     # Check if "rental delivery" product exists in the section
                         rental_delivery_line = next(
                             (line for line in order_line if line.product_template_id.name == "Rental Delivery"), None
@@ -173,6 +239,20 @@ class SaleOrderLine(models.Model):
                                 'next_bill_date': line.next_bill_date,
                                 'rental_start_date':line.rental_start_date,
                                 'rental_end_date':line.rental_end_date,
+                            })
+                    # Check if "delivery fuel surcharge" product exists in the section
+                        delivery_fuel_surcharge_line = next(
+                            (line for line in order_line if line.product_template_id.name == "Delivery Fuel Surcharge"),
+                            None
+                        )
+                        if delivery_fuel_surcharge_line:
+                            # Update the qty_delivered for "delivery fuel surcharge" product
+                            sale_order_line = self.env['sale.order.line'].browse(delivery_fuel_surcharge_line._origin.id)
+                            sale_order_line.write({
+                                'qty_delivered': line.qty_delivered - rental_delivery_line.qty_invoiced,
+                                'next_bill_date': line.next_bill_date,
+                                'rental_start_date': line.rental_start_date,
+                                'rental_end_date': line.rental_end_date,
                             })
 
                     # Check if "rental dwpp" product exists in the section
@@ -212,6 +292,30 @@ class SaleOrderLine(models.Model):
                                     'rental_start_date':line.rental_start_date,
                                     'rental_end_date':line.rental_end_date,
                                 })
+
+                    # Check if "pickup fuel surcharge" product exists in the section
+                        pickup_fuel_surcharge_line = next(
+                            (line for line in order_line if line.product_template_id.name == "Pick Up Fuel Surcharge"),
+                            None
+                        )
+                        if pickup_fuel_surcharge_line:
+                            # Update the qty_delivered for "pick up fuel surcharge" product
+                            sale_order_line = self.env['sale.order.line'].browse(pickup_fuel_surcharge_line._origin.id)
+                            if line.product_template_id.charges_in_first_invoice:
+                                sale_order_line.write({
+                                    'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
+                                    'next_bill_date': line.next_bill_date,
+                                    'rental_start_date': line.rental_start_date,
+                                    'rental_end_date': line.rental_end_date,
+
+                                })
+                            else:
+                                sale_order_line.write({
+                                'qty_delivered': line.qty_returned - rental_pickup_line.qty_invoiced,
+                                'next_bill_date': line.next_bill_date,
+                                'rental_start_date': line.rental_start_date,
+                                'rental_end_date': line.rental_end_date,
+                            })
 
     @api.onchange('is_sale')
     def _onchange_is_sale(self):
@@ -256,16 +360,18 @@ class SaleOrderLine(models.Model):
             sale_order = self.env['sale.order'].search([('id', '=', self._origin.order_id.id)])
             product_charges = self.env['product.template'].search([('id', '=', product_template_id.id)]).charges_ids
             if product_charges:
-                for prod in product_charges:
-                    # Search for existing lines with the name matching the pattern
-                    matching_lines = self.env['sale.order.line'].search([
-                        ('order_id', '=', sale_order.id),
-                        ('name', '=', f"For {product}")
-                    ])
+                # Search for existing lines with the name matching the pattern
+                matching_lines = self.env['sale.order.line'].search([
+                    ('order_id', '=', sale_order.id),
+                    ('name', '=', f"For {product}")
+                ])
+                for lines in matching_lines:
+                    price = lines.price_unit
                     if self.is_sale:
-                         matching_lines.write({'product_uom_qty': 0})
+                        lines.write({'product_uom_qty': 0})
                     else:
-                         matching_lines.write({'product_uom_qty': self.product_uom_qty})
+                        lines.write({'product_uom_qty': self.product_uom_qty})
+                        lines.price_unit = price
 
     @api.onchange('product_template_id', 'product_id')
     def _onchange_products(self):
@@ -278,3 +384,4 @@ class SaleOrderLine(models.Model):
 
         if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge and not self.is_sale:
             self.price_unit = self.product_template_id.per_day_charge
+

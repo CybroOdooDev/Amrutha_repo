@@ -87,12 +87,12 @@
                                 <tr>
                                     <td style="width:50%;height:50%; border: 1px solid #000; padding: 10px;">
                                         <b><t t-esc="docs.order_id.partner_id.name"/><br/></b>
-                                        <t t-esc="docs.order_id.partner_id.street"/><br/>
-                                        <t t-esc="docs.order_id.partner_id.street2"/><br/>
-                                        <t t-esc="docs.order_id.partner_id.city"/><br/>
-                                        <t t-esc="docs.order_id.partner_id.state_id.name"/>,
-                                        <t t-esc="docs.order_id.partner_id.zip"/><br/>
-                                        <t t-esc="docs.order_id.partner_id.country_id.name"/>
+                                        <t t-esc="docs.order_id.partner_shipping_id.street"/><br/>
+                                        <t t-esc="docs.order_id.partner_shipping_id.street2"/><br/>
+                                        <t t-esc="docs.order_id.partner_shipping_id.city"/><br/>
+                                        <t t-esc="docs.order_id.partner_shipping_id.state_id.name"/>,
+                                        <t t-esc="docs.order_id.partner_shipping_id.zip"/><br/>
+                                        <t t-esc="docs.order_id.partner_shipping_id.country_id.name"/>
                                     </td>
                                     <t t-if="location">
                                         <td style="width:50%; border: 1px solid #000; padding: 10px;">

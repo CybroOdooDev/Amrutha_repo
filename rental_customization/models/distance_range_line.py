@@ -2,8 +2,8 @@
 from odoo import api,models, fields, Command
 
 
-class SaleOrder(models.Model):
-    """To add new fields in the rental order"""
+class DistanceRange(models.Model):
+    """To add new fields in the Price List"""
     _name = "distance.range.line"
 
     pricelist_id = fields.Many2one(

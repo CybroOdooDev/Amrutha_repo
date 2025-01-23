@@ -55,11 +55,10 @@ class SaleOrderLine(models.Model):
                                     order_recurring_unit = line.order_id.recurring_plan_id.billing_period_unit
                                     if (pricelist_period_duration==order_recurring_duration) and (pricelist_period_unit==order_recurring_unit):
                                         line.price_unit = range.price
+                                    if (pricelist_period_duration==1) and (pricelist_period_unit=='day'):
+                                        line.price_unit = range.price
                         else:
-                            if product.is_per_day_charge:
-                                line.price_unit = product.per_day_charge
-                            else:
-                                line.price_unit = product.list_price
+                            line.price_unit = product.list_price
         if res.order_id.is_rental_order:
             # Checking various validations and notifying errors
             line_section_count = sum(1 for vals in vals_list if vals.get('display_type') == 'line_section')
@@ -341,13 +340,29 @@ class SaleOrderLine(models.Model):
                 ('parent_line', '=', self.sequence),
                 ('active','=', False)
             ])
-            lines_to_delete.write({
-                'active': True})
-
+            if lines_to_delete:
+                lines_to_delete.write({
+                    'active': True})
             # Setting the per day charge for products
-            if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge:
-                self.price_unit = self.product_template_id.per_day_charge
-
+            for line in self:
+                if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
+                    product = self.product_template_id
+                    # to check the price list and the pricing rule
+                    if product and product.transportation_rate and line.order_id.pricelist_id and line.order_id.pricelist_id.product_pricing_ids:
+                        for range in line.order_id.pricelist_id.product_pricing_ids:
+                            if range.product_template_id == product:
+                                # Check the rental period in the pricelist and recurring plan in the order
+                                pricelist_period_duration = range.recurrence_id.duration
+                                pricelist_period_unit = range.recurrence_id.unit
+                                order_recurring_duration = line.order_id.recurring_plan_id.billing_period_value
+                                order_recurring_unit = line.order_id.recurring_plan_id.billing_period_unit
+                                if (pricelist_period_duration == order_recurring_duration) and (
+                                        pricelist_period_unit == order_recurring_unit):
+                                    line.price_unit = range.price
+                                if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
+                                    line.price_unit = range.price
+                    else:
+                        line.price_unit = product.list_price
         if self.product_template_id and  self.qty_delivered:
             raise ValidationError("Cannot change the order status after Delivery")
 
@@ -382,6 +397,4 @@ class SaleOrderLine(models.Model):
             else:
                 self.name = " "
 
-        if self.order_id.bill_terms == 'late' and self.product_template_id.is_per_day_charge and not self.is_sale:
-            self.price_unit = self.product_template_id.per_day_charge
 

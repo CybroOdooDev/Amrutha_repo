@@ -11,17 +11,6 @@
                     <div>
                         <field name="charges_in_first_invoice"/>
                     </div>
-                    <label for="per_day_charge"/>
-                    <div>
-                        <tr>
-                            <td>
-                                <field name="is_per_day_charge"/>
-                            </td>
-                            <td invisible="not is_per_day_charge">
-                                <field name="per_day_charge" widget="monetary"/>
-                            </td>
-                        </tr>
-                    </div>
                     <label for="charges_ids"/>
                     <div>
                         <field name="charges_ids" widget="many2many_tags" domain="[('charges_ok','=',True)]"/>

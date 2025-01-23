@@ -5,6 +5,7 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def unlink(self):
+        """When an invoice is deleted, it should be reflected in the invoice count of the corresponding line in the date details with the same lot name"""
         for invoice in self:
             for line in invoice.line_ids:
                 if line.name.startswith("Rental with Per Day Charge - "):

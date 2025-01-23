@@ -5,7 +5,8 @@
         <record id="custom_ICT_pricelist_rental" model="product.pricelist">
             <field name="name">ICT</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+            <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -92,7 +93,8 @@
         <record id="custom_NEKS_pricelist_rental" model="product.pricelist">
             <field name="name">NEKS</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -179,7 +181,8 @@
         <record id="custom_OKC_pricelist_rental" model="product.pricelist">
             <field name="name">OKC</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -266,7 +269,8 @@
         <record id="custom_HOU_pricelist_rental" model="product.pricelist">
             <field name="name">HOU</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -353,7 +357,8 @@
         <record id="custom_DFW_pricelist_rental" model="product.pricelist">
             <field name="name">DFW</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -440,7 +445,8 @@
         <record id="custom_GRN_pricelist_rental" model="product.pricelist">
             <field name="name">GRN</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 251-Null -->
@@ -457,7 +463,8 @@
         <record id="custom_WTR_pricelist_rental" model="product.pricelist">
             <field name="name">WTR</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 251-Null -->
@@ -474,7 +481,8 @@
         <record id="custom_AUS_pricelist_rental" model="product.pricelist">
             <field name="name">AUS</field>
             <field name="currency_id" ref="base.USD"/>
-            <field name="company_id" ref="base.main_company"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -550,6 +558,94 @@
         <!-- Distance Range 251-Null -->
         <record id="custom_AUS_distance_range_8" model="distance.range.line">
             <field name="pricelist_id" ref="rental_customization.custom_AUS_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">251</field>
+            <field name="distance_end">0</field>
+            <field name="transportation_rate">6.3</field>
+        </record>
+
+<!-- to create Per day price list-->
+        <record id="per_day_pricelist_rental" model="product.pricelist">
+            <field name="name">Per Day Charge</field>
+            <field name="currency_id" ref="base.USD"/>
+            <field name="company_id" eval="False"/>
+<!--            <field name="company_id" ref="base.main_company"/>-->
+        </record>
+
+        <!-- Distance Range 0-20 -->
+        <record id="per_day_distance_range_1" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                                    ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">0</field>
+            <field name="distance_end">20</field>
+            <field name="transportation_rate">150.00</field>
+        </record>
+
+         <!-- Distance Range 21-39 -->
+        <record id="per_day_distance_range_2" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                                    ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">21</field>
+            <field name="distance_end">39</field>
+            <field name="transportation_rate">180.00</field>
+        </record>
+
+         <!-- Distance Range 40-54 -->
+        <record id="per_day_distance_range_3" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">40</field>
+            <field name="distance_end">54</field>
+            <field name="transportation_rate">230.00</field>
+        </record>
+
+        <!-- Distance Range 55-74 -->
+        <record id="per_day_distance_range_4" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">55</field>
+            <field name="distance_end">74</field>
+            <field name="transportation_rate">315.00</field>
+        </record>
+
+        <!-- Distance Range 75-99 -->
+        <record id="per_day_distance_range_5" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">75</field>
+            <field name="distance_end">99</field>
+            <field name="transportation_rate">425.00</field>
+        </record>
+
+         <!-- Distance Range 100-169 -->
+        <record id="per_day_distance_range_6" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">100</field>
+            <field name="distance_end">169</field>
+            <field name="transportation_rate">730.00</field>
+        </record>
+
+         <!-- Distance Range 170-250 -->
+        <record id="per_day_distance_range_7" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
+            <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
+                            ref('rental_customization.default_pickup_product')])]"/>
+            <field name="distance_begin">170</field>
+            <field name="distance_end">250</field>
+            <field name="transportation_rate">1050.00</field>
+        </record>
+
+         <!-- Distance Range 251-Null -->
+        <record id="per_day_distance_range_8" model="distance.range.line">
+            <field name="pricelist_id" ref="rental_customization.per_day_pricelist_rental"/>
             <field name="name" eval="[(6, 0, [ref('rental_customization.default_delivery_product'),
                             ref('rental_customization.default_pickup_product')])]"/>
             <field name="distance_begin">251</field>

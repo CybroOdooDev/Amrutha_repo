@@ -20,7 +20,7 @@ class ProductReturnDates(models.Model):
     serial_number = fields.Many2one('stock.lot', domain="[('product_id', '=', product_id)]")
     warehouse_id = fields.Many2one('stock.warehouse')
     quantity = fields.Integer(default=1)
-    per_day_charge = fields.Float('Per Day Charge')
+    per_day_charges = fields.Float('Per Day Charge')
     total_days = fields.Integer('Total Days', compute='_compute_total_days_price', )
     total_price = fields.Float('Total Price', compute='_compute_total_days_price', )
     delivery_date = fields.Date('Delivery Date')
@@ -36,14 +36,6 @@ class ProductReturnDates(models.Model):
                                         default="initial",
                                         store=True)
 
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        """Fetch the per_day_charge from the selected product"""
-        if self.product_id and self.product_id.per_day_charge:
-            self.per_day_charge = self.product_id.per_day_charge
-        else:
-            self.per_day_charge = 0.0
-
     @api.depends('delivery_date', 'return_date', 'total_days')
     def _compute_total_days_price(self):
         """ To compute total days of rental """
@@ -57,7 +49,7 @@ class ProductReturnDates(models.Model):
             if record.delivery_date and not record.return_date:
                 record.total_days = (today - delivery).days
 
-            record.total_price = record.quantity * record.total_days * record.per_day_charge
+            record.total_price = record.quantity * record.total_days * record.per_day_charges
 
     def action_send_delivery_signature(self):
         """ Button action for sending Delivery signature request to the driver """

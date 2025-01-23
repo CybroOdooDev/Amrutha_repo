@@ -42,11 +42,11 @@ class SaleOrder(models.Model):
     def _onchange_bill_terms(self):
         if self.state == 'sale':
             raise ValidationError("Can't change Bill Terms after Order Confirmation")
-        for lines in self.order_line:
-                if self.bill_terms == "advance" and not lines.product_template_id.charges_ok:
-                    lines.price_unit = lines.product_template_id.list_price
-                if self.bill_terms == 'late' and lines.product_template_id.is_per_day_charge and not lines.product_template_id.charges_ok:
-                    lines.price_unit = lines.product_template_id.per_day_charge
+        # for lines in self.order_line:
+        #         if self.bill_terms == "advance" and not lines.product_template_id.charges_ok:
+        #             lines.price_unit = lines.product_template_id.list_price
+        #         if self.bill_terms == 'late' and lines.product_template_id.is_per_day_charge and not lines.product_template_id.charges_ok:
+        #             lines.price_unit = lines.product_template_id.per_day_charge
 
     @api.onchange('rental_start_date', 'rental_return_date')
     def _onchange_rental_dates(self):
@@ -210,7 +210,7 @@ class SaleOrder(models.Model):
                             ))
 
                         if not line.is_sale and line.product_template_id.charges_ok == False:
-                            if sale_order.bill_terms == 'advance'or not line.product_template_id.is_per_day_charge:
+                            if sale_order.bill_terms == 'advance':
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
                                         name=f"Rental",
@@ -220,25 +220,40 @@ class SaleOrder(models.Model):
                                     )
                                 ))
                                 main_prod = line.product_id.name
-                            if sale_order.bill_terms == 'late' and line.product_template_id.is_per_day_charge:
-                                if line['pickedup_lot_ids']:
-                                    for lot in line['pickedup_lot_ids']:
-                                        date_lines = self.env['product.return.dates'].search([
-                                            ('order_id', '=', sale_order.id),
-                                            ('serial_number', '=', lot.id),
-                                        ])
-                                        if date_lines and date_lines.return_date:
-                                            date_lines.invoice_count += 1
-                                        if date_lines.invoice_count <= 1:
-                                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                                line._prepare_invoice_line(
-                                                    name=f"Rental with Per Day Charge - {lot.name}",
-                                                    product_id=date_lines.product_id.id,
-                                                    price_unit=date_lines.total_price,
-                                                    quantity=1,
-                                                )
-                                            ))
-                                main_prod = line.product_id.name
+                            if sale_order.bill_terms == 'late':
+                                for range in sale_order.pricelist_id.product_pricing_ids:
+                                    # Check the rental period in the pricelist and recurring plan in the order
+                                    pricelist_period_duration = range.recurrence_id.duration
+                                    pricelist_period_unit = range.recurrence_id.unit
+                                    if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
+                                        if line['pickedup_lot_ids']:
+                                            for lot in line['pickedup_lot_ids']:
+                                                date_lines = self.env['product.return.dates'].search([
+                                                    ('order_id', '=', sale_order.id),
+                                                    ('serial_number', '=', lot.id),
+                                                ])
+                                                if date_lines and date_lines.return_date:
+                                                    date_lines.invoice_count += 1
+                                                if date_lines.invoice_count <= 1:
+                                                    invoice_vals['invoice_line_ids'].append(Command.create(
+                                                        line._prepare_invoice_line(
+                                                            name=f"Rental with Per Day Charge - {lot.name}",
+                                                            product_id=date_lines.product_id.id,
+                                                            price_unit=date_lines.total_price,
+                                                            quantity=1,
+                                                        )
+                                                    ))
+                                        main_prod = line.product_id.name
+                                    else:
+                                        invoice_vals['invoice_line_ids'].append(Command.create(
+                                            line._prepare_invoice_line(
+                                                name=f"Rental",
+                                                product_id=line.product_id.id,
+                                                price_unit=line.price_unit,
+                                                quantity=line.qty_delivered - line.qty_returned,
+                                            )
+                                        ))
+                                        main_prod = line.product_id.name
 
                         if not line.is_sale and line.product_template_id.charges_ok == True:
                             invoice_vals['invoice_line_ids'].append(Command.create(

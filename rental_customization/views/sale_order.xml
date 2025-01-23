@@ -49,11 +49,11 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Date Details" invisible="not is_rental_order">
                     <field name="date_records_line">
-                        <!--                        <list create="false" edit="false" editable="bottom">-->
+                        <!--<list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">
                             <field name="product_id" string="Product" width="150px"/>
                             <field name="serial_number" string="Serial No." width="100px"/>
-                            <field name="per_day_charge" string="Per day charge" width="100px"
+                            <field name="per_day_charges" string="Per day charge" width="100px"
                                    column_invisible="parent.bill_terms == 'advance'"/>
                             <field name="delivery_date" string="Delivery Date" width="120px"/>
                             <field name="return_date" string="Return Date" width="120px"/>

@@ -38,7 +38,7 @@ class CrmLeadDocument(models.Model):
     is_selected = fields.Boolean(default=False)
     is_agent_signed = fields.Boolean(default=False)
     is_static = fields.Boolean(default=False)
-    static_template_id = fields.Many2one('sign.template',string="Tempalte")
+    static_template_id = fields.Many2one('sign.template',string="Template")
 
     def action_send_for_signature(self):
         """Send documents for signature and move them to 'Waiting on Signature'."""
@@ -107,6 +107,14 @@ class CrmLeadDocument(models.Model):
                 self.env['sign.item'].create(signature_items)
             else:
                 template = self.static_template_id
+                # Check for text fields and validate placeholders
+                text_fields = self.env['sign.item'].search([
+                    ('template_id', '=', template.id),
+                    ('type_id', '=',
+                     self.env.ref('sign.sign_item_type_text').id)
+                ])
+                print(text_fields.name,"name")
+                print(text_fields.display_name,"name")
 
             # Create a sign request
             sign_request = self.env['sign.request'].create({

@@ -9,10 +9,13 @@
             <div name="button_box" position="inside">
                 <button class="oe_stat_button"
                         type="object"
-                        icon="fa-file-pdf"
+                        icon="fa-book"
                         string="Lead Documents"
                         name="action_view_documents">
                     <field name="document_count"/>
+                    <span class="o_stat_text">
+                        Documents
+                    </span>
                 </button>
             </div>
 

@@ -37,9 +37,9 @@ class CrmLead(models.Model):
 
 
     agent_id = fields.Many2one('res.partner',string="Agent")
-    seller_buyer_id = fields.Many2one('res.partner',string="Seller/ Buyyer")
+    seller_buyer_id = fields.Many2one('res.partner',string="Seller/ Buyer")
     transaction_cordinator_id =fields.Many2one('res.users',
-                                               string="Transaction Cordinator")
+                                               string="Transaction Coordinator")
     property_admin_id = fields.Many2one('res.users',string="Property admin")
 
 

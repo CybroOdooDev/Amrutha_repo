@@ -38,7 +38,8 @@ class CrmLeadDocument(models.Model):
     is_selected = fields.Boolean(default=False)
     is_agent_signed = fields.Boolean(default=False)
     is_static = fields.Boolean(default=False)
-    static_template_id = fields.Many2one('sign.template',string="Template")
+    static_template_id = fields.Many2one('sign.template',string="Template",
+                                         domain=[('is_crm_template', '=', True)],)
 
     def action_send_for_signature(self):
         """Send documents for signature and move them to 'Waiting on Signature'."""

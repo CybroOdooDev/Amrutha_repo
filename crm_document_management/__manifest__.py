@@ -6,7 +6,8 @@
     "data": [
         'security/ir.model.access.csv',
         'views/crm_lead_views.xml',
-        'views/lead_document_views.xml'
+        'views/lead_document_views.xml',
+        'views/sign_template_views.xml'
     ],
     "license": "LGPL-3",
     "summary": "Lange Real Estate (RE) Residential and Commercial "

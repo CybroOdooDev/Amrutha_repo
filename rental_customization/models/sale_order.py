@@ -334,8 +334,9 @@ class SaleOrder(models.Model):
                             if response.status_code == 200:
                                 data = response.json()
                                 if data["destination_addresses"] != data["origin_addresses"]:
-                                    if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS':
+                                    if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS' and data["rows"][0]["elements"][0]["status"] != 'NOT_FOUND':
                                          # by road transportations only
+                                        print(data)
                                         distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
                                         distance_parts = distance_text.split()
                                         if distance_parts:

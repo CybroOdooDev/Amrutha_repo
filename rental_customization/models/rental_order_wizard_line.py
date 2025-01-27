@@ -32,7 +32,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                     'per_day_charges': lines.order_line_id.price_unit,
                                     'delivery_date': fields.Date.today(),
                                 }])
-                            if sale_order.bill_terms == 'late' and not((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
+                            elif sale_order.bill_terms == 'late' and not((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
                                 date_lines = self.env['product.return.dates'].create([{
                                     'order_id': sale_order.id,
                                     'product_id': product.id,

@@ -570,7 +570,7 @@
             <field name="name">Per Day Charge</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
-<!--            <field name="company_id" ref="base.main_company"/>-->
+<!--<field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->

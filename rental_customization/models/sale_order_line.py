@@ -25,10 +25,7 @@ class SaleOrderLine(models.Model):
                                                 ('confirmed', "Confirmed"),
                                                 ('finish', "Finished"),
                                                 ('cancel', "Cancelled"),
-                                                ],
-                                     string="Rental Status",
-                                     compute='_compute_rental_status',
-                                     store=False)
+                                                ],string="Rental Status",compute='_compute_rental_status',store=False)
     active = fields.Boolean(default=True)
     is_sale = fields.Boolean()
     parent_line = fields.Integer()
@@ -84,20 +81,21 @@ class SaleOrderLine(models.Model):
                 product = self.env['product.template'].search([('id', '=', product_template_id)])
                 is_sale = vals.get('is_sale')
                 prod_price = 0
-                # to check the price list and the distance range
-                if product and res.order_id.pricelist_id and res.order_id.pricelist_id.distance_range_line_ids:
-                    mileage = res.order_id.mileage
-                    for range in res.order_id.pricelist_id.distance_range_line_ids:
-                        delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
-                        pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
-                        if delivery_product_name in range.name.mapped( 'name') or pickup_product_name in range.name.mapped('name'):
-                            # if range.name.name == self.env.ref('rental_customization.default_delivery_product').name:
-                            if range.distance_end != 0:
-                                if range.distance_begin<= mileage <= range.distance_end :
-                                    prod_price = range.transportation_rate
-                            else:
-                                if  range.distance_begin<= mileage:
-                                    prod_price = mileage*range.transportation_rate
+                # to check the price list and the distance range if only mileage is enabled inside the settings.
+                if res.order_id.mileage_enabled:
+                    if product and res.order_id.pricelist_id and res.order_id.pricelist_id.distance_range_line_ids:
+                        mileage = res.order_id.mileage
+                        for range in res.order_id.pricelist_id.distance_range_line_ids:
+                            delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
+                            pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
+                            if delivery_product_name in range.name.mapped( 'name') or pickup_product_name in range.name.mapped('name'):
+                                # if range.name.name == self.env.ref('rental_customization.default_delivery_product').name:
+                                if range.distance_end != 0:
+                                    if range.distance_begin<= mileage <= range.distance_end :
+                                        prod_price = range.transportation_rate
+                                else:
+                                    if  range.distance_begin<= mileage:
+                                        prod_price = mileage*range.transportation_rate
 
                 # Adding service charges while saving
                 if product_template_id and not is_sale:
@@ -108,7 +106,7 @@ class SaleOrderLine(models.Model):
                         for prod in product_charges:
                             if prod.name in ('Rental Delivery','Rental Pick-Up'):
                                 sale_order.order_line.create({
-                                    'name': f"For {product.name}",
+                                    'name': f"{prod.name} For {product.name}",
                                     'sequence': vals.get('sequence') + 1,
                                     'order_id': sale_order.id,
                                     'product_id': prod.id,
@@ -119,7 +117,7 @@ class SaleOrderLine(models.Model):
                                 })
                             else:
                                 sale_order.order_line.create({
-                                'name': f"For {product.name}",
+                                'name': f"{prod.name} For {product.name}",
                                 'sequence': vals.get('sequence')+1,
                                 'order_id': sale_order.id,
                                 'product_id': prod.id,
@@ -136,7 +134,7 @@ class SaleOrderLine(models.Model):
                         ]
                         for prod in products:
                             sale_order.order_line.create({
-                                'name': f"For {product.name}",
+                                'name': f"{prod.name} For {product.name}",
                                 'sequence': vals.get('sequence') + 1,
                                 'order_id': sale_order.id,
                                 'product_id': prod.id,
@@ -146,7 +144,7 @@ class SaleOrderLine(models.Model):
                                 'parent_line': vals.get('sequence')
                             })
 
-            # To apply the header level dates to the newly created line
+        # To apply the header level dates to the newly created line
             for line in res:
                 if line.order_id.header_start_date and line.order_id.header_return_date and not (
                         line.rental_start_date or line.rental_end_date):
@@ -393,8 +391,6 @@ class SaleOrderLine(models.Model):
         """ Setting the per day charge of the product as its unit price """
         if (self.product_template_id or self.product_id):
             if (not self.rental_start_date or self.rental_end_date):
-                self.name = " "
+                self.name = self.product_template_id.name
             else:
-                self.name = " "
-
-
+                self.name = self.product_template_id.name

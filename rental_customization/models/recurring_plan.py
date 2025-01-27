@@ -51,4 +51,3 @@ class RentalRecurringPlan(models.Model):
             is_default = self.env['rental.recurring.plan'].search([('is_default','=','True')])
             if is_default and is_default.id != self.id:
                 raise ValidationError("Already exists a default Recurring Plan")
-

@@ -84,14 +84,14 @@
             </xpath>
 
             <xpath expr="//field[@name='date_order']" position="after">
-                <label for="mileage"/>
-                <div>
+                <label for="mileage" invisible="not mileage_enabled"/>
+                <div invisible="not mileage_enabled">
                     <tr>
                         <td>
-                            <field name="mileage"/>
+                            <field name="mileage" />
                         </td>
                         <td>
-                            <field name="mileage_unit"/>
+                            <field name="mileage_unit" />
                         </td>
                     </tr>
                 </div>
@@ -151,6 +151,7 @@
               groups="product.group_product_pricelist"
               parent="sale_renting.menu_rental_products"
               sequence="35"/>
+
     <menuitem id="menu_rental_products"
               name="Products"
               action="sale_renting.rental_product_template_action"

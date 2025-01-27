@@ -8,3 +8,4 @@ from . import rental_order_wizard_line
 from . import account_move
 from . import product_pricelist
 from . import distance_range_line
+from . import res_config_settings

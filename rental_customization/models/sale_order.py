@@ -24,14 +24,24 @@ class SaleOrder(models.Model):
     show_update_button = fields.Boolean(string="Show Update Button", default=False, store=True)
     header_start_date = fields.Date(help="Header level start date for lines")
     header_return_date = fields.Date(help="Header level end date for lines")
-    date_records_line = fields.One2many(comodel_name='product.return.dates',
-                                        inverse_name='order_id',
-                                        string="Date Records Lines",
-                                        copy=True, auto_join=True)
+    date_records_line = fields.One2many(comodel_name='product.return.dates',inverse_name='order_id',
+                                        string="Date Records Lines",copy=True, auto_join=True)
     description = fields.Html(string='Description', translate=True)
     mileage = fields.Float(help="Distance between Customer location and default warehouse",compute='_compute_mileage', default=0)
     mileage_unit = fields.Selection(selection=[('ft',"ft"),('m', "M"),('km',"KM"),('mi',"Miles")],compute='_compute_mileage',default='mi')
+    mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled",compute='_compute_mileage_enabled')
 
+    @api.depends('company_id')
+    def _compute_mileage_enabled(self):
+        """Check if the mileage calculation is enabled in setting"""
+        Param = self.env['ir.config_parameter'].sudo()
+        mileage_setting = Param.get_param('rental_customization.mileage_calculation', default=False)
+        if mileage_setting:
+            for record in self:
+                record.mileage_enabled = True
+        else:
+            for record in self:
+                record.mileage_enabled = False
 
     def _get_default_recurring_plan(self):
         """Get the default recurring plan (e.g., monthly)."""
@@ -40,13 +50,9 @@ class SaleOrder(models.Model):
 
     @api.onchange('bill_terms')
     def _onchange_bill_terms(self):
+        """Validation while changing Bill terms"""
         if self.state == 'sale':
             raise ValidationError("Can't change Bill Terms after Order Confirmation")
-        # for lines in self.order_line:
-        #         if self.bill_terms == "advance" and not lines.product_template_id.charges_ok:
-        #             lines.price_unit = lines.product_template_id.list_price
-        #         if self.bill_terms == 'late' and lines.product_template_id.is_per_day_charge and not lines.product_template_id.charges_ok:
-        #             lines.price_unit = lines.product_template_id.per_day_charge
 
     @api.onchange('rental_start_date', 'rental_return_date')
     def _onchange_rental_dates(self):
@@ -70,22 +76,23 @@ class SaleOrder(models.Model):
     @api.onchange('order_line')
     def _onchange_order_line(self):
         """ changing the invoice policy of a product as they are added to a Rental order """
-        if self.is_rental_order:
-            for line in self.order_line:
-                if line.product_template_id:
-                    line.product_template_id.invoice_policy = "delivery"
+        if self:
+            if self.is_rental_order:
+                for line in self.order_line:
+                    if line.product_template_id:
+                        line.product_template_id.invoice_policy = "delivery"
 
-            # Ensuring one product within a section
-            for line in self.order_line:
-                if not line.display_type and not line.product_template_id.charges_ok:
-                    current_sequence = line.sequence
-                    section_above = any(
-                        ol.sequence == current_sequence-1 and ol.display_type == 'line_section'
-                        for ol in self.order_line
-                    )
+                # Ensuring one product within a section
+                for line in self.order_line:
+                    if not line.display_type and not line.product_template_id.charges_ok:
+                        current_sequence = line.sequence
+                        section_above = any(
+                            ol.sequence == current_sequence-1 and ol.display_type == 'line_section'
+                            for ol in self.order_line
+                        )
 
-                    if not section_above:
-                        raise ValidationError("Ensure each product is in a section and only one product per section.")
+                        if not section_above:
+                            raise ValidationError("Ensure each product is in a section and only one product per section.")
 
     def get_sections_with_products(self):
         """ Returns a dictionary with sections as keys and their products as values """
@@ -119,15 +126,16 @@ class SaleOrder(models.Model):
         self.order_line._action_launch_stock_rule()
 
         # validation for mileage calculation
-        delivery_address = 0
-        if self.partner_id.child_ids:
-            for child in self.partner_id.child_ids:
-                if child.type == 'delivery':
-                    delivery_address += 1
-            if delivery_address == 0:
+        if self.mileage_enabled:
+            delivery_address = 0
+            if self.partner_id.child_ids:
+                for child in self.partner_id.child_ids:
+                    if child.type == 'delivery':
+                        delivery_address += 1
+                if delivery_address == 0:
+                    raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
+            else:
                 raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
-        else:
-            raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
         return super(SaleOrder, self)._action_confirm()
 
     def action_add_sale_order(self):
@@ -222,38 +230,39 @@ class SaleOrder(models.Model):
                                 main_prod = line.product_id.name
                             if sale_order.bill_terms == 'late':
                                 for range in sale_order.pricelist_id.product_pricing_ids:
+                                    if range.product_template_id == line.product_template_id:
                                     # Check the rental period in the pricelist and recurring plan in the order
-                                    pricelist_period_duration = range.recurrence_id.duration
-                                    pricelist_period_unit = range.recurrence_id.unit
-                                    if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
-                                        if line['pickedup_lot_ids']:
-                                            for lot in line['pickedup_lot_ids']:
-                                                date_lines = self.env['product.return.dates'].search([
-                                                    ('order_id', '=', sale_order.id),
-                                                    ('serial_number', '=', lot.id),
-                                                ])
-                                                if date_lines and date_lines.return_date:
-                                                    date_lines.invoice_count += 1
-                                                if date_lines.invoice_count <= 1:
-                                                    invoice_vals['invoice_line_ids'].append(Command.create(
-                                                        line._prepare_invoice_line(
-                                                            name=f"Rental with Per Day Charge - {lot.name}",
-                                                            product_id=date_lines.product_id.id,
-                                                            price_unit=date_lines.total_price,
-                                                            quantity=1,
-                                                        )
-                                                    ))
-                                        main_prod = line.product_id.name
-                                    else:
-                                        invoice_vals['invoice_line_ids'].append(Command.create(
-                                            line._prepare_invoice_line(
-                                                name=f"Rental",
-                                                product_id=line.product_id.id,
-                                                price_unit=line.price_unit,
-                                                quantity=line.qty_delivered - line.qty_returned,
-                                            )
-                                        ))
-                                        main_prod = line.product_id.name
+                                        pricelist_period_duration = range.recurrence_id.duration
+                                        pricelist_period_unit = range.recurrence_id.unit
+                                        if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
+                                            if line['pickedup_lot_ids']:
+                                                for lot in line['pickedup_lot_ids']:
+                                                    date_lines = self.env['product.return.dates'].search([
+                                                        ('order_id', '=', sale_order.id),
+                                                        ('serial_number', '=', lot.id),
+                                                    ])
+                                                    if date_lines and date_lines.return_date:
+                                                        date_lines.invoice_count += 1
+                                                    if date_lines.invoice_count <= 1:
+                                                        invoice_vals['invoice_line_ids'].append(Command.create(
+                                                            line._prepare_invoice_line(
+                                                                name=f"Rental with Per Day Charge - {lot.name}",
+                                                                product_id=date_lines.product_id.id,
+                                                                price_unit=date_lines.total_price,
+                                                                quantity=1,
+                                                            )
+                                                        ))
+                                            main_prod = line.product_id.name
+                                        else:
+                                            invoice_vals['invoice_line_ids'].append(Command.create(
+                                                line._prepare_invoice_line(
+                                                    name=f"Rental",
+                                                    product_id=line.product_id.id,
+                                                    price_unit=line.price_unit,
+                                                    quantity=line.qty_delivered - line.qty_returned,
+                                                )
+                                            ))
+                                            main_prod = line.product_id.name
 
                         if not line.is_sale and line.product_template_id.charges_ok == True:
                             invoice_vals['invoice_line_ids'].append(Command.create(
@@ -294,48 +303,52 @@ class SaleOrder(models.Model):
                         else:
                             raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")
 
-    @api.depends('partner_id','partner_id.city', 'warehouse_id','warehouse_id.partner_id.city')
+    @api.depends('partner_id','partner_id.city', 'warehouse_id','warehouse_id.partner_id.city','mileage_enabled')
     def _compute_mileage(self):
-        """ TO compute the Mileage """
-        api_key = "AIzaSyDOX3JC_DL4alKis0q-Xtb5qSeKiNZAEUI"
-        if self:
-            for order in self:
-                origin = order.warehouse_id.partner_id.city
-                if order.partner_shipping_id and (order.partner_shipping_id != order.partner_id):
-                    if order.partner_shipping_id.street:
-                        destination = order.partner_shipping_id.street
-                    elif order.partner_shipping_id.street2:
-                        destination = order.partner_shipping_id.street2
-                    elif order.partner_shipping_id.city:
-                        destination = order.partner_shipping_id.city
-                    elif order.partner_shipping_id.state_id:
-                        destination = order.partner_shipping_id.name
-                    elif order.partner_shipping_id.country_id:
-                        destination = order.partner_shipping_id.name
-                    if origin and destination:
-                        url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-                        params = {
-                            "origins": origin,
-                            "destinations": destination,
-                            "units": "imperial",
-                            "key": api_key,
-                        }
-                        response = requests.get(url, params=params)
-                        if response.status_code == 200:
-                            data = response.json()
-                            if data["destination_addresses"] != data["origin_addresses"]:
-                                if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS':
-                                     # by road transportations only
-                                    distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
-                                    distance_parts = distance_text.split()
-                                    if distance_parts:
-                                        order.mileage = float(distance_parts[0].replace(',', ''))
-                                        order.mileage_unit = distance_parts[1]
-                                        return data
+        """ To compute the Mileage if only the boolean field inside the setting is enabled """
+        if self.mileage_enabled:
+            api_key = "AIzaSyDOX3JC_DL4alKis0q-Xtb5qSeKiNZAEUI"
+            if self:
+                for order in self:
+                    origin = order.warehouse_id.partner_id.city
+                    if order.partner_shipping_id and (order.partner_shipping_id != order.partner_id):
+                        if order.partner_shipping_id.street:
+                            destination = order.partner_shipping_id.street
+                        elif order.partner_shipping_id.street2:
+                            destination = order.partner_shipping_id.street2
+                        elif order.partner_shipping_id.city:
+                            destination = order.partner_shipping_id.city
+                        elif order.partner_shipping_id.state_id:
+                            destination = order.partner_shipping_id.name
+                        elif order.partner_shipping_id.country_id:
+                            destination = order.partner_shipping_id.name
+                        if origin and destination:
+                            url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+                            params = {
+                                "origins": origin,
+                                "destinations": destination,
+                                "units": "imperial",
+                                "key": api_key,
+                            }
+                            response = requests.get(url, params=params)
+                            if response.status_code == 200:
+                                data = response.json()
+                                if data["destination_addresses"] != data["origin_addresses"]:
+                                    if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS':
+                                         # by road transportations only
+                                        distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
+                                        distance_parts = distance_text.split()
+                                        if distance_parts:
+                                            order.mileage = float(distance_parts[0].replace(',', ''))
+                                            order.mileage_unit = distance_parts[1]
+                                            return data
+                                        else:
+                                            order.mileage = 0
+                                            order.mileage_unit = 'mi'
+                                            return {"error": f"HTTP {response.status_code}: {response.text}"}
                                     else:
                                         order.mileage = 0
-                                        order.mileage_unit = 'mi'
-                                        return {"error": f"HTTP {response.status_code}: {response.text}"}
+                                        order.mileage_unit = 'ft'
                                 else:
                                     order.mileage = 0
                                     order.mileage_unit = 'ft'
@@ -348,9 +361,9 @@ class SaleOrder(models.Model):
                     else:
                         order.mileage = 0
                         order.mileage_unit = 'ft'
-                else:
-                    order.mileage = 0
-                    order.mileage_unit = 'ft'
+        else:
+            self.mileage = None
+            self.mileage_unit = None
 
     def action_update_prices(self):
         """ Calculating unit price of Main product and service charges according to the Mileage and Price list """
@@ -370,30 +383,29 @@ class SaleOrder(models.Model):
                                     pricelist_period_unit == order_recurring_unit):
                                 line.price_unit = range.price
             elif line.display_type != 'line_section' and (line.product_template_id.charges_ok):
-                product = line.product_template_id
-                # to check the price list and the distance range
-                if product and self.pricelist_id and self.pricelist_id.distance_range_line_ids:
-                    mileage = self.mileage
-                    for range in self.pricelist_id.distance_range_line_ids:
-                        delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
-                        pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
-                        delivery_fuel_surcharge = self.env.ref(
-                            'rental_customization.delivery_fuel_surcharge_product').name
-                        pickup_fuel_surcharge = self.env.ref(
-                            'rental_customization.pickup_fuel_surcharge_product').name
+                if self.mileage_enabled:
+                    product = line.product_template_id
+                    # to check the price list and the distance range
+                    if product and self.pricelist_id and self.pricelist_id.distance_range_line_ids:
+                        mileage = self.mileage
+                        for range in self.pricelist_id.distance_range_line_ids:
+                            delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
+                            pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
+                            delivery_fuel_surcharge = self.env.ref(
+                                'rental_customization.delivery_fuel_surcharge_product').name
+                            pickup_fuel_surcharge = self.env.ref(
+                                'rental_customization.pickup_fuel_surcharge_product').name
 
-                        if delivery_product_name in range.name.mapped(
-                                'name') or pickup_product_name in range.name.mapped('name'):
-                            if line.product_template_id.name in (delivery_product_name,pickup_product_name) :
-                                if range.distance_end != 0:
-                                    if range.distance_begin <= mileage <= range.distance_end:
-                                        line.price_unit = range.transportation_rate
-                                else:
-                                    if range.distance_begin <= mileage:
-                                        line.price_unit = mileage * range.transportation_rate
-                                price_unit = line.price_unit
-                            if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
-                                line.price_unit = (price_unit * 15) / 100
-
-
+                            if delivery_product_name in range.name.mapped(
+                                    'name') or pickup_product_name in range.name.mapped('name'):
+                                if line.product_template_id.name in (delivery_product_name,pickup_product_name) :
+                                    if range.distance_end != 0:
+                                        if range.distance_begin <= mileage <= range.distance_end:
+                                            line.price_unit = range.transportation_rate
+                                    else:
+                                        if range.distance_begin <= mileage:
+                                            line.price_unit = mileage * range.transportation_rate
+                                    price_unit = line.price_unit
+                                if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
+                                    line.price_unit = (price_unit * 15) / 100
         return res

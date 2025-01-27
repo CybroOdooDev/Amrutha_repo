@@ -101,8 +101,8 @@ class SaleOrderLine(models.Model):
                 if product_template_id and not is_sale:
                     product_charges = self.env['product.template'].search([('id', '=', product_template_id)]).charges_ids
                     # Delivery and Pick-Up charge
+                    sale_order = self.env['sale.order'].search([('id', '=', res.order_id.id)])
                     if product_charges:
-                        sale_order = self.env['sale.order'].search([('id', '=', res.order_id.id)])
                         for prod in product_charges:
                             if prod.name in ('Rental Delivery','Rental Pick-Up'):
                                 sale_order.order_line.create({

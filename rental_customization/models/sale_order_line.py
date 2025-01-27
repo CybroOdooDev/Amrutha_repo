@@ -83,7 +83,7 @@ class SaleOrderLine(models.Model):
                 prod_price = 0
                 # to check the price list and the distance range if only mileage is enabled inside the settings.
                 if res.order_id.mileage_enabled:
-                    if product and res.order_id.pricelist_id and res.order_id.pricelist_id.distance_range_line_ids:
+                    if product and product.transportation_rate and res.order_id.pricelist_id and res.order_id.pricelist_id.distance_range_line_ids:
                         mileage = res.order_id.mileage
                         for range in res.order_id.pricelist_id.distance_range_line_ids:
                             delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name

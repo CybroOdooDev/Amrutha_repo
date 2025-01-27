@@ -16,16 +16,8 @@ class RentalRecurringPlan(models.Model):
     billing_period_value = fields.Integer(string="Duration", required=True, default=1)
     billing_period_unit = fields.Selection([("day","Days"), ("month", "Months"), ('year', 'Years')],
                                            string="Unit", required=True, default='month')
-    billing_period_display = fields.Char(compute='_compute_billing_period_display',string="Billing Period")
     active_rental_count = fields.Integer(compute="_compute_active_rental_count", string="Subscriptions")
     is_default = fields.Boolean()
-
-    @api.depends('billing_period_value', 'billing_period_unit')
-    def _compute_billing_period_display(self):
-        """To display in the tree view"""
-        labels = dict(self._fields['billing_period_unit']._description_selection(self.env))
-        for plan in self:
-            plan.billing_period_display = f"{plan.billing_period_value} {labels[plan.billing_period_unit]}"
 
     def _compute_active_rental_count(self):
         """Computing count of rental orders using the plan, for smart button"""

@@ -45,7 +45,8 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="billing_period_display"/>
+                <field name="billing_period_value"/>
+                <field name="billing_period_unit"/>
             </list>
         </field>
     </record>

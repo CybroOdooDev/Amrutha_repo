@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record id="sale_order_form_quote" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.sale_management</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='order_lines']" position="after">
+                <page name="zoho_data" string="Zoho Information's">
+                    <group>
+                        <group>
+                            <field name="zoho_reference"/>
+                            <field name="quote_number"/>
+                            <field name="subject"/>
+                            <field name="valid_date"/>
+                            <field name="carrier"/>
+                            <field name="billing_street"/>
+                            <field name="shipping_street"/>
+                            <field name="billing_city"/>
+                            <field name="shipping_city"/>
+                            <field name="billing_state"/>
+                        </group>
+                        <group>
+                            <field name="shipping_state"/>
+                            <field name="billing_code"/>
+                            <field name="shipping_code"/>
+                            <field name="zoho_terms"/>
+                            <field name="zoho_description"/>
+                            <field name="delivered"/>
+                            <field name="installed"/>
+                            <field name="roof_length"/>
+                            <field name="roof_height"/>
+                            <field name="gauge"/>
+                        </group>
+                        <group>
+                            <field name="roof_color"/>
+                            <field name="roof_width"/>
+                            <field name="pitch"/>
+                            <field name="permit"/>
+                            <field name="turn_key"/>
+                            <field name="power_source_quoted"/>
+                            <field name="terms"/>
+                            <field name="sales_rep"/>
+                            <field name="install_date"/>
+                            <field name="contract_date"/>
+                            <field name="payment_terms"/>
+                            <field name="enclosed_gables"/>
+                        </group>
+                        <group>
+                            <field name="engineering_needed"/>
+                            <field name="wall_color"/>
+                            <field name="terms2"/>
+                            <field name="job_number"/>
+                            <field name="product_family"/>
+                            <field name="submit_to_erp"/>
+                            <field name="bix_box_retailer_sale"/>
+                            <field name="amount_of_deposit"/>
+                            <field name="deposit_taken"/>
+                            <field name="internal_notes"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

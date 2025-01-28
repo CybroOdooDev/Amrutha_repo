@@ -10,11 +10,15 @@
                         <group>
                             <group >
                                 <field name="zoho_record_reference"/>
+                                <field name="title_zoho"/>
                                 <field name="deal_owner_id"/>
                                 <field name="amount"/>
                                 <field name="business_type"/>
                                 <field name="next_step"/>
                                 <field name="zoho_lead_source"/>
+                                <field name="zoho_lead_status"/>
+                                <field name="annual_revenue"/>
+                                <field name="employee_count"/>
                                 <field name="forcast_category"/>
                                 <field name="revenue"/>
                                 <field name="principle_reduction"/>
@@ -82,6 +86,56 @@
                                 <field name="qty"/>
                                 <field name="make_model"/>
                                 <field name="internal_notes"/>
+                                <field name="zoho_lead_company"/>
+                            </group>
+                            <group >
+                                <field name="street"/>
+                                <field name="city"/>
+                                <field name="state_id"/>
+                                <field name="zip"/>
+                                <field name="how_did_you_hear_about_us"/>
+                                <field name="which_product_are_you_intrested_in"/>
+                                <field name="comments"/>
+                                <field name="unsubscribed_mode"/>
+                                <field name="unsubscribed_time"/>
+                            </group>
+                            <group>
+                                <field name="do_not_use"/>
+                                <field name="url"/>
+                                <field name="lead_outcome"/>
+                                <field name="roofing_component_interested"/>
+                                <field name="building_component_interested"/>
+                                <field name="lead_origin"/>
+                                <field name="how_can_help"/>
+                                <field name="interested_product"/>
+                                <field name="lead_notes"/>
+                            </group>
+                             <group>
+                                <field name="original_lead_source"/>
+                                <field name="gclid"/>
+                                <field name="compaignid"/>
+                                <field name="adgroupid"/>
+                                <field name="adid"/>
+                                <field name="keywordid"/>
+                                <field name="Keyword"/>
+                                <field name="click_type"/>
+                                <field name="device_type"/>
+                                <field name="ad_network"/>
+                                <field name="ad_compaign_name"/>
+                                <field name="ad_group_name"/>
+                                <field name="ad"/>
+                                <field name="gadconfigid"/>
+                                <field name="visit_score"/>
+                                <field name="state_of_business_registration"/>
+                                <field name="years_in_business"/>
+                                <field name="equipment_cost"/>
+                                <field name="equipment_dealer"/>
+                                <field name="additional_comments"/>
+                                <field name="equipment_dealer_phone_number"/>
+                                <field name="type_of_business_filing"/>
+                                <field name="social_security_number"/>
+                                <field name="business_address"/>
+                                <field name="equipment_description"/>
                             </group>
                         </group>
                     </page>

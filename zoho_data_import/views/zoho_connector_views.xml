@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--    Zoho Connector Form View-->
+    <record id="zoho_connector_view_form" model="ir.ui.view">
+        <field name="name">zoho.connector.view.form</field>
+        <field name="model">zoho.connector</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_access_token" data-hotkey="v" string="Generate Access Token" type="object"/>
+                    <button name="action_fetch_emails" data-hotkey="v" string="Fetch Emails" type="object"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet name="Zoho Credentials">
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="client_id"/>
+                            <field name="client_secret"/>
+                            <field name="refresh_token"/>
+                            <field name="access_token"/>
+                            <field name="company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+     <!--    Zoho Connector Tree View-->
+    <record id="zoho_connector_view_tree" model="ir.ui.view">
+        <field name="name">zoho.connector.view.tree</field>
+        <field name="model">zoho.connector</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="client_id"/>
+                <field name="client_secret"/>
+                <field name="refresh_token"/>
+            </list>
+        </field>
+    </record>
+
+        <!--    Zoho Connector Menu Action-->
+     <record id="zoho_connector_action" model="ir.actions.act_window">
+        <field name="name">Zoho Connector</field>
+        <field name="res_model">zoho.connector</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+        <!--    Webhook Menu-->
+    <menuitem id="zoho_connector_menu" name="Zoho Connector"
+              parent="base.menu_automation" action="zoho_connector_action"/>
+</odoo>

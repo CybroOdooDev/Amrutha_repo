@@ -14,7 +14,7 @@
                             <group>
                                 <field name="zoho_record_id"/>
                                 <field name="contact_owner_id"/>
-                                <field name="title"/>
+                                <field name="name_title"/>
                                 <field name="home_phone"/>
                                 <field name="other_phone"/>
                                 <field name="birth_date"/>
@@ -84,6 +84,104 @@
                                 <field name="shipping_code"/>
                                    <field name="billing_country_id"/>
                                 <field name="shipping_country_id"/>
+                            </group>
+                            <group>
+                                <field name="physical_address"/>
+                                <field name="physical_city"/>
+                                <field name="physical_state_id"/>
+                                <field name="physical_zip"/>
+                                <field name="company_legal_name"/>
+                                <field name="purchase_plan"/>
+                                <field name="hear_about_us"/>
+                                <field name="intrested_product"/>
+                                <field name="sales_notes"/>
+                                <field name="product_family"/>
+                                <field name="do_not_mail"/>
+                                   <field name="company_type"/>
+                                <field name="sales_rep"/>
+                            </group>
+                            <group>
+                                <field name="outcome"/>
+                                <field name="online_date"/>
+                                <field name="offline_date"/>
+                                <field name="install_week"/>
+                                <field name="storage_location"/>
+                                <field name="sale_date"/>
+                                <field name="serial_number"/>
+                                <field name="ship_date"/>
+                                <field name="nssa"/>
+                                <field name="customer_service_note"/>
+                                <field name="delivery_method"/>
+                                   <field name="geolocator_cordinates"/>
+                                <field name="days_visited"/>
+                            </group>
+                            <group>
+                                <field name="wellness_contact_1"/>
+                                <field name="wellness_contact_2"/>
+                                <field name="wellness_contact_3"/>
+                                <field name="wellness_phone_1"/>
+                                <field name="wellness_phone_2"/>
+                                <field name="wellness_phone_3"/>
+                                <field name="average_time_spent"/>
+                                <field name="number_of_chats"/>
+                                <field name="most_recent_visit"/>
+                                <field name="first_visit"/>
+                                <field name="first_page_visited"/>
+                                   <field name="referrer"/>
+                            </group>
+                            <group>
+                                <field name="install_status"/>
+                                <field name="installation_notes"/>
+                                <field name="install_date_time"/>
+                                <field name="market"/>
+                                <field name="sent_referral_email"/>
+                                <field name="preferred_install_date"/>
+                                <field name="installation_date"/>
+                                <field name="where_did_you_hear_about_us"/>
+                                <field name="unsubscribed_mode"/>
+                                <field name="unsubscribed_time"/>
+                                <field name="original_lead_source"/>
+                                   <field name="payment_received"/>
+                                <field name="products_purchased"/>
+                                <field name="county"/>
+                                <field name="remote_ip_address"/>
+                                <field name="district_name"/>
+                            </group>
+                            <group>
+                                <field name="home_depot_store"/>
+                                <field name="deal_source"/>
+                                <field name="coupon_code"/>
+                                <field name="doing_business_as"/>
+                                <field name="usdot_number"/>
+                                <field name="tractors_count"/>
+                                <field name="truck_count"/>
+                                <field name="trailer_count"/>
+                                <field name="total_truck_count"/>
+                                <field name="total_power_units"/>
+                                <field name="fleet_size_code"/>
+                                   <field name="total_trucks"/>
+                                <field name="rep1_name"/>
+                                <field name="rep2_name"/>
+                                <field name="territory"/>
+                                <field name="company_name"/>
+                            </group>
+                            <group>
+                                <field name="annual_truck_miles"/>
+                                <field name="percentage_miles_on_highway"/>
+                                <field name="annual_foil_savings"/>
+                                <field name="fuel_cost_gallon"/>
+                                <field name="five_year_total_savings"/>
+                                <field name="miles_per_gallon"/>
+                                <field name="return_call_date"/>
+                                <field name="average_mpg"/>
+                                <field name="total_tractors"/>
+                                <field name="total_vans"/>
+                                <field name="average_miles_per_gallon"/>
+                                   <field name="total_annual_miles_per_truck"/>
+                                <field name="primary_contact_first_name"/>
+                                <field name="primary_contact_second_name"/>
+<!--                                <field name="territory"/>-->
+<!--                                <field name="company_name"/>-->
                             </group>
                         </group>
                     </sheet>

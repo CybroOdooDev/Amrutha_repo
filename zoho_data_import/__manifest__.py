@@ -1,6 +1,6 @@
 {
     'name': 'Zoho Data Import',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.0.1',
     'depends':['base','base_setup','contacts','crm','mail','sale'],
     'data':{
         # 'security/contact_security.xml',

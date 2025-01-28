@@ -18,7 +18,7 @@ class SaleOrder(models.Model):
     billing_code = fields.Char('Billing Code', help="Billing Code")
     shipping_code = fields.Char('Shipping Code', help="Billing Code")
     zoho_terms = fields.Text('Terms and Conditions',help='Terms and Conditions')
-    zoho_description = fields.Text('Description',help='Description')
+    zoho_description = fields.Text('Description of zoho',help='Description')
     delivered = fields.Char('DELIVERED',help='DELIVERED')
     installed = fields.Char('Installed',help='Installed')
     roof_length = fields.Char('Roof Length',help='Roof Length')

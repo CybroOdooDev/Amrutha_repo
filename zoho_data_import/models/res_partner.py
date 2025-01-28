@@ -11,7 +11,7 @@ class ResPartner(models.Model):
     # title = fields.Char('Zoho Title', help='Title of Contacts in Zoho')
     home_phone = fields.Char('Home phone', help='Home Phone')
     other_phone = fields.Char('Other phone', help='Other Phone')
-    birth_date = fields.Date(string='Date of Birth',
+    birth_date = fields.Date(string='Date of Birth of zoho Contact',
                              help='Date of Birth of Contacts')
     assistant = fields.Char('Assistant', help='Contact Assistant')
     mailing_street = fields.Char('Mailing Street',
@@ -141,7 +141,7 @@ class ResPartner(models.Model):
     payment_received = fields.Char('Payment Received')
     products_purchased = fields.Text('Products Purchased')
     county = fields.Char('County')
-    name_title = fields.Char('Title')
+    name_title = fields.Char('Title of Contact in Zoho')
     remote_ip_address = fields.Char('Remote IP Address')
     district_name = fields.Char('District Name')
     home_depot_store = fields.Char('HOME DEPOT STORE')
@@ -159,7 +159,7 @@ class ResPartner(models.Model):
     rep1_name = fields.Char('Rep 1 - Full Name',help='Rep 1 - Full Name')
     rep2_name = fields.Char('Rep 2 - Full Name',help='Rep 2 - Last Name')
     territory = fields.Char('Territory', help='Territory')
-    company_name = fields.Char('Company', help='Company')
+    company_name = fields.Char('Company of Contact', help='Company of Contact')
     annual_truck_miles = fields.Char('Annual Miles Per Truck',help='Annual Miles Per Truck')
     percentage_miles_on_highway =  fields.Char('% of Miles on Highway',help='% of Miles on Highway')
     annual_foil_savings = fields.Char('Annual Per Foil Savings',help='Annual Per Foil Savings')

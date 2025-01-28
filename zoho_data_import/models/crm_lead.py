@@ -52,7 +52,7 @@ class CrmLead(models.Model):
     total_downpayment = fields.Float('Total Down payment',
                                      help='Total Down payment in Zoho')
     payment_due = fields.Char('Payment Due date', help='Payment Due date')
-    lost_reason = fields.Char('Lost Reason', help='Lost Reason')
+    lost_reason = fields.Char('Lost Reason in Zoho', help='Lost Reason in Zoho')
     business_name = fields.Char('Business name', help='Business Name')
     bank_rate = fields.Char('Bank Rate', help='Bank Rate')
     equipment = fields.Char('Equipment', help='Equipment')
@@ -92,8 +92,8 @@ class CrmLead(models.Model):
     make_model = fields.Char('Make/Model', help='Make/Model')
     internal_notes = fields.Html('Internal Notes', help='Internal Notes')
 
-    zoho_lead_company = fields.Char('Company', help='Company')
-    title_zoho = fields.Char('Title', help='Title of Zoho lead')
+    zoho_lead_company = fields.Char('Company of Lead', help='Company of Lead')
+    title_zoho = fields.Char('Lead Title', help='Title of Zoho lead')
     street = fields.Char("street", help='street')
     city = fields.Char("City", help='City')
     state_id = fields.Many2one("res.country.state", help='State',

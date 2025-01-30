@@ -6,11 +6,15 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='order_line']//list//field[@name='tax_id']" position="after">
-                <field name="rental_start_date" column_invisible=" not parent.is_rental_order"/>
-                <field name="rental_end_date" column_invisible=" not parent.is_rental_order"/>
-                <field name="next_bill_date" column_invisible=" not parent.is_rental_order"/>
+                <field name="rental_available_lot_ids" column_invisible="1"/>
+                <field name="rental_pickable_lot_ids" string="Serial Numbers" widget="many2many_tags" column_invisible=" not parent.is_rental_order"
+                       options="{'no_create':1, 'no_edit':1}" width="120px"/>
+<!--                       options="{'no_create':1, 'no_edit':1}" width="120px" readonly="rental_status  in ['rent','finish','cancel']"/>-->
+                <field name="rental_start_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="rental_end_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="next_bill_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="rental_status"
-                       widget="label" width="120px"/>
+                       widget="label" width="120px" column_invisible=" not parent.is_rental_order"/>
                 <field name="parent_line" column_invisible="True"/>
             </xpath>
 
@@ -43,7 +47,6 @@
             <xpath expr="//button[@name='action_open_pickup']" position="after">
                 <button name="action_add_sale_order" string="Sale Order" type="object" class="btn-primary"
                         invisible="state != 'sale' or not is_rental_order"/>
-                <!--                <button name="action_pdf_report" string="PDF Report" type="object" class="btn-primary"/>-->
             </xpath>
 
             <xpath expr="//notebook" position="inside">

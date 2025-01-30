@@ -9,3 +9,4 @@ from . import account_move
 from . import product_pricelist
 from . import distance_range_line
 from . import res_config_settings
+from . import stock_lot

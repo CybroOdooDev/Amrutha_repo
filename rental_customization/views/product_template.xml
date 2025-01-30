@@ -13,7 +13,9 @@
                     </div>
                     <label for="charges_ids"/>
                     <div>
-                        <field name="charges_ids" widget="many2many_tags" domain="[('charges_ok','=',True)]"/>
+                        <field name="charges_ids"
+                               widget="many2many_tags"
+                               domain="[('charges_ok', '=', True), ('name', 'not in', ('Delivery Fuel Surcharge', 'Pick Up Fuel Surcharge'))]"/>
                     </div>
                 </group>
             </group>

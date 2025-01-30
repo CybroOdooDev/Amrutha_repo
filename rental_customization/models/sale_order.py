@@ -54,6 +54,12 @@ class SaleOrder(models.Model):
         if self.state == 'sale':
             raise ValidationError("Can't change Bill Terms after Order Confirmation")
 
+    @api.onchange('recurring_plan_id')
+    def _onchange_recurring_plan_id(self):
+        """Validation while changing Rental Recurring Plan"""
+        if self.state == 'sale':
+            raise ValidationError("Can't change Rental Recurring Plan after Order Confirmation")
+
     @api.onchange('rental_start_date', 'rental_return_date')
     def _onchange_rental_dates(self):
         """Show the button if rental dates change."""
@@ -336,7 +342,6 @@ class SaleOrder(models.Model):
                                 if data["destination_addresses"] != data["origin_addresses"]:
                                     if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS' and data["rows"][0]["elements"][0]["status"] != 'NOT_FOUND':
                                          # by road transportations only
-                                        print(data)
                                         distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
                                         distance_parts = distance_text.split()
                                         if distance_parts:

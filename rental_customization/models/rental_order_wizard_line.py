@@ -18,6 +18,7 @@ class RentalOrderWizardLine(models.TransientModel):
             product_id = lines.order_line_id.product_id.id
             if lines.pickedup_lot_ids and lines['status'] == 'pickup':
                 for lot in lines.pickedup_lot_ids:
+                    lot.reserved = True
                     for range in sale_order.pricelist_id.product_pricing_ids:
                         if range.product_template_id == product:
                             # Check the rental period in the pricelist and recurring plan in the order
@@ -56,13 +57,52 @@ class RentalOrderWizardLine(models.TransientModel):
                                     'warehouse_id': stock_quant.location_id.warehouse_id
                                 })
             if lines.returned_lot_ids and lines['status'] == 'return':
-                                for lot in lines.returned_lot_ids:
-                                    date_lines = self.env['product.return.dates'].search([
-                                        ('order_id', '=', sale_order.id),
-                                        ('serial_number', '=', lot.id),
-                                    ])
-                                    if date_lines:
-                                        date_lines.update({
-                                            'return_date': fields.Date.today()
-                                        })
+                for lot in lines.returned_lot_ids:
+                    lot.reserved = False
+                    date_lines = self.env['product.return.dates'].search([
+                        ('order_id', '=', sale_order.id),
+                        ('serial_number', '=', lot.id),
+                    ])
+                    if date_lines:
+                        date_lines.update({
+                            'return_date': fields.Date.today()
+                        })
         return super()._apply()
+
+    @api.model
+    def _default_wizard_line_vals(self, line,status):
+        """ To pass 'pickedup_lot_ids' to the wizard line """
+        default_line_vals = super()._default_wizard_line_vals(line, status)
+        remaining_lot_ids = list(set(line.rental_pickable_lot_ids.ids) - set(line.pickedup_lot_ids.ids))
+        # Update default_line_vals with the filtered pickedup_lot_ids
+        if status == 'pickup':
+            default_line_vals.update({
+                'pickedup_lot_ids': remaining_lot_ids,
+                'qty_delivered': len(remaining_lot_ids),
+
+            })
+        return default_line_vals
+
+
+  # default_line_vals = super()._default_wizard_line_vals(line, status)
+  #       for lot in line.rental_pickable_lot_ids:
+  #           print(lot.name,lot.location_id.name)
+  #           lot_no = 0
+  #           if lot.location_id.name != 'Rental':
+  #               lot_no  += 1
+  #               default_line_vals.update({
+  #                   'pickedup_lot_ids': lot.id,
+  #                   'qty_delivered': lot_no
+  #               })
+
+
+   # default_line_vals.update({
+        #     'pickedup_lot_ids': line.rental_pickable_lot_ids.ids,
+        #     'qty_delivered': len(line.rental_pickable_lot_ids.ids)
+        # })
+
+
+# lots_to_remove = lines.pickedup_lot_ids.filtered(lambda lot: lot.location_id.name == 'Rental')
+# print('lots_to_remove', lots_to_remove.name)
+# if lots_to_remove:
+#     lots_to_remove.unlink()

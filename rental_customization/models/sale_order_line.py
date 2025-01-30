@@ -16,8 +16,7 @@ class SaleOrderLine(models.Model):
 
     rental_start_date = fields.Date(string="Rental Start Date", tracking=True)
     rental_end_date = fields.Date(string="Rental End Date", tracking=True)
-    next_bill_date = fields.Date(compute="_compute_next_bill_date", string="Next Bill Date", store=True,
-                                     readonly=False)
+    next_bill_date = fields.Date(compute="_compute_next_bill_date", string="Next Bill Date", store=True,readonly=False)
     rental_status = fields.Selection(selection=[('draft', "Quotation"),
                                                 ('sent', "Quotation Sent"),
                                                 ('rent', "Rental Order"),
@@ -29,13 +28,16 @@ class SaleOrderLine(models.Model):
     active = fields.Boolean(default=True)
     is_sale = fields.Boolean()
     parent_line = fields.Integer()
+    rental_available_lot_ids = fields.Many2many('stock.lot','rental_available_lot_rel',compute="_compute_pickeable_lot_ids")
+    rental_pickable_lot_ids = fields.Many2many(
+        'stock.lot',domain="[('id','in',rental_available_lot_ids),('reserved','!=',True)]")
 
     @api.model_create_multi
     def create(self, vals_list):
         """Supering Create function of sale order lines"""
         res = super().create(vals_list)
-        # to calculate the main product's unit price based on PL
         for line in res:
+            # to calculate the main product's unit price based on PL
             if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
                 for vals in vals_list:
                     if vals['display_type'] != 'line_section':
@@ -58,9 +60,9 @@ class SaleOrderLine(models.Model):
                             line.price_unit = product.list_price
         if res.order_id.is_rental_order:
             # Checking various validations and notifying errors
-            line_section_count = sum(1 for vals in vals_list if vals.get('display_type') == 'line_section')
-            if line_section_count > 1:
-                raise ValidationError("Create one section with one Product,at a time")
+            # line_section_count = sum(1 for vals in vals_list if vals.get('display_type') == 'line_section')
+            # if line_section_count > 1:
+            #     raise ValidationError("Create one section with one Product,at a time")
             for vals in vals_list:
                 # Ensuring section name is unique
                 if vals.get('display_type') == 'line_section' and vals.get('name'):
@@ -394,3 +396,37 @@ class SaleOrderLine(models.Model):
                 self.name = self.product_template_id.name
             else:
                 self.name = self.product_template_id.name
+
+    @api.depends('product_id','product_template_id')  # Replace with a field that affects the domain
+    def _compute_pickeable_lot_ids(self):
+        """ For computing the available lot numbers of the product """
+        for line in self:
+            if not line.product_id.charges_ok or line.display_type != 'line_section':
+                pickeable_lot_ids = self.env['stock.lot']._get_available_lots(line.product_id,
+                                                                      line.order_id.warehouse_id.lot_stock_id)
+                if pickeable_lot_ids:
+                    line.rental_available_lot_ids = pickeable_lot_ids
+                else:
+                    line.rental_available_lot_ids = False
+            else:
+                line.rental_available_lot_ids = False
+
+    def write(self, vals):
+        """Supering Write function for reserving serial no. once it's added to the line
+           and un-reserving once it is removed"""
+        prev_lots = self.rental_pickable_lot_ids
+        return_value = super().write(vals)
+        current_lots = self.rental_pickable_lot_ids
+        if current_lots:
+            for lot in current_lots:
+                if lot not in self.pickedup_lot_ids:
+                    lot.reserved = True
+        if prev_lots:
+            for lot in prev_lots:
+                if lot not in current_lots:
+                    lot.reserved = False
+        # to check the ordered qty and number of serial numbers selected
+        if len(self.rental_pickable_lot_ids) > self.product_uom_qty:
+            self.product_uom_qty = len(self.rental_pickable_lot_ids)
+        return return_value
+

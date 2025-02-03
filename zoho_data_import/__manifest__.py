@@ -1,6 +1,7 @@
 {
     'name': 'Zoho Data Import',
     'version': '18.0.1.0.2',
+    'license': 'LGPL-3',
     'depends':['base','base_setup','contacts','crm','mail','sale'],
     'data':{
         # 'security/contact_security.xml',

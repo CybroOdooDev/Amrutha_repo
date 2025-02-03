@@ -7,7 +7,7 @@ class CrmLead(models.Model):
     zoho_record_reference = fields.Char('Zoho Id', help='Zoho record reference')
     deal_owner_id = fields.Many2one('res.users', string='Owner',
                                     help='Deal Owner')
-    amount = fields.Float('Amount', help='Deal amount')
+    amount = fields.Float('Zoho Deal Amount', help='Deal amount')
     business_type = fields.Char('Business Type', help='Type of Business')
     next_step = fields.Char('Next step', help='Next step')
     zoho_lead_source = fields.Char('Lead Source', help='Lead Source')

@@ -2,7 +2,7 @@ from odoo import models, fields
 
 
 class Product(models.Model):
-   _inherit = 'product.template'
+   _inherit = 'product.product'
 
    zoho_reference = fields.Char('Product Zoho reference', help='Product Zoho Reference')
    roof_color = fields.Char('ROOF COLOR',help='ROOF COLOR')

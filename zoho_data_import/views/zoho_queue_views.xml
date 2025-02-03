@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--    Zoho Queue Form View-->
+    <record id="zoho_queue_view_form" model="ir.ui.view">
+        <field name="name">zoho.queue.view.form</field>
+        <field name="model">zoho.queue</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_reset_to_draft" data-hotkey="v" string="Reset to Draft" type="object"   invisible="state in ['draft','confirm']"/>
+<!--                    <button name="action_fetch_emails" data-hotkey="v" string="Fetch Emails" type="object"/>-->
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet name="Zoho Queue">
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="action"/>
+                            <field name="data"/>
+                            <field name="instance_id"/>
+                            <field name="company_id"/>
+<!--                            <field name="access_token"/>-->
+<!--                            <field name="company"/>-->
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+     <!--    Zoho Queue Tree View-->
+    <record id="zoho_queue_view_tree" model="ir.ui.view">
+        <field name="name">zoho.queue.view.tree</field>
+        <field name="model">zoho.queue</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="action"/>
+                <field name="data"/>
+                <field name="instance_id"/>
+                <field name="company_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+        <!--    Zoho Queue Menu Action-->
+     <record id="zoho_queue_action" model="ir.actions.act_window">
+        <field name="name">Zoho Queue</field>
+        <field name="res_model">zoho.queue</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+        <!--    Zoho Queue Menu-->
+    <menuitem id="zoho_queue_menu" name="Zoho Queue"
+              parent="base.menu_automation" action="zoho_queue_action"/>
+</odoo>

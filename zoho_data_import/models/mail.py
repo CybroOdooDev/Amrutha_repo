@@ -11,3 +11,6 @@ class Mail(models.Model):
     bounce_reason = fields.Char('Bounce Reason', help='Bounce Reason')
     source = fields.Char('Source', help='Source of Email')
     sent_from = fields.Char("send from", help='Send from')
+    mail_sent_time = fields.Datetime('Zoho Mail Time', help='Zoho Mail Time')
+    zoho_mail = fields.Boolean('Is Zoho Mail', help='Check whether the email is created from Zoho')
+

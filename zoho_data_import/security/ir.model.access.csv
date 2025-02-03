@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_zoho_connector_user,access.zoho.connector.user,model_zoho_connector,base.group_user,1,1,1,1
+access_zoho_queue_user,access.zoho.queue.user,model_zoho_queue,base.group_user,1,1,1,1

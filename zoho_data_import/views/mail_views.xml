@@ -16,6 +16,7 @@
                         <field name="bounce_reason"/>
                         <field name="source"/>
                         <field name="sent_from"/>
+                        <field name="mail_sent_time"/>
                     </group>
                 </page>
             </xpath>

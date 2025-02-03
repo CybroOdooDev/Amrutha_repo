@@ -9,7 +9,7 @@
                 <field name="rental_available_lot_ids" column_invisible="1"/>
                 <field name="rental_pickable_lot_ids" string="Serial Numbers" widget="many2many_tags" column_invisible=" not parent.is_rental_order"
                        options="{'no_create':1, 'no_edit':1}" width="120px"/>
-<!--                       options="{'no_create':1, 'no_edit':1}" width="120px" readonly="rental_status  in ['rent','finish','cancel']"/>-->
+<!--                       options="{'no_create':1, 'no_edit':1}" width="120px" readonly="rental_status  in ['rent','sale','finish','cancel']"/>-->
                 <field name="rental_start_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="rental_end_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="next_bill_date" column_invisible=" not parent.is_rental_order" width="120px"/>
@@ -20,6 +20,8 @@
 
             <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
                 <field name="is_sale" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                       widget="toggle"/>
+                <field name="is_service_charge" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
                        widget="toggle"/>
             </xpath>
 

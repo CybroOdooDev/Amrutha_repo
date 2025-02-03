@@ -19,36 +19,38 @@ class RentalOrderWizardLine(models.TransientModel):
             if lines.pickedup_lot_ids and lines['status'] == 'pickup':
                 for lot in lines.pickedup_lot_ids:
                     lot.reserved = True
-                    for range in sale_order.pricelist_id.product_pricing_ids:
-                        if range.product_template_id == product:
-                            # Check the rental period in the pricelist and recurring plan in the order
-                            pricelist_period_duration = range.recurrence_id.duration
-                            pricelist_period_unit = range.recurrence_id.unit
-                            if sale_order.bill_terms == 'late' and ((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
-                                date_lines = self.env['product.return.dates'].create([{
-                                    'order_id': sale_order.id,
-                                    'product_id': product_id,
-                                    'serial_number': lot.id,
-                                    'quantity': 1,
-                                    'per_day_charges': lines.order_line_id.price_unit,
-                                    'delivery_date': fields.Date.today(),
-                                }])
-                            elif sale_order.bill_terms == 'late' and not((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
-                                date_lines = self.env['product.return.dates'].create([{
-                                    'order_id': sale_order.id,
-                                    'product_id': product.id,
-                                    'serial_number': lot.id,
-                                    'quantity': 1,
-                                    'delivery_date': fields.Date.today(),
-                                }])
-                            elif  sale_order.bill_terms == 'advance':
-                                date_lines = self.env['product.return.dates'].create([{
-                                    'order_id': sale_order.id,
-                                    'product_id': product.id,
-                                    'serial_number': lot.id,
-                                    'quantity': 1,
-                                    'delivery_date': fields.Date.today(),
-                                }])
+                    if sale_order.pricelist_id.product_pricing_ids:
+                        for range in sale_order.pricelist_id.product_pricing_ids:
+                            if range.product_template_id == product:
+                                # Check the rental period in the pricelist and recurring plan in the order
+                                pricelist_period_duration = range.recurrence_id.duration
+                                pricelist_period_unit = range.recurrence_id.unit
+                                if sale_order.bill_terms == 'late' and ((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
+                                    date_lines = self.env['product.return.dates'].create([{
+                                        'order_id': sale_order.id,
+                                        'product_id': product_id,
+                                        'serial_number': lot.id,
+                                        'quantity': 1,
+                                        'per_day_charges': lines.order_line_id.price_unit,
+                                        'delivery_date': fields.Date.today(),
+                                    }])
+                                elif sale_order.bill_terms == 'late' and not((pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
+                                    date_lines = self.env['product.return.dates'].create([{
+                                        'order_id': sale_order.id,
+                                        'product_id': product.id,
+                                        'serial_number': lot.id,
+                                        'quantity': 1,
+                                        'delivery_date': fields.Date.today(),
+                                    }])
+                                elif  sale_order.bill_terms == 'advance':
+                                    date_lines = self.env['product.return.dates'].create([{
+                                        'order_id': sale_order.id,
+                                        'product_id': product.id,
+                                        'serial_number': lot.id,
+                                        'quantity': 1,
+                                        'delivery_date': fields.Date.today(),
+                                    }])
+
 
                             stock_quant = self.env['stock.lot'].search(
                                 [('name', '=', lot.name), ('product_id', '=', lines.product_id.id)])
@@ -56,6 +58,20 @@ class RentalOrderWizardLine(models.TransientModel):
                                 date_lines.update({
                                     'warehouse_id': stock_quant.location_id.warehouse_id
                                 })
+                    else:
+                        date_lines = self.env['product.return.dates'].create([{
+                            'order_id': sale_order.id,
+                            'product_id': product.id,
+                            'serial_number': lot.id,
+                            'quantity': 1,
+                            'delivery_date': fields.Date.today(),
+                        }])
+                        stock_quant = self.env['stock.lot'].search(
+                            [('name', '=', lot.name), ('product_id', '=', lines.product_id.id)])
+                        if stock_quant and stock_quant.location_id.warehouse_id:
+                            date_lines.update({
+                                'warehouse_id': stock_quant.location_id.warehouse_id
+                            })
             if lines.returned_lot_ids and lines['status'] == 'return':
                 for lot in lines.returned_lot_ids:
                     lot.reserved = False
@@ -82,27 +98,3 @@ class RentalOrderWizardLine(models.TransientModel):
 
             })
         return default_line_vals
-
-
-  # default_line_vals = super()._default_wizard_line_vals(line, status)
-  #       for lot in line.rental_pickable_lot_ids:
-  #           print(lot.name,lot.location_id.name)
-  #           lot_no = 0
-  #           if lot.location_id.name != 'Rental':
-  #               lot_no  += 1
-  #               default_line_vals.update({
-  #                   'pickedup_lot_ids': lot.id,
-  #                   'qty_delivered': lot_no
-  #               })
-
-
-   # default_line_vals.update({
-        #     'pickedup_lot_ids': line.rental_pickable_lot_ids.ids,
-        #     'qty_delivered': len(line.rental_pickable_lot_ids.ids)
-        # })
-
-
-# lots_to_remove = lines.pickedup_lot_ids.filtered(lambda lot: lot.location_id.name == 'Rental')
-# print('lots_to_remove', lots_to_remove.name)
-# if lots_to_remove:
-#     lots_to_remove.unlink()

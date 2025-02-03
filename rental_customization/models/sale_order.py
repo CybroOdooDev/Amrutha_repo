@@ -19,7 +19,7 @@ class SaleOrder(models.Model):
 
     recurring_plan_id = fields.Many2one("rental.recurring.plan",string="Rental Recurring Plan",
                                         default=lambda self: self._get_default_recurring_plan())
-    bill_terms = fields.Selection(selection=[('advance', "Advance Bill"),('late', "Late Bill")],
+    bill_terms = fields.Selection(selection=[('advance', "Advance Bill"),('late', "Not Advance Bill")],
                                   string="Bill Terms",default='late')
     show_update_button = fields.Boolean(string="Show Update Button", default=False, store=True)
     header_start_date = fields.Date(help="Header level start date for lines")
@@ -234,7 +234,17 @@ class SaleOrder(models.Model):
                                     )
                                 ))
                                 main_prod = line.product_id.name
-                            if sale_order.bill_terms == 'late':
+                            if sale_order.bill_terms == 'late' and not  sale_order.pricelist_id.product_pricing_ids:
+                                invoice_vals['invoice_line_ids'].append(Command.create(
+                                    line._prepare_invoice_line(
+                                        name=f"Rental",
+                                        product_id=line.product_id.id,
+                                        price_unit=line.price_unit,
+                                        quantity=line.qty_delivered - line.qty_returned,
+                                    )
+                                ))
+                                main_prod = line.product_id.name
+                            if sale_order.bill_terms == 'late' and sale_order.pricelist_id.product_pricing_ids:
                                 for range in sale_order.pricelist_id.product_pricing_ids:
                                     if range.product_template_id == line.product_template_id:
                                     # Check the rental period in the pricelist and recurring plan in the order
@@ -374,44 +384,46 @@ class SaleOrder(models.Model):
     def action_update_prices(self):
         """ Calculating unit price of Main product and service charges according to the Mileage and Price list """
         res = super(SaleOrder, self).action_update_prices()
-        for line in self.order_line:
-            if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
-                product = line.product_template_id
-                if product and product.transportation_rate and self.pricelist_id and self.pricelist_id.product_pricing_ids:
-                    for range in self.pricelist_id.product_pricing_ids:
-                        if range.product_template_id == product:
-                            # Check the rental period in the pricelist and recurring plan in the order
-                            pricelist_period_duration = range.recurrence_id.duration
-                            pricelist_period_unit = range.recurrence_id.unit
-                            order_recurring_duration = line.order_id.recurring_plan_id.billing_period_value
-                            order_recurring_unit = line.order_id.recurring_plan_id.billing_period_unit
-                            if (pricelist_period_duration == order_recurring_duration) and (
-                                    pricelist_period_unit == order_recurring_unit):
-                                line.price_unit = range.price
-            elif line.display_type != 'line_section' and (line.product_template_id.charges_ok):
-                if self.mileage_enabled:
+        if self.pricelist_id:
+            for line in self.order_line:
+                if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
                     product = line.product_template_id
-                    # to check the price list and the distance range
-                    if product and self.pricelist_id and self.pricelist_id.distance_range_line_ids:
-                        mileage = self.mileage
-                        for range in self.pricelist_id.distance_range_line_ids:
-                            delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
-                            pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
-                            delivery_fuel_surcharge = self.env.ref(
-                                'rental_customization.delivery_fuel_surcharge_product').name
-                            pickup_fuel_surcharge = self.env.ref(
-                                'rental_customization.pickup_fuel_surcharge_product').name
+                    if product and product.transportation_rate and self.pricelist_id and self.pricelist_id.product_pricing_ids:
+                        for range in self.pricelist_id.product_pricing_ids:
+                            if range.product_template_id == product:
+                                # Check the rental period in the pricelist and recurring plan in the order
+                                pricelist_period_duration = range.recurrence_id.duration
+                                pricelist_period_unit = range.recurrence_id.unit
+                                order_recurring_duration = line.order_id.recurring_plan_id.billing_period_value
+                                order_recurring_unit = line.order_id.recurring_plan_id.billing_period_unit
+                                if (pricelist_period_duration == order_recurring_duration) and (
+                                        pricelist_period_unit == order_recurring_unit):
+                                    line.price_unit = range.price
+                elif line.display_type != 'line_section' and (line.product_template_id.charges_ok):
+                    if self.mileage_enabled:
+                        product = line.product_template_id
+                        # to check the price list and the distance range
+                        if product and self.pricelist_id and self.pricelist_id.distance_range_line_ids:
+                            mileage = self.mileage
+                            for range in self.pricelist_id.distance_range_line_ids:
+                                delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
+                                pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
+                                delivery_fuel_surcharge = self.env.ref(
+                                    'rental_customization.delivery_fuel_surcharge_product').name
+                                pickup_fuel_surcharge = self.env.ref(
+                                    'rental_customization.pickup_fuel_surcharge_product').name
 
-                            if delivery_product_name in range.name.mapped(
-                                    'name') or pickup_product_name in range.name.mapped('name'):
-                                if line.product_template_id.name in (delivery_product_name,pickup_product_name) :
-                                    if range.distance_end != 0:
-                                        if range.distance_begin <= mileage <= range.distance_end:
-                                            line.price_unit = range.transportation_rate
-                                    else:
-                                        if range.distance_begin <= mileage:
-                                            line.price_unit = mileage * range.transportation_rate
-                                    price_unit = line.price_unit
-                                if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
-                                    line.price_unit = (price_unit * 15) / 100
+                                if delivery_product_name in range.name.mapped(
+                                        'name') or pickup_product_name in range.name.mapped('name'):
+                                    if line.product_template_id.name in (delivery_product_name,pickup_product_name) :
+                                        if range.distance_end != 0:
+                                            if range.distance_begin <= mileage <= range.distance_end:
+                                                line.price_unit = range.transportation_rate
+                                        else:
+                                            if range.distance_begin <= mileage:
+                                                line.price_unit = mileage * range.transportation_rate
+                                        price_unit = line.price_unit
+                                    if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
+                                        line.price_unit = (price_unit * 15) / 100
         return res
+

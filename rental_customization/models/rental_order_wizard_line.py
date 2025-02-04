@@ -4,6 +4,7 @@ from itertools import product
 from google.auth import default
 from odoo import api, models, fields, Command
 from odoo.tools.safe_eval import datetime
+from odoo.exceptions import ValidationError
 
 
 class RentalOrderWizardLine(models.TransientModel):
@@ -16,7 +17,7 @@ class RentalOrderWizardLine(models.TransientModel):
             sale_order = lines.order_line_id.order_id
             product = lines.order_line_id.product_template_id
             product_id = lines.order_line_id.product_id.id
-            if lines.pickedup_lot_ids and lines['status'] == 'pickup':
+            if lines.pickedup_lot_ids and lines['status'] == 'pickup' and (product.is_storable and product.tracking == 'serial'):
                 for lot in lines.pickedup_lot_ids:
                     lot.reserved = True
                     if sale_order.pricelist_id.product_pricing_ids:
@@ -72,7 +73,7 @@ class RentalOrderWizardLine(models.TransientModel):
                             date_lines.update({
                                 'warehouse_id': stock_quant.location_id.warehouse_id
                             })
-            if lines.returned_lot_ids and lines['status'] == 'return':
+            if lines.returned_lot_ids and lines['status'] == 'return' and product.is_storable:
                 for lot in lines.returned_lot_ids:
                     lot.reserved = False
                     date_lines = self.env['product.return.dates'].search([
@@ -83,6 +84,10 @@ class RentalOrderWizardLine(models.TransientModel):
                         date_lines.update({
                             'return_date': fields.Date.today()
                         })
+            if (not lines.pickedup_lot_ids and lines['status'] == 'pickup') or (not lines.returned_lot_ids and lines['status'] == 'return'):
+                if product.is_storable  and product.tracking == 'serial':
+                    raise ValidationError("Please Choose Serial Numbers")
+
         return super()._apply()
 
     @api.model
@@ -91,7 +96,7 @@ class RentalOrderWizardLine(models.TransientModel):
         default_line_vals = super()._default_wizard_line_vals(line, status)
         remaining_lot_ids = list(set(line.rental_pickable_lot_ids.ids) - set(line.pickedup_lot_ids.ids))
         # Update default_line_vals with the filtered pickedup_lot_ids
-        if status == 'pickup':
+        if status == 'pickup' and line.product_id.is_storable and line.product_id.tracking == 'serial':
             default_line_vals.update({
                 'pickedup_lot_ids': remaining_lot_ids,
                 'qty_delivered': len(remaining_lot_ids),

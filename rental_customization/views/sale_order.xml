@@ -21,7 +21,7 @@
             <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
                 <field name="is_sale" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
                        widget="toggle"/>
-                <field name="is_service_charge" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                    <field name="is_service_charge" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
                        widget="toggle"/>
             </xpath>
 

@@ -432,5 +432,3 @@ class SaleOrderLine(models.Model):
             if len(line.rental_pickable_lot_ids) > line.product_uom_qty:
                 line.product_uom_qty = len(line.rental_pickable_lot_ids)
         return return_value
-
-

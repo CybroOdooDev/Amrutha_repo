@@ -42,7 +42,7 @@ class SaleOrderLine(models.Model):
             # to calculate the main product's unit price based on PL
             if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
                 for vals in vals_list:
-                    if vals['display_type'] != 'line_section':
+                    if "display_type" in vals and vals['display_type'] != 'line_section':
                         product_template_id = vals.get('product_template_id')
                         product = self.env['product.template'].search([('id', '=', product_template_id)])
                     # to check the price list and the pricing rule

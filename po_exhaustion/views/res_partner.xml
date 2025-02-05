@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_partner_notebook" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="PO Exhaustion">
+                    <field name="po_exhaustion_line">
+                        <list>
+                            <field name="po_name" widget="" width="150px"/>
+                            <field name="issued_date" width="100px"/>
+                            <field name="currency_id" width="100px"/>
+                            <field name="amount_issued" width="120px"/>
+                            <field name="total_consumed" width="120px"/>
+                            <field name="total_remaining" width="120px"/>
+                            <field name="notes" width="120px"/>
+                            <field name="create_uid"/>
+                        </list>
+                        <form>
+                            <sheet>
+                                <field name="po_name" widget="" placeholder="Customer PO #"/>
+                                <group class="mt-3">
+                                    <field name="issued_date"/>
+                                    <field name="currency_id"/>
+                                    <field name="amount_issued"/>
+                                    <field name="notes"/>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api,_
 
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
@@ -42,7 +42,39 @@ class CrmLead(models.Model):
                                                string="Transaction Coordinator")
     property_admin_id = fields.Many2one('res.users',string="Property admin")
 
+    def _create_category_documents(self, enable_field, doc_field, lead_field, tag_field):
+        """ Helper function to create documents dynamically """
+        if getattr(self, enable_field):
+            if not self[doc_field]:  # Only create if no documents exist
+                templates = self.env['sign.template'].search([
+                    ('tag_ids.' + tag_field, '=', True)  # Search within tag_ids
+                ])
+                documents = [(0, 0, {'name': t.name, 'static_template_id': t.id, 'is_static': True, lead_field: self.id}) for t in templates]
+                self.update({doc_field: documents})
 
+    @api.onchange('enable_residential_sale')
+    def _onchange_enable_residential_sale(self):
+        self._create_category_documents('enable_residential_sale', 'residential_sale_docs', 'residential_sale_id', 'is_residential_sale')
+
+    @api.onchange('enable_residential_purchase')
+    def _onchange_enable_residential_purchase(self):
+        self._create_category_documents('enable_residential_purchase', 'residential_purchase_docs', 'residential_purchase_id', 'is_residential_purchase')
+
+    @api.onchange('enable_commercial_sale')
+    def _onchange_enable_commercial_sale(self):
+        self._create_category_documents('enable_commercial_sale', 'commercial_sale_docs', 'commercial_sale_id', 'is_commercial_sale')
+
+    @api.onchange('enable_commercial_purchase')
+    def _onchange_enable_commercial_purchase(self):
+        self._create_category_documents('enable_commercial_purchase', 'commercial_purchase_docs', 'commercial_purchase_id', 'is_commercial_purchase')
+
+    @api.onchange('enable_auction_sale')
+    def _onchange_enable_auction_sale(self):
+        self._create_category_documents('enable_auction_sale', 'auction_sale_docs', 'auction_sale_id', 'is_auction_sale')
+
+    @api.onchange('enable_auction_purchase')
+    def _onchange_enable_auction_purchase(self):
+        self._create_category_documents('enable_auction_purchase', 'auction_purchase_docs', 'auction_purchase_id', 'is_auction_purchase')
     def _compute_document_count(self):
         for lead in self:
             # Count the total documents across all categories
@@ -58,11 +90,12 @@ class CrmLead(models.Model):
     def action_view_documents(self):
         """ Open the documents view for the current lead """
         self.ensure_one()
+        view_id = self.env.ref("sign.sign_request_view_kanban").id
         return {
             'type': 'ir.actions.act_window',
-            'name': 'Lead Documents',
+            'name': _('Document Signature Requests'),
             'view_mode': 'kanban',
-            'res_model': 'crm.lead.document',
+            'res_model': 'sign.request',
             'domain': [('residential_sale_id', '=', self.id)] +
                       [('residential_purchase_id', '=', self.id)] +
                       [('commercial_sale_id', '=', self.id)] +

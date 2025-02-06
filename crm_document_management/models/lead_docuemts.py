@@ -38,15 +38,20 @@ class CrmLeadDocument(models.Model):
     is_selected = fields.Boolean(default=False)
     is_agent_signed = fields.Boolean(default=False)
     is_static = fields.Boolean(default=False)
-    static_template_id = fields.Many2one('sign.template',string="Template",
-                                         domain=[('is_crm_template', '=', True)],)
+    static_template_id = fields.Many2one(
+        'sign.template',
+        string="Template",
+        domain=[('is_crm_template', '=', True)]
+        # Dynamically compute domain
+    )
+
 
     def action_send_for_signature(self):
         """Send documents for signature and move them to 'Waiting on Signature'."""
         for record in self:
-            if record.stage != 'not_shared':
-                raise UserError(
-                    "Only documents in 'Not Shared' stage can be sent for signature.")
+            # if record.stage != 'not_shared':
+            #     raise UserError(
+            #         "Only documents in 'Not Shared' stage can be sent for signature.")
 
             # Determine the correct crm.lead (lead_id)
             lead_id = None
@@ -108,14 +113,35 @@ class CrmLeadDocument(models.Model):
                 self.env['sign.item'].create(signature_items)
             else:
                 template = self.static_template_id
-                # Check for text fields and validate placeholders
-                text_fields = self.env['sign.item'].search([
-                    ('template_id', '=', template.id),
-                    ('type_id', '=',
-                     self.env.ref('sign.sign_item_type_text').id)
-                ])
-                print(text_fields.name,"name")
-                print(text_fields.display_name,"name")
+                # sign_item_types = self.env['sign.item.type'].sudo().search_read([])
+                # for item_type in sign_item_types:
+                #     if item_type['auto_field']:
+                #         try:
+                #         #     # Instead of fetching from partner_id, get auto_field data from crm_lead
+                        #     auto_field = lead_id.mapped(
+                        #         item_type['auto_field'])
+                        #     print(item_type['auto_field'], "111111111111111")
+                        #     print(auto_field[0], "222222222222222222222")
+                        #     print("renuuuuuuuuuuuuuu")
+                        #     print( item_type,"3333333333333333333")
+                        #     item_type['auto_value'] = auto_field[
+                        #         0] if auto_field and not isinstance(auto_field,
+                        #                                             models.BaseModel) else ''
+                        #     print(item_type['auto_value'],
+                        #           "4444444444444444")
+                        #     print("vijillllllllllllllllllllll")
+                        # except Exception:
+                        #     item_type['auto_value'] = ''
+
+                # # Check for text fields and validate placeholders
+                # text_fields = self.env['sign.item'].search([
+                #     ('template_id', '=', template.id),
+                #     ('type_id', '=',
+                #      self.env.ref('sign.sign_item_type_text').id)
+                # ])
+                # print(text_fields.name,"name")
+                # print(text_fields.display_name,"name")
+
 
             # Create a sign request
             sign_request = self.env['sign.request'].create({

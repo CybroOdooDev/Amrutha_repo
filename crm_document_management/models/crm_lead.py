@@ -41,6 +41,13 @@ class CrmLead(models.Model):
     transaction_cordinator_id =fields.Many2one('res.users',
                                                string="Transaction Coordinator")
     property_admin_id = fields.Many2one('res.users',string="Property admin")
+    document_sign_request_ids = fields.Many2many(
+        'sign.request',
+        'crm_lead_document_sign_request_rel',  # Unique table name
+        'crm_lead_id',  # Column for CRM Lead ID
+        'sign_request_id',  # Column for Sign Request ID
+        string='Signature Requests'
+    )
 
     def _create_category_documents(self, enable_field, doc_field, lead_field, tag_field):
         """ Helper function to create documents dynamically """
@@ -96,12 +103,7 @@ class CrmLead(models.Model):
             'name': _('Document Signature Requests'),
             'view_mode': 'kanban',
             'res_model': 'sign.request',
-            'domain': [('residential_sale_id', '=', self.id)] +
-                      [('residential_purchase_id', '=', self.id)] +
-                      [('commercial_sale_id', '=', self.id)] +
-                      [('commercial_purchase_id', '=', self.id)] +
-                      [('auction_sale_id', '=', self.id)] +
-                      [('auction_purchase_id', '=', self.id)],
+            'domain': [('id', 'in', self.document_sign_request_ids.ids)],
             'context': "{'create': False}"
         }
 

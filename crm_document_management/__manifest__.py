@@ -1,7 +1,7 @@
 {
     "name": "Document Management Module",
     "depends": ["base", 'crm', 'sign', 'commission_plan', 'account', 'product',
-                'stock', 'sale_management', 'purchase'],
+                'stock', 'sale_management', 'purchase','mail', 'attachment_indexation', 'portal', 'sms'],
     "category": "Sales/CRM",
     "version": "1.0",
     "data": [
@@ -10,9 +10,11 @@
         'views/lead_document_views.xml',
         'views/sign_template_views.xml',
         'views/sign_template_tag_views.xml',
-        # 'views/pdf_report_view.xml',
     ],
     'assets': {
+        'web.assets_backend': [
+            'crm_document_management/static/src/components/sign_request/signable_PDF_iframe.js',
+        ],
         'web.assets_frontend': [
             'crm_document_management/static/src/components/sign_request/signable_PDF_iframe.js',
         ],

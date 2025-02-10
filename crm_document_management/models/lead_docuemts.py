@@ -155,6 +155,7 @@ class CrmLeadDocument(models.Model):
 
             # Update record fields
             record.sign_request_id = sign_request.id
+            lead_id.document_sign_request_ids = [(4, sign_request.id)]
             record.stage = 'waiting_signature'
             record.status = 'sent'
             record.is_send = True

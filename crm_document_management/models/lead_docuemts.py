@@ -49,9 +49,9 @@ class CrmLeadDocument(models.Model):
     def action_send_for_signature(self):
         """Send documents for signature and move them to 'Waiting on Signature'."""
         for record in self:
-            # if record.stage != 'not_shared':
-            #     raise UserError(
-            #         "Only documents in 'Not Shared' stage can be sent for signature.")
+            if record.stage != 'not_shared':
+                raise UserError(
+                    "Only documents in 'Not Shared' stage can be sent for signature.")
 
             # Determine the correct crm.lead (lead_id)
             lead_id = None

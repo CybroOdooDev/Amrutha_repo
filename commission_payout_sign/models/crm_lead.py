@@ -11,7 +11,8 @@ class CrmLead(models.Model):
     is_signed = fields.Boolean(string="Is Approved",compute='_compute_is_signed')
     signed_document = fields.Many2one('ir.attachment',)
     is_attached = fields.Boolean(string="Proof Attached",default=False)
-    is_invoice_created =fields.Boolean(string="Invoice created",default=False)
+    is_invoice_created =fields.Boolean(string="Invoice created",
+                                       default=False, readonly=True)
 
     @api.depends('sign_request_ids')
     def _compute_sign_request_count(self):

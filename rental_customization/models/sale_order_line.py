@@ -83,13 +83,15 @@ class SaleOrderLine(models.Model):
                         self.env.ref('rental_customization.pickup_fuel_surcharge_product')
                     ]
                     for prod in products:
+                        fuel_charge = order.fuel_surcharge_percentage
                         order.order_line.create({
                             'name': f"{prod.name} For {product.name}",
                             'sequence': vals.get('sequence') + 1,
                             'order_id': order.id,
                             'product_id': prod.id,
                             'product_uom_qty': vals.get('product_uom_qty'),
-                            'price_unit': (prod_price * 15) / 100,
+                            # 'price_unit': (prod_price * 15) / 100,
+                            'price_unit': (prod_price * fuel_charge) / 100,
                             'display_type': False,
                             'parent_line': vals.get('sequence')
                         })
@@ -130,10 +132,10 @@ class SaleOrderLine(models.Model):
         # Apply header-level dates to the newly created lines
         for line in res:
             line.is_service_charge = line.product_id.charges_ok
-            if line.order_id.header_start_date and line.order_id.header_return_date and not (
-                    line.rental_start_date or line.rental_end_date):
-                line.rental_start_date = line.order_id.header_start_date
-                line.rental_end_date = line.order_id.header_return_date
+            # if line.order_id.header_start_date and line.order_id.header_return_date and not (
+            #         line.rental_start_date or line.rental_end_date):
+            #     line.rental_start_date = line.order_id.header_start_date
+            #     line.rental_end_date = line.order_id.header_return_date
 
         return res
 

@@ -4,7 +4,7 @@ from importlib.metadata import requires
 from itertools import product
 from re import search
 from google.auth import default
-from odoo import api,models, fields, Command
+from odoo import api,models, fields, Command, _
 import pytz
 from odoo.tools import date_utils
 from odoo.exceptions import ValidationError
@@ -30,6 +30,9 @@ class SaleOrder(models.Model):
     mileage = fields.Float(help="Distance between Customer location and default warehouse",compute='_compute_mileage', default=0)
     mileage_unit = fields.Selection(selection=[('ft',"ft"),('m', "M"),('km',"KM"),('mi',"Miles")],compute='_compute_mileage',default='mi')
     mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled",compute='_compute_mileage_enabled')
+    fuel_surcharge_percentage = fields.Integer(default="15")
+    fuel_surcharge_unit = fields.Char(default='%',readonly=True)
+
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -161,6 +164,22 @@ class SaleOrder(models.Model):
                 raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
 
         return super().action_open_pickup()
+
+    def _open_rental_wizard(self, status, order_line_ids):
+        """over-writting the '_open_rental_wizard' function to change the pick-up wizard name"""
+        context = {
+            'order_line_ids': order_line_ids,
+            'default_status': status,
+            'default_order_id': self.id,
+        }
+        return {
+            'name': _('Validate a delivery') if status == 'pickup' else _('Validate a return'),
+            'view_mode': 'form',
+            'res_model': 'rental.order.wizard',
+            'type': 'ir.actions.act_window',
+            'target': 'new',
+            'context': context
+        }
 
     def generate_recurring_bills(self):
         """Continuous Bill creation based on the selected Rental recurring plan"""
@@ -412,6 +431,7 @@ class SaleOrder(models.Model):
                                     'rental_customization.delivery_fuel_surcharge_product').name
                                 pickup_fuel_surcharge = self.env.ref(
                                     'rental_customization.pickup_fuel_surcharge_product').name
+                                fuel_charge = self.fuel_surcharge_percentage
 
                                 if delivery_product_name in range.name.mapped(
                                         'name') or pickup_product_name in range.name.mapped('name'):
@@ -424,6 +444,7 @@ class SaleOrder(models.Model):
                                                 line.price_unit = mileage * range.transportation_rate
                                         price_unit = line.price_unit
                                     if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
-                                        line.price_unit = (price_unit * 15) / 100
+                                        # line.price_unit = (price_unit * 15) / 100
+                                        line.price_unit = (price_unit * fuel_charge) / 100
         return res
 

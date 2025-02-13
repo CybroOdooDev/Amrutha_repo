@@ -100,7 +100,19 @@
                         </td>
                     </tr>
                 </div>
+                <label for="fuel_surcharge_percentage" invisible="not is_rental_order"/>
+                <div invisible="not is_rental_order">
+                    <tr>
+                        <td width="10%">
+            <field name="fuel_surcharge_percentage" readonly="state == 'sale'" />
+                        </td>
+                        <td>
+                            <field name="fuel_surcharge_unit" />
+                        </td>
+                    </tr>
+                </div>
             </xpath>
+
         </field>
     </record>
 
@@ -128,6 +140,9 @@
             <xpath expr="//div[hasclass('text-bg-default')]" position="replace">
                 <div>
                 </div>
+            </xpath>
+             <xpath expr="//button[@name='action_open_pickup']" position="attributes">
+                <attribute name="string">Delivery</attribute>
             </xpath>
         </field>
     </record>

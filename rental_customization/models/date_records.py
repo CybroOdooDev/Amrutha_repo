@@ -73,7 +73,7 @@ class ProductReturnDates(models.Model):
             'logo': self.order_id.company_id.logo,
             'customer': self.order_id.partner_id.name,
             'notes': plain_text,
-            'location':self.warehouse_id
+            'location': self.warehouse_id
         }
         content, _report_type = self.env['ir.actions.report']._render_qweb_pdf(
             pdf_report.report_name,
@@ -89,15 +89,26 @@ class ProductReturnDates(models.Model):
             'res_id': self.id,
             'mimetype': 'application/x-pdf'
         }])
-
+        #
+        # sign_template = self.env['sign.template'].create([{
+        #     'attachment_id': attatchment.id,
+        #     'sign_item_ids': [fields.Command.create({
+        #         'type_id': self.env.ref('sign.sign_item_type_signature').id,
+        #         'responsible_id': self.env.ref('sign.sign_item_role_customer').id,
+        #         'page': 1,
+        #         'posX': 0.283,
+        #         'posY': 0.681,
+        #         'width': 0.2,
+        #         'height': 0.05,
+        #     })],
         sign_template = self.env['sign.template'].create([{
             'attachment_id': attatchment.id,
             'sign_item_ids': [fields.Command.create({
                 'type_id': self.env.ref('sign.sign_item_type_signature').id,
                 'responsible_id': self.env.ref('sign.sign_item_role_customer').id,
                 'page': 1,
-                'posX': 0.283,
-                'posY': 0.681,
+                'posX': 0.294,
+                'posY': 0.704,
                 'width': 0.2,
                 'height': 0.05,
             })],
@@ -118,11 +129,11 @@ class ProductReturnDates(models.Model):
             'reference_doc': f"sale.order,{self.order_id.id}"}])
 
         if request.reference_doc:
-            model = request.reference_doc  and self.env['ir.model']._get(request._name)
+            model = request.reference_doc and self.env['ir.model']._get(request._name)
             if model.is_mail_thread:
                 body = _("A signature request has been linked to this document: %s", request._get_html_link())
                 self.order_id.message_post(body=body)
-                body = _("%s has been linked to this sign request.",  self.order_id._get_html_link())
+                body = _("%s has been linked to this sign request.", self.order_id._get_html_link())
                 request.message_post(body=body)
 
     def action_send_pickup_signature(self):
@@ -154,8 +165,8 @@ class ProductReturnDates(models.Model):
             'ticket_no': self.order_id.name,
             'logo': self.order_id.company_id.logo,
             'customer': self.order_id.partner_id.name,
-            'notes': plain_text ,
-            'location':location
+            'notes': plain_text,
+            'location': location
         }
         content, _report_type = self.env['ir.actions.report']._render_qweb_pdf(
             pdf_report.report_name,
@@ -177,8 +188,8 @@ class ProductReturnDates(models.Model):
                 'type_id': self.env.ref('sign.sign_item_type_signature').id,
                 'responsible_id': self.env.ref('sign.sign_item_role_customer').id,
                 'page': 1,
-                'posX': 0.283,
-                'posY': 0.681,
+                'posX': 0.294,
+                'posY': 0.704,
                 'width': 0.2,
                 'height': 0.05,
             })],

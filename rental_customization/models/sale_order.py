@@ -12,6 +12,14 @@ import base64
 import requests
 import re
 
+RENTAL_STATUS = [
+    ('draft', "Quotation"),
+    ('sent', "Quotation Sent"),
+    ('pickup', "Reserved"),
+    ('return', "Delivered"),
+    ('returned', "Returned"),
+    ('cancel', "Cancelled"),
+]
 
 class SaleOrder(models.Model):
     """To add new fields in the rental order"""
@@ -32,7 +40,11 @@ class SaleOrder(models.Model):
     mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled",compute='_compute_mileage_enabled')
     fuel_surcharge_percentage = fields.Integer(default="15")
     fuel_surcharge_unit = fields.Char(default='%',readonly=True)
-
+    rental_status = fields.Selection(
+        selection=RENTAL_STATUS,
+        string="Rental Status",
+        compute='_compute_rental_status',
+        store=True)
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -188,9 +200,9 @@ class SaleOrder(models.Model):
         lines_to_invoice = self.env['sale.order.line'].search([])
 
         filtered_order_lines = lines_to_invoice.filtered(
-            lambda line: (line.next_bill_date and line.next_bill_date <= today) or line.is_sale
+            lambda line: ((
+            line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered !=0
         )
-
         # Group order lines by sale order
         orders_grouped = {}
         for line in filtered_order_lines:
@@ -217,8 +229,11 @@ class SaleOrder(models.Model):
                             sale_order.fiscal_position_id or sale_order.fiscal_position_id._get_fiscal_position(
                         sale_order.partner_invoice_id)).id,
                 'invoice_origin': sale_order.name,
+                'date': today,
                 'invoice_date': today,
-                'invoice_payment_term_id': sale_order.payment_term_id.id,
+                'invoice_date_due': today if not sale_order.payment_term_id else False,
+                'invoice_payment_term_id': sale_order.payment_term_id.id if sale_order.payment_term_id else False,
+                'preferred_payment_method_line_id': False,
                 'invoice_user_id': sale_order.user_id.id,
                 'payment_reference': sale_order.reference,
                 'transaction_ids': [Command.set(sale_order.transaction_ids.ids)],
@@ -227,7 +242,6 @@ class SaleOrder(models.Model):
                 'user_id': sale_order.user_id.id,
                 'name': '/'
             }
-
             # Adding all the order lines to the invoice
             for line in order_lines:
                 for section, order_line in section_prod.items():
@@ -319,6 +333,8 @@ class SaleOrder(models.Model):
                 if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
             ]
             invoice = self.env['account.move'].create(invoice_vals)
+            if invoice.invoice_payment_term_id:
+                invoice._onchange_invoice_payment_term_id()
         # Updating the Next bill date
             if invoice:
                 sale_order = invoice.line_ids.sale_line_ids.order_id

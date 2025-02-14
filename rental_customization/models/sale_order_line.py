@@ -121,21 +121,29 @@ class SaleOrderLine(models.Model):
                         if product and product.transportation_rate:
                             for range in line.order_id.pricelist_id.product_pricing_ids:
                                 if range.product_template_id == product:
-                                    if range.recurrence_id.duration == line.order_id.recurring_plan_id.billing_period_value \
-                                            and range.recurrence_id.unit == line.order_id.recurring_plan_id.billing_period_unit:
+                                    if (range.recurrence_id.duration == line.order_id.recurring_plan_id.billing_period_value and
+                                            range.recurrence_id.unit == line.order_id.recurring_plan_id.billing_period_unit):
+                                        line.price_unit = range.price
+                                    elif (((range.recurrence_id.duration == 1) and (line.order_id.recurring_plan_id.billing_period_value == 28)) and
+                                        ((range.recurrence_id.unit == 'month') and (line.order_id.recurring_plan_id.billing_period_unit == 'day'))):
+                                        line.price_unit = range.price
+                                    elif (((range.recurrence_id.duration == 28) and (line.order_id.recurring_plan_id.billing_period_value == 1 )) and
+                                        ((range.recurrence_id.unit == 'day') and (line.order_id.recurring_plan_id.billing_period_unit == 'month'))):
                                         line.price_unit = range.price
                                     elif range.recurrence_id.duration == 1 and range.recurrence_id.unit == 'day':
                                         line.price_unit = range.price
                         else:
                             line.price_unit = product.list_price
 
-        # Apply header-level dates to the newly created lines
         for line in res:
             line.is_service_charge = line.product_id.charges_ok
-            # if line.order_id.header_start_date and line.order_id.header_return_date and not (
-            #         line.rental_start_date or line.rental_end_date):
-            #     line.rental_start_date = line.order_id.header_start_date
-            #     line.rental_end_date = line.order_id.header_return_date
+            # Apply header-level dates to the newly created lines
+            line.order_id.header_start_date = line.order_id.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+            line.order_id.header_return_date = line.order_id.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+            if line.order_id.header_start_date and line.order_id.header_return_date and not (
+                    line.rental_start_date or line.rental_end_date):
+                line.rental_start_date = line.order_id.header_start_date
+                line.rental_end_date = line.order_id.header_return_date
 
         return res
 

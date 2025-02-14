@@ -24,7 +24,7 @@ class RentalOrderWizardLine(models.TransientModel):
                         product.is_storable and product.tracking == 'serial'):
                     lines.order_line_id.rental_pickable_lot_ids.write({'reserved':False})
                     lines.order_line_id.update({
-                        'rental_pickable_lot_ids': lines.pickedup_lot_ids
+                        'rental_pickable_lot_ids': lines.pickedup_lot_ids | lines.order_line_id.pickedup_lot_ids
                     })
                     for lot in lines.pickedup_lot_ids:
                         lot.reserved = True

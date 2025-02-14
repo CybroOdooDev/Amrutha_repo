@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from ast import literal_eval
 from email.policy import default
 from itertools import product
 from venv import create
@@ -119,19 +119,23 @@ class SaleOrderLine(models.Model):
                     if "display_type" in vals and vals['display_type'] != 'line_section':
                         product = self.env['product.template'].browse(vals.get('product_template_id'))
                         if product and product.transportation_rate:
-                            for range in line.order_id.pricelist_id.product_pricing_ids:
-                                if range.product_template_id == product:
-                                    if (range.recurrence_id.duration == line.order_id.recurring_plan_id.billing_period_value and
-                                            range.recurrence_id.unit == line.order_id.recurring_plan_id.billing_period_unit):
-                                        line.price_unit = range.price
-                                    elif (((range.recurrence_id.duration == 1) and (line.order_id.recurring_plan_id.billing_period_value == 28)) and
-                                        ((range.recurrence_id.unit == 'month') and (line.order_id.recurring_plan_id.billing_period_unit == 'day'))):
-                                        line.price_unit = range.price
-                                    elif (((range.recurrence_id.duration == 28) and (line.order_id.recurring_plan_id.billing_period_value == 1 )) and
-                                        ((range.recurrence_id.unit == 'day') and (line.order_id.recurring_plan_id.billing_period_unit == 'month'))):
-                                        line.price_unit = range.price
-                                    elif range.recurrence_id.duration == 1 and range.recurrence_id.unit == 'day':
-                                        line.price_unit = range.price
+                            if product in line.order_id.pricelist_id.product_pricing_ids.product_template_id:
+                                for range in line.order_id.pricelist_id.product_pricing_ids:
+                                    if range.product_template_id == product and line.product_template_id == product:
+                                        if (range.recurrence_id.duration == line.order_id.recurring_plan_id.billing_period_value and
+                                                range.recurrence_id.unit == line.order_id.recurring_plan_id.billing_period_unit):
+                                            line.price_unit = range.price
+                                        elif (((range.recurrence_id.duration == 1) and (line.order_id.recurring_plan_id.billing_period_value == 28)) and
+                                            ((range.recurrence_id.unit == 'month') and (line.order_id.recurring_plan_id.billing_period_unit == 'day'))):
+                                            line.price_unit = range.price
+                                        elif (((range.recurrence_id.duration == 28) and (line.order_id.recurring_plan_id.billing_period_value == 1 )) and
+                                            ((range.recurrence_id.unit == 'day') and (line.order_id.recurring_plan_id.billing_period_unit == 'month'))):
+                                            line.price_unit = range.price
+                                        elif range.recurrence_id.duration == 1 and range.recurrence_id.unit == 'day':
+                                            line.price_unit = range.price
+                            else:
+                                if line.product_template_id == product:
+                                    line.price_unit = product.list_price
                         else:
                             line.price_unit = product.list_price
 

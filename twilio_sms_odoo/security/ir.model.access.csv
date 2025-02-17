@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+twilio_sms_odoo.access_twilio_response_log,access_twilio_response_log,twilio_sms_odoo.model_twilio_response_log,base.group_user,1,1,1,1
+twilio_sms_odoo.access_twilio_incoming_sms,access_twilio_incoming_sms,twilio_sms_odoo.model_twilio_incoming_sms,base.group_user,1,1,1,1
+twilio_sms_odoo.access_twilio_outgoing_log,access_twilio_outgoing_log,twilio_sms_odoo.model_twilio_outgoing_log,base.group_user,1,1,1,1

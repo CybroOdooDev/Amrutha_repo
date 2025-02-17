@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Define a mail template for incoming SMS alerts -->
+        <record id="mail_incoming_sms" model="mail.template">
+            <field name="name">Incoming SMS Alert</field>
+            <field name="model_id" ref="crm.model_crm_lead"/>
+            <field name="subject">Incoming SMS sent by customer</field>
+            <!-- <field name="email_from">{{object.company_id.email}}</field> -->
+            <!-- Define the recipient email address -->
+            <field name="email_to">{{object.user_id.login}}</field>
+            <field name="description">Incoming SMS</field>
+            <!-- Define the HTML body of the email -->
+            <field name="body_html" type="html">
+                <div>
+                    <br/>
+                    <!-- Greet the recipient -->
+                    Hi <span t-out="object.user_id.partner_id.name" />, <br/> 
+                    <!-- Mention who replied back -->
+                    <span t-out="object.partner_id.name" /> has replied back ! <br/>
+                    <!-- Provide links to view contact and lead -->
+                    To open the profile or lead and reply back, click any one of the buttons below. <br/>
+                    <div style="margin: 16px 0; text-align: center;">
+                        <!-- Link to view contact -->
+                        <a t-attf-href="/web#id={{object.partner_id.id}}&amp;model=res.partner&amp;view_type=form"
+                           style="text-decoration: none; font-size: 12px; background-color: #875A7B; color: #fff; border-radius: 5px; padding: 10px; display: inline-block; margin-right: 10px;">
+                            <strong>View Contact</strong>
+                        </a>
+                        <!-- Link to view lead -->
+                        <a t-attf-href="/web#id={{object.id}}&amp;model=crm.lead&amp;view_type=form"
+                           style="text-decoration: none; font-size: 12px; background-color: #875A7B; color: #fff; border-radius: 5px; padding: 10px; display: inline-block; margin-right: 10px;">
+                            <strong>View Lead</strong>
+                        </a>
+                    </div>
+                </div>
+            </field>
+            <!-- Set the language of the email -->
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <!-- Prevent auto-deletion of the template -->
+            <field name="auto_delete" eval="False"/>
+        </record>
+		<record id="mail_incoming_sms_contact" model="mail.template">
+            <field name="name">Incoming SMS Alert</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">Incoming SMS sent by customer</field>
+            <!-- <field name="email_from">{{object.company_id.email}}</field> -->
+            <!-- Define the recipient email address -->
+            <field name="email_to">{{object.user_id.login}}</field>
+            <field name="description">Incoming SMS</field>
+            <!-- Define the HTML body of the email -->
+            <field name="body_html" type="html">
+                <div>
+                    <br/>
+                    <!-- Greet the recipient -->
+                    Hi <span t-out="object.user_id.partner_id.name" />, <br/> 
+                    <!-- Mention who replied back -->
+                    <span t-out="object.name" /> has replied back ! <br/>
+                    <!-- Provide links to view contact and lead -->
+                    To open the profile and reply back, click on the button below. <br/>
+                    <div style="margin: 16px 0; text-align: center;">
+                        <!-- Link to view contact -->
+                        <a t-attf-href="/web#id={{object.id}}&amp;model=res.partner&amp;view_type=form"
+                           style="text-decoration: none; font-size: 12px; background-color: #875A7B; color: #fff; border-radius: 5px; padding: 10px; display: inline-block; margin-right: 10px;">
+                            <strong>View Contact</strong>
+                        </a>
+                    </div>
+                </div>
+            </field>
+            <!-- Set the language of the email -->
+            <field name="lang">{{ object.lang }}</field>
+            <!-- Prevent auto-deletion of the template -->
+            <field name="auto_delete" eval="False"/>
+        </record>
+    </data>
+</odoo>
+

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+     <!--    Dispatch Schedule Tree View-->
+    <record id="dispatch_schedule_view_tree" model="ir.ui.view">
+        <field name="name">dispatch.schedule.view.tree</field>
+        <field name="model">product.return.dates</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <list js_class="dispatch_schedule">
+                <field name="product_lines"/>
+                <field name="project_id"/>
+                <field name="order_id"/>
+                <field name="stop_rent"/>
+                <field name="requested_delivery_date"/>
+                <field name="projected_delivery_date"/>
+                <field name="delivery_departure_date"/>
+                <field name="product_id"/>
+                <field name="comment"/>
+                <field name="serial_number"/>
+                <field name="delivery_driver"/>
+                <field name="door_direction"/>
+                <field name="warehouse_id"/>
+                <field name="partner_id"/>
+                <field name="delivery_address"/>
+                <field name="delivery_city"/>
+                <field name="delivery_state_id"/>
+                <field name="pricelist_id"/>
+                <field name="company_id"/>
+            </list>
+        </field>
+    </record>
+
+        <!--    Dispatch Schedule Menu Action-->
+     <record id="dispatch_schedule_action" model="ir.actions.act_window">
+        <field name="name">Dispatch Schedule</field>
+        <field name="res_model">product.return.dates</field>
+        <field name="view_mode">list</field>
+         <field name="domain">["|", "&amp;", ("return_date", "=", False), ("is_rental_order", "=", True), "&amp;", ("actual_delivery_date", "=", False), ("is_rental_order", "=", False)]</field>
+    </record>
+     <record id="action_dispatch_schedule_view_tree" model="ir.actions.act_window.view">
+            <field eval="10" name="sequence"/>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="dispatch_schedule_view_tree"/>
+            <field name="act_window_id" ref="dispatch_schedule_action"/>
+        </record>
+
+        <!--    Dispatch Schedule Menu-->
+    <menuitem id="sale_dispatch_schedule_menu" name="Dispatch Schedule"
+              parent="sale.sale_order_menu" action="dispatch_schedule_action" sequence="50"/>
+    <menuitem id="rental_dispatch_schedule_menu" name="Dispatch Schedule"
+              parent="sale_renting.rental_order_menu" action="dispatch_schedule_action" sequence="50"/>
+
+</odoo>

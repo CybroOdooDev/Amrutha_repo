@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<!--    Product form page inherited to add the custom fields-->
+    <record id="product_normal_form_view_inherit_dispatch_schedule_report" model="ir.ui.view">
+        <field name="name">product.normal.form.view.inherit.dispatch.schedule.report</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="product_line_category"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

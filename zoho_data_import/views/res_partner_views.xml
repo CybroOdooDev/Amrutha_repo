@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!--    Inheriting res.partner form view to add custom fields -->
-    <record model="ir.ui.view" id="view_partner_form">
+    <record model="ir.ui.view" id="view_partner_form_inherit_zoho_data_import">
         <field name="name">res.partner.view.form.inherit.theme.blast</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='internal_notes']"
                    position="after">
-                <page string="Zoho Informations">
+                <page string="Zoho Information's">
                     <sheet>
                         <group>
                             <group>
@@ -180,8 +180,6 @@
                                    <field name="total_annual_miles_per_truck"/>
                                 <field name="primary_contact_first_name"/>
                                 <field name="primary_contact_second_name"/>
-<!--                                <field name="territory"/>-->
-<!--                                <field name="company_name"/>-->
                             </group>
                         </group>
                     </sheet>

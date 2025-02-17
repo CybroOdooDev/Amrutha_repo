@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Added fields for accessible location -->
-    <record id="view_mail_form_inherit" model="ir.ui.view">
+    <record id="view_mail_form_inherit_zoho_data_import" model="ir.ui.view">
         <field name="name">view.mail.form.form.inherit.zoho.data.import</field>
         <field name="model">mail.mail</field>
         <field name="mode">extension</field>

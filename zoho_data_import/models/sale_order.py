@@ -46,5 +46,3 @@ class SaleOrder(models.Model):
     amount_of_deposit =  fields.Char('Amount of Deposit', help='Amount of Deposit')
     deposit_taken = fields.Char('Deposit Taken',help='Deposit Taken')
     internal_notes = fields.Text('Internal Notes', help='Internal Notes')
-
-

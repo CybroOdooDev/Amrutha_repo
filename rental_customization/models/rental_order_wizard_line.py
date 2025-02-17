@@ -44,6 +44,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                             'quantity': 1,
                                             'per_day_charges': lines.order_line_id.price_unit,
                                             'delivery_date': fields.Date.today(),
+                                            'order_line_id':lines.order_line_id.id,
                                         }])
                                     elif sale_order.bill_terms == 'late':
                                         date_lines = self.env['product.return.dates'].create([{
@@ -52,6 +53,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                             'serial_number': lot.id,
                                             'quantity': 1,
                                             'delivery_date': fields.Date.today(),
+                                            'order_line_id': lines.order_line_id.id,
                                         }])
                                     elif sale_order.bill_terms == 'advance':
                                         date_lines = self.env['product.return.dates'].create([{
@@ -60,6 +62,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                             'serial_number': lot.id,
                                             'quantity': 1,
                                             'delivery_date': fields.Date.today(),
+                                            'order_line_id': lines.order_line_id.id,
                                         }])
 
                         # Handle case where no pricing record is found
@@ -70,6 +73,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                 'serial_number': lot.id,
                                 'quantity': 1,
                                 'delivery_date': fields.Date.today(),
+                                'order_line_id': lines.order_line_id.id,
                             }])
 
                         # Update warehouse_id if available

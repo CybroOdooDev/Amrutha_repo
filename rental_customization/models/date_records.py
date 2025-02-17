@@ -17,6 +17,7 @@ class ProductReturnDates(models.Model):
         string="Order Reference",
         required=True, ondelete='cascade', index=True, copy=False)
     # product_id = fields.Many2one('product.product', required=True)
+    order_line_id = fields.Many2one('sale.order.line', 'Sale Order Line')
     product_id = fields.Many2one('product.product')
     serial_number = fields.Many2one('stock.lot', domain="[('product_id', '=', product_id)]")
     warehouse_id = fields.Many2one('stock.warehouse')

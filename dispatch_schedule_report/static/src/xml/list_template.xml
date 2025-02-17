@@ -1,0 +1,12 @@
+<templates>
+<!--  Added button validate to the top of list view  -->
+<t t-name="dispatch_schedule_report.dispatch_schedule" t-inherit="web.ListView">
+<xpath expr="//Layout//SearchBar" position="before">
+<div class="mr-3" style="padding-right:20px;">
+<button class="btn btn-primary d-flex gap-1" t-on-click="OnclickValidate">
+<span>Dispatch Schedule Xlsx</span>
+</button>
+</div>
+</xpath>
+</t>
+</templates>

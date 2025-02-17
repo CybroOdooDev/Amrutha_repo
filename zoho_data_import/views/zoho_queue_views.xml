@@ -9,7 +9,6 @@
             <form>
                 <header>
                     <button name="action_reset_to_draft" data-hotkey="v" string="Reset to Draft" type="object"   invisible="state in ['draft','confirm']"/>
-<!--                    <button name="action_fetch_emails" data-hotkey="v" string="Fetch Emails" type="object"/>-->
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet name="Zoho Queue">
@@ -20,8 +19,6 @@
                             <field name="data"/>
                             <field name="instance_id"/>
                             <field name="company_id"/>
-<!--                            <field name="access_token"/>-->
-<!--                            <field name="company"/>-->
                         </group>
                     </group>
                 </sheet>

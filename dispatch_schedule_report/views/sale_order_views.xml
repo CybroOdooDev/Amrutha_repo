@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record id="sale_order_form_dispatch_schedule" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.dispatch_schedule_report
+        </field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="project_id"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']//list//field[@name='tax_id']"
+                   position="after">
+                <field name="comment"/>
+                <field name="requested_delivery_date"
+                       column_invisible="parent.is_rental_order"/>
+                <field name="projected_delivery_date"
+                       column_invisible="parent.is_rental_order"/>
+                <field name="delivery_departure_date"
+                       column_invisible="parent.is_rental_order"/>
+                <field name="door_direction"
+                       column_invisible="parent.is_rental_order"/>
+                <field name="stop_rent"
+                       column_invisible="not parent.is_rental_order"/>
+                <field name="projected_pickup_date"
+                       column_invisible="not parent.is_rental_order"/>
+                <field name="projected_return_date"
+                       column_invisible="not parent.is_rental_order"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']//list//field[@name='rental_pickable_lot_ids']"
+                   position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="column_invisible">0</attribute>
+            </xpath>
+            <xpath expr="//page[@name='date_details']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//field[@name='per_day_charges']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order or parent.bill_terms == 'advance'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//field[@name='return_date']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//field[@name='pickup_driver']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order</attribute>
+            </xpath>
+              <xpath expr="//field[@name='date_records_line']//list//field[@name='total_days']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order</attribute>
+            </xpath>
+             <xpath expr="//field[@name='date_records_line']//list//field[@name='total_price']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//button[@name='action_send_delivery_signature']"
+                   position="attributes">
+                <attribute name="invisible">signature_status != 'initial'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//button[@name='action_signature_msg']"
+                   position="attributes">
+                <attribute name="invisible">signature_status in ['initial','delivery']</attribute>
+            </xpath>
+             <xpath expr="//field[@name='date_records_line']//list//field[@name='delivery_date']"
+                   position="attributes">
+                <attribute name="column_invisible">not parent.is_rental_order</attribute>
+             </xpath>
+            <xpath expr="//field[@name='date_records_line']//list//field[@name='delivery_date']" position="after">
+                <field name="actual_delivery_date"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

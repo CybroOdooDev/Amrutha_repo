@@ -13,4 +13,3 @@ class Mail(models.Model):
     sent_from = fields.Char("send from", help='Send from')
     mail_sent_time = fields.Datetime('Zoho Mail Time', help='Zoho Mail Time')
     zoho_mail = fields.Boolean('Is Zoho Mail', help='Check whether the email is created from Zoho')
-

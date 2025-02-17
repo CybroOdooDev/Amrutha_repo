@@ -10,7 +10,6 @@
             <field name="name">Salesperson</field>
             <field name="category_id" ref="module_contacts_category"/>
              <field name="users" eval="[(4, ref('base.group_user'))]"/>
-<!--            <field name="users"  eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>-->
         </record>
 
           <record id="contacts_group_administrator" model="res.groups">

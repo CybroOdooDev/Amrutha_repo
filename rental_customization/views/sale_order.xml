@@ -52,7 +52,7 @@
             </xpath>
 
             <xpath expr="//notebook" position="inside">
-                <page string="Date Details" invisible="not is_rental_order">
+                <page string="Date Details" name='date_details' invisible="not is_rental_order">
                     <field name="date_records_line">
                         <!--<list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">

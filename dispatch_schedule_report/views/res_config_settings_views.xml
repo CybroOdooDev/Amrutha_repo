@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+     <record id="res_config_settings_view_form_inherit_dispatch_schedule_report" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.dispatch.schedule.report</field>
+        <field name="inherit_id" ref="sale.res_config_settings_view_form"/>
+        <field name="model">res.config.settings</field>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='catalog_setting_container']" position="after">
+               <block title="Dispatch Schedule" name="dispatch_schedule_block">
+                        <setting id="dispatch_schedule_settings" help="Choose the company for Dispatch schedule report">
+                            <field name="dispatch_schedule_company_ids" widget="many2many_tags"/>
+                        </setting>
+                    </block>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="sale_renting_res_config_settings_view_form_inherit_dispatch_schedule_report" model="ir.ui.view">
+        <field name="name">sale_renting_res.config.settings.view.form.inherit.dispatch.schedule.report</field>
+        <field name="inherit_id" ref="sale_renting.res_config_settings_view_form"/>
+        <field name="model">res.config.settings</field>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='sale_renting']" position="inside">
+               <block title="Dispatch Schedule" name="dispatch_schedule_block">
+                        <setting id="dispatch_schedule_settings" help="Choose the company for Dispatch schedule report">
+                            <field name="dispatch_schedule_company_ids" widget="many2many_tags"/>
+                        </setting>
+                    </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

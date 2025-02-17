@@ -140,14 +140,15 @@ class SaleOrderLine(models.Model):
                             line.price_unit = product.list_price
 
         for line in res:
-            line.is_service_charge = line.product_id.charges_ok
-            # Apply header-level dates to the newly created lines
-            line.order_id.header_start_date = line.order_id.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
-            line.order_id.header_return_date = line.order_id.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
-            if line.order_id.header_start_date and line.order_id.header_return_date and not (
-                    line.rental_start_date or line.rental_end_date):
-                line.rental_start_date = line.order_id.header_start_date
-                line.rental_end_date = line.order_id.header_return_date
+            if line.order_id.is_rental_order:
+                line.is_service_charge = line.product_id.charges_ok
+                # Apply header-level dates to the newly created lines
+                line.order_id.header_start_date = line.order_id.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                line.order_id.header_return_date = line.order_id.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                if line.order_id.header_start_date and line.order_id.header_return_date and not (
+                        line.rental_start_date or line.rental_end_date):
+                    line.rental_start_date = line.order_id.header_start_date
+                    line.rental_end_date = line.order_id.header_return_date
 
         return res
 

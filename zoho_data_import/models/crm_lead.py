@@ -157,6 +157,3 @@ class CrmLead(models.Model):
     social_security_number = fields.Char('Social Security Number', help='Social Security Number')
     business_address = fields.Char('Business Address', help='Business Address')
     equipment_description = fields.Char('Equipment Description', help='Equipment Description')
-
-
-

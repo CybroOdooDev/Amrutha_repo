@@ -7,8 +7,6 @@ class ResPartner(models.Model):
     contact_owner_id = fields.Many2one('res.users', 'Contact Owner',
                                        help='Related Owner of Contact')
     zoho_record_id = fields.Char('Zoho Contact Reference', help='Record reference in Zoho')
-
-    # title = fields.Char('Zoho Title', help='Title of Contacts in Zoho')
     home_phone = fields.Char('Home phone', help='Home Phone')
     other_phone = fields.Char('Other phone', help='Other Phone')
     birth_date = fields.Date(string='Date of Birth of zoho Contact',
@@ -174,7 +172,3 @@ class ResPartner(models.Model):
     total_annual_miles_per_truck = fields.Char('Total Annual Miles Per Truck',help='Total Annual Miles Per Truck')
     primary_contact_first_name = fields.Char('Primary contact First Name', help='Primary contact First Name')
     primary_contact_second_name = fields.Char('Primary Contact Last Name', help='Primary Contact Last Name')
-
-
-
-

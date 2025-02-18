@@ -149,7 +149,6 @@ class SaleOrderLine(models.Model):
                         line.rental_start_date or line.rental_end_date):
                     line.rental_start_date = line.order_id.header_start_date
                     line.rental_end_date = line.order_id.header_return_date
-
         return res
 
     @api.depends('rental_start_date', 'rental_end_date', 'order_id.recurring_plan_id','order_id.bill_terms')
@@ -392,6 +391,8 @@ class SaleOrderLine(models.Model):
                 self.name = self.product_template_id.name
             else:
                 self.name = self.product_template_id.name
+            if self.product_template_id.description_sale:
+                self.name += " [ " + self.product_template_id.description_sale + " ]"
 
     @api.depends('product_id','product_template_id')  # Replace with a field that affects the domain
     def _compute_pickeable_lot_ids(self):

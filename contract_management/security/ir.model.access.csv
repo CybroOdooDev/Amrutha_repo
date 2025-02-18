@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_contract_management,contract.management,model_contract_management,base.group_user,1,1,1,1
+access_details_line,details.line,model_details_line,base.group_user,1,1,1,1
+access_contract_management_tags,contract.management.tags,model_contract_management_tags,base.group_user,1,1,1,1
+access_contract_management_state,contract.management.state,model_contract_management_state,base.group_user,1,1,1,1
+

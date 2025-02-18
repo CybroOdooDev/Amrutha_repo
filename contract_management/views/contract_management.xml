@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="contract_management_form_action" model="ir.actions.act_window">
+        <field name="name">Contracts Management</field>
+        <field name="res_model">contract.management</field>
+        <field name="view_mode">kanban,list,form,calendar,gantt,map,pivot,graph</field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_kanban_view">
+        <field name="name">contract.management.kanban.view</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_view" default_group_by="status_id" sample="1">
+                <progressbar field="kanban_state" colors='{"done": "success", "blocked": "danger"}'/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card"
+                             style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 10px; position: relative;">
+                            <div class="o_kanban_details" style="text-align: center;">
+                                <strong>
+                                    <field name="name"/>
+                                </strong>
+                                <br/>
+                                <span>
+                                    <field name="effective_date"/>
+                                </span>
+                                <br/>
+                                <span>
+                                    <field name="contract_value" widget="Monetary"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </span>
+                            </div>
+                            <div class="ms-auto d-flex align-items-center">
+                                <field name="kanban_state" widget="state_selection"/>
+                                <field class="ms-1" name="partner_id" widget="kanban.many2one_avatar_user"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_list_view">
+        <field name="name">contract.management.form.tree.view</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <list string="contracts Management ">
+                <field name="name" string="Contract"/>
+                <field name="contract_type"/>
+                <field name="status"/>
+                <field name="partner_id" string="External Legal Contact"/>
+                <field name="effective_date"/>
+                <field name="expiration_date"/>
+                <field name="user_id" string="Responsible"/>
+                <field name="company_id" string="Company"/>
+                <field name="contract_value"/>
+                <field name="tags" widget="many2many_tags"/>
+                <field name="color" widget="color_picker"/>
+            </list>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_form_view">
+        <field name="name">Contract Management</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <form string="Form view">
+                <header>
+                    <field name="status_id" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <field name="kanban_state" widget="state_selection"/>
+                    <div class="oe_title">
+                        <field name="sequence_test" invisible="0"/>
+                        <field name="name" placeholder="Contract Name" class="oe_edit_only mb-3"
+                               style="font-size:30px; width:100%;"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="contract_type"/>
+                            <div invisible="contract_type != 'MSA'">
+                                <field name="pricing"/>
+                                <label for="pricing"/>
+
+                                <field name="rebate"/>
+                                <label for="rebate"/>
+
+                                <field name="agreement_only"/>
+                                <label for="agreement_only"/>
+                            </div>
+                            <field name="agreement_application"/>
+                            <field name="create_date" invisible="1"/>
+                            <field name="effective_date"/>
+                            <field name="expiration_date"/>
+                            <field name="status"/>
+                            <field name="partner_id" string="External Legal Contact"/>
+                            <field name="partner_phone" string="Phone"/>
+                            <field name="partner_email" string="Email"/>
+                        </group>
+                        <group>
+                            <field name="user_id" string="Responsible"/>
+                            <field name="contract_value" string="Value" widget="monetary"/>
+                            <field name="tags" widget="many2many_tags" options="{'color_field': 'color'} "/>
+                            <field name="company_id" string="Company"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Type down your notes here..." options="{'collaborative': true}"/>
+                    <notebook>
+                        <page string="Details">
+                            <field name="details_line_ids">
+                                <list editable="bottom">
+                                    <field name="name" widget="" width="150px"/>
+                                    <field name="contract_begin_date" width="100px"/>
+                                    <field name="expiration_date" width="100px"/>
+                                    <field name="current_revision"/>
+                                    <field name="document" width="120px"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Contract Notes">
+                            <group>
+                                <field name="notes"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_calendar_view_leads">
+        <field name="name">contract.management.calendar.lead</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <calendar string="Contracts Management" create="0" mode="month" date_start="effective_date"
+                      date_stop="expiration_date" color="user_id" hide_time="true" event_limit="5">
+                <field name="name"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_view_gantt">
+        <field name="name">contract.management.view.gantt</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <gantt date_start="effective_date" date_stop="expiration_date" default_scale="month">
+                <!--                default_group_by="status_id">-->
+                <field name="name"/>
+            </gantt>
+        </field>
+    </record>
+
+    <record id="contract_management_view_map" model="ir.ui.view">
+        <field name="name">contract.management.view.map</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <map res_partner="partner_id">
+                <field name="partner_id" string="External Legal Contact"/>
+            </map>
+        </field>
+    </record>
+
+    <record id="contract_management_view_pivot" model="ir.ui.view">
+        <field name="name">contract.management.pivot.view</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <pivot string="Contract Management" display_quantity="1" sample="1">
+                <field name="contract_value" string="value" type="measure"/>
+                <field name="status_id" type="col"/>
+                <field name="create_date" type="row"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="contract_management_search_view" model="ir.ui.view">
+        <field name="name">contract.management.search.view</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <search string="Search Contracts">
+                <group expand="0" string="Group By">
+                    <filter string="Partner" name="group_by_partner" domain="[]" context="{'group_by': 'partner_id'}"/>
+                    <filter string="User" name="group_by_user" domain="[]" context="{'group_by': 'user_id'}"/>
+                    <filter string="Status" name="group_by_status" domain="[]" context="{'group_by': 'status_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="contract_management_graph_view" model="ir.ui.view">
+        <field name="name">contract.management.graph.view</field>
+        <field name="model">contract.management</field>
+        <field name="arch" type="xml">
+            <graph string="Contracts Management" type="bar">
+                <field name="create_date" type="row"/>
+                <field name="contract_value" type="measure" string="Value"/>
+                <field name="sequence_test" type="measure" string="Sequence"/>
+            </graph>
+        </field>
+    </record>
+
+</odoo>

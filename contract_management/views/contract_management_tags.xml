@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="contract_management_tag_action" model="ir.actions.act_window">
+        <field name="name">Contracts Management Tags</field>
+        <field name="res_model">contract.management.tags</field>
+        <field name="view_mode">list</field>
+         <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Tag
+            </p>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_tag_view">
+        <field name="name">contract.management.tags.list.view</field>
+        <field name="model">contract.management.tags</field>
+        <field name="arch" type="xml">
+            <list string="contracts Management Tags" editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+            </list>
+        </field>
+    </record>
+
+</odoo>

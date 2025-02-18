@@ -9,6 +9,12 @@
                 <setting string="Mileage Calculation" help="Activate Mileage calculation for rental orders">
                     <field name="mileage_calculation"/>
                 </setting>
+                <setting string="Fuel surcharge percentage" help="To calculate the Fuel surcharges for Rental orders">
+                    <div  width="20%">
+                        <field name="fuel_surcharge_percentage"/>
+                        <field name="fuel_surcharge_unit"/>
+                    </div>
+                </setting>
             </setting>
         </field>
     </record>

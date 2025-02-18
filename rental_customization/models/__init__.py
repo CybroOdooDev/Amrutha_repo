@@ -10,3 +10,4 @@ from . import product_pricelist
 from . import distance_range_line
 from . import res_config_settings
 from . import stock_lot
+from . import sale_advance_payment_inv

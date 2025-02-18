@@ -104,7 +104,7 @@
                 <div invisible="not is_rental_order">
                     <tr>
                         <td width="10%">
-            <field name="fuel_surcharge_percentage" readonly="state == 'sale'" />
+                            <field name="fuel_surcharge_percentage" readonly="state == 'sale'" />
                         </td>
                         <td>
                             <field name="fuel_surcharge_unit" />

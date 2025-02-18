@@ -38,7 +38,7 @@ class SaleOrder(models.Model):
     mileage = fields.Float(help="Distance between Customer location and default warehouse",compute='_compute_mileage', default=0)
     mileage_unit = fields.Selection(selection=[('ft',"ft"),('m', "M"),('km',"KM"),('mi',"Miles")],compute='_compute_mileage',default='mi')
     mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled",compute='_compute_mileage_enabled')
-    fuel_surcharge_percentage = fields.Integer(default="15")
+    fuel_surcharge_percentage = fields.Integer(compute='_compute_fuel_surcharge')
     fuel_surcharge_unit = fields.Char(default='%',readonly=True)
     rental_status = fields.Selection(
         selection=RENTAL_STATUS,
@@ -464,3 +464,9 @@ class SaleOrder(models.Model):
                                         line.price_unit = (price_unit * fuel_charge) / 100
         return res
 
+    @api.depends('company_id')
+    def _compute_fuel_surcharge(self):
+        """To access the Fuel Surcharge Configured in the settings"""
+        Params = self.env['ir.config_parameter'].sudo()
+        fuel_surcharge_setting = Params.get_param('rental_customization.fuel_surcharge_percentage')
+        self.fuel_surcharge_percentage = fuel_surcharge_setting if fuel_surcharge_setting else 15

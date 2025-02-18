@@ -7,8 +7,8 @@
         <field name="arch" type="xml">
              <xpath expr="//field[@name='payment_term_id']" position="after">
                 <field name="customer_po" string="Customer PO"/>
-<!--                <field name="total_invoiced_amount" invisible="1"/>-->
-                <field name="total_invoiced_amount"/>
+                <field name="total_invoiced_amount" invisible="1"/>
+<!--                <field name="total_invoiced_amount"/>-->
              </xpath>
         </field>
     </record>

@@ -15,7 +15,9 @@
                     <div>
                         <field name="charges_ids"
                                widget="many2many_tags"
-                               domain="[('charges_ok', '=', True), ('name', 'not in', ('Delivery Fuel Surcharge', 'Pick Up Fuel Surcharge'))]"/>
+                               domain="[('charges_ok', '=', True),
+                                       ('name', 'not in', ('Delivery Fuel Surcharge', 'Pick Up Fuel Surcharge')),
+                                       '|', ('company_id', '=', company_id), ('company_id', '=', False)]"/>
                     </div>
                 </group>
             </group>

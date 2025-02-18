@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="contract_management_state_action" model="ir.actions.act_window">
+        <field name="name">Contracts Management Stages</field>
+        <field name="res_model">contract.management.state</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Tag
+            </p>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="contract_management_state_tree">
+        <field name="name">contract.management.state.list</field>
+        <field name="model">contract.management.state</field>
+        <field name="arch" type="xml">
+            <list default_order="sequence" editable="top" >
+                <field name="sequence" widget="handle"/>
+<!--                <field name="sequence" />-->
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+<!--    <menuitem id="configuration" name="Configuration" parent="contract_management_menu_root" sequence="2"/>-->
+<!--    <menuitem id="contract_management_state" name="Contract Management Stages" parent="configuration"-->
+<!--              action="contract_management_state_action"/>-->
+</odoo>

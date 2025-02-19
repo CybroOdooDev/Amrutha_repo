@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="contract_management_menu_root" name="Contracts Management"/>
+    <menuitem id="contract_management_menu_root" name="Contracts Management" web_icon="contract_management,static/description/rectangle-list-regular-.png"/>
     <menuitem id="contract_management" name="Contracts Management" parent="contract_management_menu_root" sequence="1"
               action="contract_management_form_action"/>
-
     <menuitem id="configuration" name="Configuration" parent="contract_management_menu_root" sequence="2"/>
     <menuitem id="contract_management_state" name="Contract Management Stages" parent="configuration"
               action="contract_management_state_action"/>

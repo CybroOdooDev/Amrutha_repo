@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import base64
 
-from odoo import fields, models, api, _
+from odoo import fields, models, api, _, Command
 from datetime import datetime, timedelta
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 import time
+from datetime import date
 
 
 class Lead(models.Model):
@@ -64,6 +65,227 @@ class Lead(models.Model):
                                                string="Attachments",
                                                help="Add attachment file")
     pdf_report = fields.Binary('PDF')
+
+    # Commercial commission plan
+
+    is_calculate_commercial_commission = fields.Boolean(
+        string="Compute Commercial Commission",
+        help="Enable for Commission calculation.",
+        related='company_id.is_calculate_commercial_commission',
+        readonly=False,
+    )
+    total_commercial_commission = fields.Float(string="Total Commission "
+                                                      "Received by LRE",
+                                               compute="_compute_total_commercial_commission")
+    agent_payout_tier = fields.Float(string="Agent Payout Tier",
+                                     compute="_compute_agent_payout_tier",
+                                     store=True)
+    errors_omission_fee = fields.Float(string="Errors & Omission Fee",
+                                       compute="_compute_errors_omission_fee",
+                                       store=True)
+    planned_revenue = fields.Float(string="Amount",
+                                   help="This field represents the overall amount from which the commission is calculated.")
+    external_referral_fee = fields.Float(string="Referral Fee", readonly=True)
+    total_commercial_commission_earned = fields.Float(
+        string="Commission earned",
+        readonly=True)
+    is_sale_lead = fields.Boolean()
+    base_rent = fields.Float(
+        string="Base Rent",
+        help="The base rent amount for the lease.",
+    )
+    lease_duration = fields.Integer(
+        string="Lease Duration (Months)",
+        help="The duration of the lease in months.",
+    )
+    landlord_percentage = fields.Float(
+        string="Landlord Percentage (%)",
+        help="The percentage of the lease base rent charged to the landlord.",
+    )
+
+    @api.depends('user_id')
+    def _compute_agent_payout_tier(self):
+        print("_compute_agent_payout_tier")
+        """Compute the Agent Payout Tier dynamically using tier.tier."""
+        for lead in self:
+            if not lead.user_id:
+                lead.agent_payout_tier = 0.0
+                continue
+
+            # Fetch previous year
+            today = date.today()
+            last_year_start = date(today.year - 1, 1, 1)
+            last_year_end = date(today.year - 1, 12, 31)
+
+            # Get all leads won by the agent (user_id) in the previous year
+            previous_year_leads = self.env['crm.lead'].search([
+                ('user_id', '=', lead.user_id.id),
+                ('date_closed', '>=', last_year_start),
+                ('date_closed', '<=', last_year_end),
+                ('stage_id.is_won', '=', True),
+                # Only include "won" opportunities
+            ])
+            total_previous_year_sales = sum(
+                previous_year_leads.mapped('planned_revenue'))
+
+            # Fetch the correct tier for the total sales
+            tier = self.env['tier.tier'].search([
+                ('company_id', '=', lead.company_id.id),
+                ('amount', '<=', total_previous_year_sales)
+            ], order='amount desc', limit=1)
+            print(tier, "tier")
+            print(total_previous_year_sales, "total_previous_year_sales")
+            if tier:
+                lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
+            else:
+                lead.agent_payout_tier = 0.0  # Default to 0 if no tier is found
+
+    @api.depends('agent_payout_tier', 'planned_revenue')
+    def _compute_total_commercial_commission(self):
+        """Calculate the total commercial commission for the current lead based on the payout tier."""
+        for lead in self:
+            if not lead.user_id:
+                lead.agent_payout_tier = 0.0
+                continue
+
+            # Fetch previous year
+            today = date.today()
+            last_year_start = date(today.year - 1, 1, 1)
+            last_year_end = date(today.year - 1, 12, 31)
+
+            # Get all leads won by the agent (user_id) in the previous year
+            previous_year_leads = self.env['crm.lead'].search([
+                ('user_id', '=', lead.user_id.id),
+                ('date_closed', '>=', last_year_start),
+                ('date_closed', '<=', last_year_end),
+                ('stage_id.is_won', '=', True),
+                # Only include "won" opportunities
+            ])
+            total_previous_year_sales = sum(
+                previous_year_leads.mapped('planned_revenue'))
+
+            # Fetch the correct tier for the total sales
+            tier = self.env['tier.tier'].search([
+                ('company_id', '=', lead.company_id.id),
+                ('amount', '<=', total_previous_year_sales)
+            ], order='amount desc', limit=1)
+            print(tier, "tier")
+            print(total_previous_year_sales, "total_previous_year_sales")
+            if tier:
+                lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
+            else:
+                lead.agent_payout_tier = 0.0  # Default to 0 if no tier is found
+            lead.total_commercial_commission = (
+                                                       lead.planned_revenue or 0.0) * (
+                                                       lead.agent_payout_tier or 0.0)
+
+    @api.depends('total_commercial_commission')
+    def _compute_errors_omission_fee(self):
+        """Compute the Errors & Omission Fee dynamically from the eo.insurance model."""
+        for lead in self:
+            eo_insurance = self.env['eo.insurance'].search([
+                ('company_id', '=', lead.company_id.id),
+                ('from_amount', '<=', lead.total_commercial_commission),
+                ('to_amount', '>=', lead.total_commercial_commission)
+            ], limit=1)
+
+            if eo_insurance:
+                lead.errors_omission_fee = eo_insurance.eo_to_charge
+            else:
+                lead.errors_omission_fee = 0.0  # Default to 0 if no matching range is found
+
+    def action_commercial_commission(self):
+        for lead in self:
+            transaction_type = lead.x_studio_opportunity_type_1.x_name
+            if transaction_type == 'Sale':
+                # Logic for 'sale'
+                self.is_sale_lead = True
+                self.handle_sale_commission(lead)
+            elif transaction_type == 'Lease':
+                self.is_sale_lead = False
+                # Logic for 'lease'
+                self.handle_lease_commission(lead)
+            else:
+                raise ValueError(
+                    "Unknown transaction type: %s" % transaction_type)
+
+    def handle_sale_commission(self, lead):
+        print("sale")
+        self.external_referral_fee = 0
+        if lead.referer_id:  # Check for external referral fee
+            external_referral_fee = (
+                    lead.total_commercial_commission * (
+                    self.company_id.commercial_referral_fee_rate or 0.0)
+            )
+            self.external_referral_fee = external_referral_fee
+        total_commercial_commission_earned = (
+                lead.total_commercial_commission - lead.errors_omission_fee)
+        self.total_commercial_commission_earned = total_commercial_commission_earned
+
+    def handle_lease_commission(self, lead):
+        print("Lease")
+        tax = self.env['account.tax'].search(
+            [('company_id', '=', self.env.company.id),
+             ('amount', '=', float(0.00)),
+             ('amount_type', '=', 'percent'),
+             ('type_tax_use', '=', 'sale'),
+             ], limit=1)
+        self.external_referral_fee = 0
+        for lead in self:
+            base_rent = lead.base_rent
+            lease_duration = lead.lease_duration
+            landlord_percentage = lead.landlord_percentage
+            if not base_rent or not lease_duration or not landlord_percentage:
+                raise UserError(
+                    _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
+        lead.total_commercial_commission = base_rent * lease_duration * (
+                landlord_percentage / 100)
+        if lead.referer_id:  # Check for external referral fee
+            external_referral_fee = (
+                    lead.total_commercial_commission * (
+                    self.company_id.commercial_referral_fee_rate or 0.0)
+            )
+            self.external_referral_fee = external_referral_fee
+        total_commercial_commission_earned = (
+                lead.total_commercial_commission - lead.errors_omission_fee)
+        self.total_commercial_commission_earned = total_commercial_commission_earned
+
+    def create_commercial_invoice(self):
+        print("invoice")
+        tax = self.env['account.tax'].search(
+            [('company_id', '=', self.env.company.id),
+             ('amount', '=', float(0.00)),
+             ('amount_type', '=', 'percent'),
+             ('type_tax_use', '=', 'sale'),
+             ], limit=1)
+        for lead in self:
+            if lead.referer_id:  # Check for external referral fee
+                self.env['account.move'].create([{
+                    'move_type': 'in_invoice',
+                    'partner_id': self.referer_id.id,
+                    'crm_lead_id': self.id,
+                    'invoice_line_ids': [(0, 0, {
+                        'product_id': self.env.ref(
+                            'commission_payout_sign.product_referral').id,
+                        'price_unit': self.external_referral_fee,
+                        'quantity': 1,
+                        'tax_ids': [Command.set(tax.ids)]
+                    })]
+                }])
+            self.env['account.move'].create([{
+                'move_type': 'in_invoice',
+                'partner_id': self.user_id.id,
+                'crm_lead_id': self.id,
+                'invoice_line_ids': [(0, 0, {
+                    'product_id': self.env.ref(
+                        'commission_payout_sign.product_commission').id,
+                    'price_unit': self.total_commercial_commission_earned,
+                    'quantity': 1,
+                    'tax_ids': [Command.set(tax.ids)]
+                })]
+            }])
+
+
 
     @api.onchange('omissions_insurance')
     def _onchange_omissions_insurance(self):

@@ -10,6 +10,8 @@ class CrmLead(models.Model):
     sign_request_count = fields.Integer(compute='_compute_sign_request_count')
     is_signed = fields.Boolean(string="Is Approved",compute='_compute_is_signed')
     signed_document = fields.Many2one('ir.attachment',)
+
+
     is_attached = fields.Boolean(string="Proof Attached",default=False)
     is_invoice_created =fields.Boolean(string="Invoice created",
                                        default=False, readonly=True)
@@ -23,17 +25,23 @@ class CrmLead(models.Model):
     @api.depends('sign_request_ids')
     def _compute_is_signed(self):
         print("_compute_is_signed")
-        for requests in  self.sign_request_ids:
-            if requests.state=='signed':
-                self.is_signed = True
-                self.signed_document = (
-                    self.sign_request_ids.completed_document_attachment_ids)[1]
-                if not self.is_attached:
-                    body = u"You will find attached the proof of payment document"
-                    self.message_post(body=body, attachment_ids=self.sign_request_ids.completed_document_attachment_ids.ids)
-                    self.is_attached = True
-
-
+        print(self.sign_request_ids)
+        if self.sign_request_ids:
+            for requests in  self.sign_request_ids:
+                print("RRRRRRRRRRRRRRRRRRRRRRRRrrr")
+                if requests.state=='signed':
+                    print(requests)
+                    print(requests.state)
+                    self.is_signed = True
+                    print(self.is_signed,"self.is_signed")
+                    self.signed_document = (
+                        self.sign_request_ids.completed_document_attachment_ids)[1]
+                    if not self.is_attached:
+                        body = u"You will find attached the proof of payment document"
+                        self.message_post(body=body, attachment_ids=self.sign_request_ids.completed_document_attachment_ids.ids)
+                        self.is_attached = True
+                else:
+                    self.is_signed = False
         else:
             self.is_signed = False
 

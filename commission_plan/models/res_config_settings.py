@@ -40,7 +40,7 @@ class ResConfigSettings(models.TransientModel):
         related='company_id.inside_sale_fee',
         readonly=False,
     )
-    referral_fee_rate=fields.Float(
+    referral_fee_rate = fields.Float(
         string="Referral Fee rate",
         default=25,
         help="Amount paid to the inside salesperson that brought in the lead.",
@@ -48,10 +48,27 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
 
     )
-    co_agent_fee_rate=fields.Float(
+    co_agent_fee_rate = fields.Float(
         string="Co-agent Fee rate",
         default=25,
         related='company_id.co_agent_fee_rate',
+        readonly=False,
+
+    )
+
+    # Commercial Commission
+
+    is_calculate_commercial_commission = fields.Boolean(
+        string="Apply Commercial Commission",
+        help="Enable for Commercial Commission calculation.",
+        # related='company_id.is_calculate_commercial_commission',
+        readonly=False,
+    )
+    commercial_referral_fee_rate = fields.Float(
+        string="Referral Fee rate",
+        default=25,
+        help="Amount paid to the inside salesperson that brought in the lead.",
+        related='company_id.referral_fee_rate',
         readonly=False,
 
     )

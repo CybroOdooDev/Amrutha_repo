@@ -26,6 +26,10 @@
                         string="Send Signature Request" type="object"
                         groups="sign.group_sign_user" class="btn-primary"
                         invisible="is_signed or not is_calculate_commission"/>
+                <button name="action_signature_request_wizard"
+                        string="Send Signature Request" type="object"
+                        groups="sign.group_sign_user" class="btn-primary"
+                        invisible="is_signed"/>
                 <button name="create_invoice"
                         string="Create Invoice" type="object"
                         groups="sign.group_sign_user" class="btn-primary"

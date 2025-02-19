@@ -38,3 +38,12 @@ class ResCompany(models.Model):
         string="Co-agent Fee rate",
         default=25,
     )
+    is_calculate_commercial_commission = fields.Boolean(
+        string="Compute Commercial Commission",
+        help="Enable for Commercial Commission calculation.",
+    )
+    commercial_referral_fee_rate = fields.Float(
+        string="Referral Fee rate",
+        default=25,
+        help="Amount paid to the inside salesperson that brought in the lead.",
+    )

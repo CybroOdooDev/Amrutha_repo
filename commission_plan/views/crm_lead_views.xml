@@ -10,21 +10,37 @@
             <xpath expr="//header" position="inside">
                 <button name="action_commission" string="Commission"
                         type="object"
-                        class="btn btn-primary me-1"/>
+                        class="btn btn-primary me-1"
+                        invisible="not is_calculate_commission"/>
+                <button name="action_commercial_commission" string="Commission"
+                        type="object"
+                        class="btn btn-primary me-1"
+                        invisible="is_calculate_commercial_commission"/>
+                <button name="create_commercial_invoice"
+                        string="Create Invoice" type="object"
+                        class="btn-primary"
+                        invisible="is_calculate_commercial_commission"
+                />
             </xpath>
 
             <!-- Add Commission Information on Lead Form -->
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="referer_id" invisible="not is_calculate_commission"/>
-                <field name="co_agent_id" invisible="not is_calculate_commission"/>
-                <field name="inside_sale_person_id" invisible="not is_calculate_commission"/>
-                <field name="required_approvers" widget="many2many_tags" invisible="not is_calculate_commission"/>
-<!--                <field name="won_status" invisible="1"/>-->
+                <field name="referer_id"
+                       invisible="not is_calculate_commission"/>
+                <field name="co_agent_id"
+                       invisible="not is_calculate_commission"/>
+                <field name="inside_sale_person_id"
+                       invisible="not is_calculate_commission"/>
+                <field name="required_approvers" widget="many2many_tags"
+                       invisible="not is_calculate_commission"/>
+                <!--                <field name="won_status" invisible="1"/>-->
 
             </xpath>
 
             <xpath expr="//notebook/page[@name='extra']" position="after">
                 <field name="is_calculate_commission"/>
+                <field name="is_calculate_commercial_commission"/>
+                <field name="is_sale_lead"/>
                 <page string="Commission"
                       invisible="not is_calculate_commission">
                     <field name="currency_id" invisible="1"/>
@@ -49,6 +65,27 @@
                             <field name="pdf_report" widget="pdf_viewer"/>
                         </group>
                     </group>
+                </page>
+                <page string="commercial Commission"
+                      invisible="is_calculate_commercial_commission">
+                    <group string="Commission Information">
+                        <field name="planned_revenue"
+                               invisible="not is_sale_lead"/>
+                        <field name="base_rent" invisible="is_sale_lead"/>
+                        <field name="lease_duration" invisible="is_sale_lead"/>
+                        <field name="landlord_percentage"
+                               invisible="is_sale_lead"/>
+                        <field name="referer_id"
+                               invisible="is_calculate_commercial_commission"/>
+                        <field name="agent_payout_tier" readonly="1"/>
+                        <field name="total_commercial_commission"
+                               readonly="1"/>
+                        <field name="errors_omission_fee" readonly="1"/>
+                        <field name="external_referral_fee" readonly="1"/>
+                        <field name="total_commercial_commission_earned"
+                               readonly="1"/>
+                    </group>
+
                 </page>
             </xpath>
         </field>

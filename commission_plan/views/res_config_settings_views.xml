@@ -31,6 +31,13 @@
                         <field name="co_agent_fee_rate" company_dependent="1" />
                     </setting>
                 </block>
+<!--                commercial commission-->
+                <block name="Commission " title="Commission">
+                    <setting help="Apply Commission for this company">
+                        <field name="is_calculate_commercial_commission" company_dependent="1"/>
+                    </setting>
+
+                </block>
             </block>
         </field>
     </record>

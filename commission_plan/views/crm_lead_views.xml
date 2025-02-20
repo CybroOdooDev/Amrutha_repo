@@ -15,11 +15,11 @@
                 <button name="action_commercial_commission" string="Commission"
                         type="object"
                         class="btn btn-primary me-1"
-                        invisible="is_calculate_commercial_commission"/>
+                        invisible="not is_calculate_commercial_commission"/>
                 <button name="create_commercial_invoice"
                         string="Create Invoice" type="object"
                         class="btn-primary"
-                        invisible="is_calculate_commercial_commission"
+                        invisible="not is_calculate_commercial_commission"
                 />
             </xpath>
 
@@ -67,7 +67,7 @@
                     </group>
                 </page>
                 <page string="commercial Commission"
-                      invisible="is_calculate_commercial_commission">
+                      invisible="not is_calculate_commercial_commission">
                     <group string="Commission Information">
                         <field name="planned_revenue"
                                invisible="not is_sale_lead"/>

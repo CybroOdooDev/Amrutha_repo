@@ -61,7 +61,7 @@ class ResConfigSettings(models.TransientModel):
     is_calculate_commercial_commission = fields.Boolean(
         string="Apply Commercial Commission",
         help="Enable for Commercial Commission calculation.",
-        # related='company_id.is_calculate_commercial_commission',
+        related='company_id.is_calculate_commercial_commission',
         readonly=False,
     )
     commercial_referral_fee_rate = fields.Float(

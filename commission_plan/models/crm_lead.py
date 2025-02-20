@@ -221,6 +221,7 @@ class Lead(models.Model):
         total_commercial_commission_earned = (
                 lead.total_commercial_commission - lead.errors_omission_fee)
         self.total_commercial_commission_earned = total_commercial_commission_earned
+        self.generate_pdf_attachment()
 
     def handle_lease_commission(self, lead):
         print("Lease")
@@ -249,6 +250,7 @@ class Lead(models.Model):
         total_commercial_commission_earned = (
                 lead.total_commercial_commission - lead.errors_omission_fee)
         self.total_commercial_commission_earned = total_commercial_commission_earned
+        self.generate_pdf_attachment()
 
     def create_commercial_invoice(self):
         print("invoice")

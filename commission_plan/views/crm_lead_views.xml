@@ -33,6 +33,8 @@
                        invisible="not is_calculate_commission"/>
                 <field name="required_approvers" widget="many2many_tags"
                        invisible="not is_calculate_commission"/>
+                <field name="required_approvers" widget="many2many_tags"
+                       invisible="not is_calculate_commercial_commission"/>
                 <!--                <field name="won_status" invisible="1"/>-->
 
             </xpath>

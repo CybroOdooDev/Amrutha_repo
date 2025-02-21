@@ -266,7 +266,8 @@ class Lead(models.Model):
             )
             self.external_referral_fee = external_referral_fee
         total_commercial_commission_earned = (
-                lead.total_commercial_commission - lead.errors_omission_fee)
+            (lead.total_commercial_commission * lead.agent_payout_tier) -
+            lead.errors_omission_fee)
         self.total_commercial_commission_earned = total_commercial_commission_earned
         self.generate_pdf_attachment()
 

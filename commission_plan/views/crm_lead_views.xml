@@ -87,7 +87,6 @@
                         <field name="total_commercial_commission_earned"
                                readonly="1"/>
                     </group>
-
                 </page>
             </xpath>
         </field>

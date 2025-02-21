@@ -103,6 +103,15 @@ class Lead(models.Model):
         help="The percentage of the lease base rent charged to the landlord.",
     )
 
+    @api.onchange('x_studio_opportunity_type_1')
+    def _onchange_x_studio_opportunity_type_1(self):
+        transaction_type = self.x_studio_opportunity_type_1.x_name
+        if transaction_type == 'Sale':
+            # Logic for 'sale'
+            self.is_sale_lead = True
+        else:
+            self.is_sale_lead = False
+
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):
         print("_compute_agent_payout_tier")
@@ -169,8 +178,6 @@ class Lead(models.Model):
                 ('company_id', '=', lead.company_id.id),
                 ('amount', '<=', total_previous_year_sales)
             ], order='amount desc', limit=1)
-            print(tier, "tier")
-            print(total_previous_year_sales, "total_previous_year_sales")
             if tier:
                 lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
             else:
@@ -178,6 +185,16 @@ class Lead(models.Model):
             lead.total_commercial_commission = (
                                                        lead.planned_revenue or 0.0) * (
                                                        lead.agent_payout_tier or 0.0)
+            transaction_type = lead.x_studio_opportunity_type_1.x_name
+            if transaction_type == 'Lease':
+                base_rent = lead.base_rent
+                lease_duration = lead.lease_duration
+                landlord_percentage = lead.landlord_percentage
+                if not base_rent or not lease_duration or not landlord_percentage:
+                    raise UserError(
+                        _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
+                lead.total_commercial_commission = base_rent * (
+                        landlord_percentage / 100)
 
     @api.depends('total_commercial_commission')
     def _compute_errors_omission_fee(self):
@@ -232,15 +249,16 @@ class Lead(models.Model):
              ('type_tax_use', '=', 'sale'),
              ], limit=1)
         self.external_referral_fee = 0
-        for lead in self:
-            base_rent = lead.base_rent
-            lease_duration = lead.lease_duration
-            landlord_percentage = lead.landlord_percentage
-            if not base_rent or not lease_duration or not landlord_percentage:
-                raise UserError(
-                    _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
-        lead.total_commercial_commission = base_rent * lease_duration * (
-                landlord_percentage / 100)
+
+        base_rent = lead.base_rent
+        lease_duration = lead.lease_duration
+        landlord_percentage = lead.landlord_percentage
+        if not base_rent or not lease_duration or not landlord_percentage:
+            raise UserError(
+                _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
+        lead.total_commercial_commission = base_rent * (
+                    landlord_percentage / 100)
+        print(lead.total_commercial_commission, "total_commercial_commission")
         if lead.referer_id:  # Check for external referral fee
             external_referral_fee = (
                     lead.total_commercial_commission * (
@@ -286,8 +304,6 @@ class Lead(models.Model):
                     'tax_ids': [Command.set(tax.ids)]
                 })]
             }])
-
-
 
     @api.onchange('omissions_insurance')
     def _onchange_omissions_insurance(self):
@@ -445,7 +461,7 @@ class Lead(models.Model):
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')
-        print(base64.b64encode(pdf_content),"base64.b64encode(pdf_content)")
+        print(base64.b64encode(pdf_content), "base64.b64encode(pdf_content)")
         # Create the attachment with the PDF content
         attachment = self.env['ir.attachment'].create({
             'name': attachment_name,

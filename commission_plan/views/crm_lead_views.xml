@@ -35,8 +35,6 @@
                        invisible="not is_calculate_commission"/>
                 <field name="required_approvers" widget="many2many_tags"
                        invisible="not is_calculate_commercial_commission"/>
-                <!--                <field name="won_status" invisible="1"/>-->
-
             </xpath>
 
             <xpath expr="//notebook/page[@name='extra']" position="after">
@@ -59,22 +57,12 @@
                             <field name="flat_fee" widget="monetary"/>
                             <field name="commission_to_be_paid"
                                    widget="monetary"/>
-                            <!--                            <field name="approval_ids" widget="one2many_list"/>-->
                             <field name="commission_attachment_id"
                                    invisible="1"/>
                         </group>
-
                     </group>
                 </page>
-                <page string="Commission Report"
-                      invisible="not is_calculate_commission">
-                    <group>
-                        <group>
-                            <field name="pdf_report" widget="pdf_viewer"/>
-                        </group>
-                    </group>
-                </page>
-                <page string="commercial Commission"
+                <page string="Commercial Commission"
                       invisible="not is_calculate_commercial_commission">
                     <group string="Commission Information">
                         <field name="planned_revenue"
@@ -92,6 +80,14 @@
                         <field name="external_referral_fee" readonly="1"/>
                         <field name="total_commercial_commission_earned"
                                readonly="1"/>
+                    </group>
+                </page>
+                <page string="Commission Report"
+                      invisible="not is_calculate_commission">
+                    <group string="Commission Report">
+                        <group>
+                            <field name="pdf_report" widget="pdf_viewer"/>
+                        </group>
                     </group>
                 </page>
             </xpath>

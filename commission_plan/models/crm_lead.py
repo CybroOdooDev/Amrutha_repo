@@ -479,7 +479,10 @@ class Lead(models.Model):
 
     def action_commission(self):
         """ Action to calculate commission manually """
+
         self.compute_commission()
+        # pdf attachment creation
+        self.generate_pdf_attachment()
 
     def get_commission_rate(self, total_amount):
         """Fetch the correct commission rate based on total amount from tier.tier,

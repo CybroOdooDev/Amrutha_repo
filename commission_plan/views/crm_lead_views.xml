@@ -63,6 +63,12 @@
                             <field name="commission_attachment_id"
                                    invisible="1"/>
                         </group>
+
+                    </group>
+                </page>
+                <page string="Commission Report"
+                      invisible="not is_calculate_commission">
+                    <group>
                         <group>
                             <field name="pdf_report" widget="pdf_viewer"/>
                         </group>

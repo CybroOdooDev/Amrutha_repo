@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+agent_dashboard.access_crm_weekly_task,access_crm_weekly_task,agent_dashboard.model_crm_weekly_task,base.group_user,1,1,1,1
+
+
+
+

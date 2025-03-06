@@ -2,3 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_rental_recurring_plan,rental.recurring.plan,model_rental_recurring_plan,base.group_user,1,1,1,1
 access_product_return_dates,product.return.dates,model_product_return_dates,base.group_user,1,1,1,1
 access_distance_range_line,distance.range.line,model_distance_range_line,base.group_user,1,1,1,1
+access_import_file_wizard,access.import.file.wizard,model_import_file_wizard,base.group_user,1,1,1,1
+access_import_invoices_wizard,access.import.invoices.wizard,model_import_invoices_wizard,base.group_user,1,1,1,1
+

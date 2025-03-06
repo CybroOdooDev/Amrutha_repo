@@ -29,13 +29,15 @@ class SaleOrderLine(models.Model):
     is_sale = fields.Boolean()
     parent_line = fields.Integer()
     rental_available_lot_ids = fields.Many2many('stock.lot','rental_available_lot_rel',compute="_compute_pickeable_lot_ids")
-    rental_pickable_lot_ids = fields.Many2many(
-        'stock.lot',domain="[('id','in',rental_available_lot_ids),('reserved','!=',True)]")
+    rental_pickable_lot_ids = fields.Many2many('stock.lot',domain="[('id','in',rental_available_lot_ids),('reserved','!=',True)]")
     is_service_charge = fields.Boolean()
+    importing_external_id = fields.Char(help="External Id Provided during importing")
 
     @api.model_create_multi
     def create(self, vals_list):
         """Supering Create function of sale order lines at the end"""
+        if self._context.get('import_from_sheet'):
+            return super().create(vals_list)
         for vals in vals_list:
             product_template_id = vals.get('product_template_id')
             product = self.env['product.template'].search([('id', '=', product_template_id)])
@@ -46,6 +48,7 @@ class SaleOrderLine(models.Model):
             if product and product.transportation_rate:
                 order = self.env['sale.order'].browse(vals.get('order_id'))
                 if order.mileage_enabled and order.pricelist_id and order.pricelist_id.distance_range_line_ids:
+
                     mileage = order.mileage
                     for range in order.pricelist_id.distance_range_line_ids:
                         delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
@@ -62,6 +65,11 @@ class SaleOrderLine(models.Model):
             # Adding service charges while saving
             if product_template_id and not is_sale:
                 product_charges = product.charges_ids
+                products = [
+                    self.env.ref('rental_customization.default_delivery_product'),
+                    self.env.ref('rental_customization.default_pickup_product'),
+                    self.env.ref('rental_customization.default_dwpp_product')
+                ]
                 order = self.env['sale.order'].browse(vals.get('order_id'))
                 if product_charges:
                     for prod in product_charges:
@@ -71,11 +79,10 @@ class SaleOrderLine(models.Model):
                             'order_id': order.id,
                             'product_id': prod.id,
                             'product_uom_qty': vals.get('product_uom_qty'),
-                            'price_unit': prod_price if prod.name in ('Rental Delivery', 'Rental Pick-Up') else 0.00,
+                            'price_unit': prod_price if prod.name in products else 0.00,
                             'display_type': False,
                             'parent_line': vals.get('sequence')
                         })
-
                 # Fuel Surcharges
                 if prod_price > 0:
                     products = [
@@ -90,12 +97,10 @@ class SaleOrderLine(models.Model):
                             'order_id': order.id,
                             'product_id': prod.id,
                             'product_uom_qty': vals.get('product_uom_qty'),
-                            # 'price_unit': (prod_price * 15) / 100,
                             'price_unit': (prod_price * fuel_charge) / 100,
                             'display_type': False,
                             'parent_line': vals.get('sequence')
                         })
-
         # Call super at the end
         res = super().create(vals_list)
         # Update unit price based on price list
@@ -138,13 +143,25 @@ class SaleOrderLine(models.Model):
                                     line.price_unit = product.list_price
                         else:
                             line.price_unit = product.list_price
-
         for line in res:
             if line.order_id.is_rental_order:
                 line.is_service_charge = line.product_id.charges_ok
                 # Apply header-level dates to the newly created lines
-                line.order_id.header_start_date = line.order_id.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
-                line.order_id.header_return_date = line.order_id.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                # line.order_id.header_start_date = line.order_id.rental_start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                # line.order_id.header_return_date = line.order_id.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                # Extract header-level dates
+                start_date = line.order_id.rental_start_date
+                return_date = line.order_id.rental_return_date
+                # Convert to UTC only if the datetime contains a time component
+                if isinstance(start_date, datetime) and start_date.time() != datetime.min.time():
+                    line.order_id.header_start_date = start_date.astimezone(pytz.utc).replace(tzinfo=None)
+                else:
+                    line.order_id.header_start_date = start_date  # Keep as is if only date
+
+                if isinstance(return_date, datetime) and return_date.time() != datetime.min.time():
+                    line.order_id.header_return_date = return_date.astimezone(pytz.utc).replace(tzinfo=None)
+                else:
+                    line.order_id.header_return_date = return_date  # Keep as is if only date
                 if line.order_id.header_start_date and line.order_id.header_return_date and not (
                         line.rental_start_date or line.rental_end_date):
                     line.rental_start_date = line.order_id.header_start_date
@@ -211,7 +228,7 @@ class SaleOrderLine(models.Model):
     def _onchange_quantities(self):
         """ Rental Start Date and Next Bill Date Validation """
         if self.order_id.is_rental_order and self.product_template_id and self.order_id.state != "draft":
-            if not self.is_sale and  not self.next_bill_date:
+            if not self.is_sale and  not self.next_bill_date and not self.is_service_charge:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
 
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
@@ -224,8 +241,12 @@ class SaleOrderLine(models.Model):
                 for section, order_line in section_prod.items():
                     if line in order_line and not line.product_template_id.charges_ok:
                     # Check if "rental delivery" product exists in the section
+                        delivery_prod = self.env.ref('rental_customization.default_delivery_product').name
+                        # rental_delivery_line = next(
+                        #     (line for line in order_line if line.product_template_id.name == delivery_prod), None
+                        # )
                         rental_delivery_line = next(
-                            (line for line in order_line if line.product_template_id.name == "Rental Delivery"), None
+                            (line for line in order_line if line.product_template_id.name in [delivery_prod, "SBDEL"]), None
                         )
                         if rental_delivery_line:
                             # Update the qty_delivered for "rental delivery" product
@@ -237,8 +258,9 @@ class SaleOrderLine(models.Model):
                                 'rental_end_date':line.rental_end_date,
                             })
                     # Check if "delivery fuel surcharge" product exists in the section
+                        delivery_fuel_surcharge_prod = self.env.ref('rental_customization.delivery_fuel_surcharge_product').name
                         delivery_fuel_surcharge_line = next(
-                            (line for line in order_line if line.product_template_id.name == "Delivery Fuel Surcharge"),
+                            (line for line in order_line if line.product_template_id.name in [delivery_fuel_surcharge_prod, "SBDELFS"]),
                             None
                         )
                         if delivery_fuel_surcharge_line:
@@ -252,8 +274,9 @@ class SaleOrderLine(models.Model):
                             })
 
                     # Check if "rental dwpp" product exists in the section
+                        rental_dwpp_prod = self.env.ref('rental_customization.default_dwpp_product').name
                         rental_dwpp_line = next(
-                            (line for line in order_line if line.product_template_id.name == "Rental DWPP"), None
+                            (line for line in order_line if line.product_template_id.name in [rental_dwpp_prod, "SBLOSSWAV-STCO","SBLOSSWAV-40OF"]), None
                         )
                         if rental_dwpp_line:
                             # Update the qty_delivered for "rental dwpp" product
@@ -267,8 +290,9 @@ class SaleOrderLine(models.Model):
                             })
 
                     # Check if "rental pick-up" product exists in the section
+                        rental_pickup_prod = self.env.ref('rental_customization.default_pickup_product').name
                         rental_pickup_line = next(
-                            (line for line in order_line if line.product_template_id.name == "Rental Pick-Up"), None
+                            (line for line in order_line if line.product_template_id.name in [rental_pickup_prod, "SBPIC"]), None
                         )
                         if rental_pickup_line:
                             # Update the qty_delivered for "rental dwpp" product
@@ -290,8 +314,9 @@ class SaleOrderLine(models.Model):
                                 })
 
                     # Check if "pickup fuel surcharge" product exists in the section
+                        pickup_fuel_surcharge_prod = self.env.ref('rental_customization.default_pickup_product').name
                         pickup_fuel_surcharge_line = next(
-                            (line for line in order_line if line.product_template_id.name == "Pick Up Fuel Surcharge"),
+                            (line for line in order_line if line.product_template_id.name in [pickup_fuel_surcharge_prod, "SBPICFS"]),
                             None
                         )
                         if pickup_fuel_surcharge_line:
@@ -394,7 +419,7 @@ class SaleOrderLine(models.Model):
             if self.product_template_id.description_sale:
                 self.name += " [ " + self.product_template_id.description_sale + " ]"
 
-    @api.depends('product_id','product_template_id')  # Replace with a field that affects the domain
+    @api.depends('product_id','product_template_id')
     def _compute_pickeable_lot_ids(self):
         """ For computing the available lot numbers of the product """
         for line in self:

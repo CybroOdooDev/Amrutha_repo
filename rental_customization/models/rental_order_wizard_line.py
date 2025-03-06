@@ -18,7 +18,6 @@ class RentalOrderWizardLine(models.TransientModel):
             product = lines.order_line_id.product_template_id
             product_id = lines.order_line_id.product_id.id
             date_lines = False  # Initialize the variable
-
             if not product.charges_ok:
                 if lines.pickedup_lot_ids and lines['status'] == 'pickup' and (
                         product.is_storable and product.tracking == 'serial'):
@@ -94,13 +93,6 @@ class RentalOrderWizardLine(models.TransientModel):
                         ])
                         if date_lines:
                             date_lines.update({'return_date': fields.Date.today()})
-
-                # # Ensure validation for missing serial numbers
-                # if (not lines.pickedup_lot_ids and lines['status'] == 'pickup') or (
-                #         not lines.returned_lot_ids and lines['status'] == 'return'):
-                #     if product.is_storable and product.tracking == 'serial':
-                #         raise ValidationError("Please Choose Serial Numbers")
-
         return super()._apply()
 
     @api.model
@@ -113,7 +105,6 @@ class RentalOrderWizardLine(models.TransientModel):
             default_line_vals.update({
                 'pickedup_lot_ids': remaining_lot_ids,
                 'qty_delivered': len(remaining_lot_ids),
-
             })
         return default_line_vals
 

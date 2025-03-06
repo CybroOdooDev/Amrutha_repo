@@ -16,7 +16,6 @@ class ProductReturnDates(models.Model):
         comodel_name='sale.order',
         string="Order Reference",
         required=True, ondelete='cascade', index=True, copy=False)
-    # product_id = fields.Many2one('product.product', required=True)
     order_line_id = fields.Many2one('sale.order.line', 'Sale Order Line')
     product_id = fields.Many2one('product.product')
     serial_number = fields.Many2one('stock.lot', domain="[('product_id', '=', product_id)]")
@@ -33,10 +32,7 @@ class ProductReturnDates(models.Model):
     signature_status = fields.Selection(selection=[('initial', "Initial"),
                                                    ('delivery', "Delivery Sent"),
                                                    ('pickup', "Pick-Up Sent"),
-                                                   ],
-                                        string="Signature Status",
-                                        default="initial",
-                                        store=True)
+                                                   ],string="Signature Status",default="initial",store=True)
 
     @api.depends('delivery_date', 'return_date', 'total_days')
     def _compute_total_days_price(self):

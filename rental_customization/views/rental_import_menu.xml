@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="active_order_action" model="ir.actions.act_window">
+        <field name="name">Import Active Rental Orders</field>
+        <field name="res_model">import.file.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="invoices_import_action" model="ir.actions.act_window">
+        <field name="name">Import Invoices</field>
+        <field name="res_model">import.invoices.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <menuitem id="import_menu" name="Import"
+              parent="sale_renting.rental_menu_root" sequence="6"/>
+    <menuitem id="import_order_menu" name="Import Rental Orders" action="rental_customization.active_order_action"
+              parent="rental_customization.import_menu"/>
+    <menuitem id="import_invoice_menu" name="Import Invoices" action="rental_customization.invoices_import_action"
+              parent="rental_customization.import_menu" />
+</odoo>

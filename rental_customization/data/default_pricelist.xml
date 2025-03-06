@@ -6,7 +6,8 @@
             <field name="name">ICT</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
-            <!--            <field name="company_id" ref="base.main_company"/>-->
+            <field name="active">True</field>
+<!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
         <!-- Distance Range 0-20 -->
@@ -94,6 +95,7 @@
             <field name="name">NEKS</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -182,6 +184,7 @@
             <field name="name">OKC</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -270,6 +273,7 @@
             <field name="name">HOU</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -358,6 +362,7 @@
             <field name="name">DFW</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -446,6 +451,7 @@
             <field name="name">GRN</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -464,6 +470,7 @@
             <field name="name">WTR</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -482,6 +489,7 @@
             <field name="name">AUS</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--            <field name="company_id" ref="base.main_company"/>-->
         </record>
 
@@ -570,6 +578,7 @@
             <field name="name">Per Day Charge</field>
             <field name="currency_id" ref="base.USD"/>
             <field name="company_id" eval="False"/>
+            <field name="active">True</field>
 <!--<field name="company_id" ref="base.main_company"/>-->
         </record>
 

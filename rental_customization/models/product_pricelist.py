@@ -2,7 +2,7 @@
 from odoo import api,models, fields, Command
 
 
-class SaleOrder(models.Model):
+class PriceList(models.Model):
     """To add new fields in the rental order"""
     _inherit = "product.pricelist"
 
@@ -11,3 +11,7 @@ class SaleOrder(models.Model):
         inverse_name='pricelist_id',
         string="Distance Range Lines",
         copy=True, auto_join=True)
+
+    @api.onchange('company_id')
+    def _onchange_company_id(self):
+        print(self.display_name)

@@ -3,7 +3,7 @@
     'name': 'Rental Customization',
     'version': '18.0.1.0.0',
     'description': """ Customisation for Rental module """,
-    'depends': ['base','product','sale_management', 'sale_project','sale_renting', 'account','sale_stock','stock'],
+    'depends': ['base', 'product', 'sale_management', 'sale_project', 'sale_renting', 'account', 'sale_stock', 'stock'],
     'installable': True,
 
     'data': [
@@ -22,6 +22,9 @@
         'report/delivery_pdf_templates.xml',
         'report/pickup_pdf_templates.xml',
         'report/manage_reports_action.xml',
+        'wizard/import_file_wizard.xml',
+        'views/rental_import_menu.xml',
+        'views/account_move.xml',
     ],
 
 }

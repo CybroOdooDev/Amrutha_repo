@@ -90,6 +90,14 @@
                         </group>
                     </group>
                 </page>
+                <page string="Commission Report"
+                      invisible="not is_calculate_commercial_commission">
+                    <group string="Commission Report">
+                        <group>
+                            <field name="pdf_report" widget="pdf_viewer"/>
+                        </group>
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>

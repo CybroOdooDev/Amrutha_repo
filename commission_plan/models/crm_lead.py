@@ -225,6 +225,7 @@ class Lead(models.Model):
             else:
                 raise ValueError(
                     "Unknown transaction type: %s" % transaction_type)
+            self.generate_pdf_attachment()
 
     def handle_sale_commission(self, lead):
         print("sale")

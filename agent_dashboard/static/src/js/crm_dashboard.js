@@ -169,7 +169,12 @@ export class CRMDashboard extends Component {
             this.state.error = _t("Failed to load stage data. Please try again later.");
         }
     }
-
+    formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+        }).format(value);
+    }
     /**
      * Fetch dashboard data from the backend.
      */
@@ -197,21 +202,51 @@ export class CRMDashboard extends Component {
                 [
                     'partner_id', // Client Name
                     'x_studio_property_address', // Property
-                    'planned_revenue', // Price
-                    'total_commercial_commission_earned', // Estimated Commission
+                    'planned_revenue', // Price (for commercial commission)
+                    'total_commercial_commission_earned', // Estimated Commission (for commercial commission)
+                    'total_amount', // Price (for non-commercial commission)
+                    'commission_to_be_paid', // Estimated Commission (for non-commercial commission)
                     'date_deadline', // Estimated Closing Date
+                    'company_id', // Company ID to check the condition
                 ],
             );
 
+            // Fetch company details for all unique company IDs
+            const companyIds = [...new Set(leads.map(lead => lead.company_id[0]))];
+            const companies = await this.orm.searchRead(
+                'res.company', // Model name
+                [['id', 'in', companyIds]], // Domain to fetch only relevant companies
+                ['id', 'is_calculate_commercial_commission'], // Fields to fetch
+            );
+
+            // Create a map of company ID to company details for quick lookup
+            const companyMap = {};
+            companies.forEach(company => {
+                companyMap[company.id] = company;
+            });
+
             // Map the fetched leads to the required format
-            this.state.propertyDetails = leads.map(lead => ({
-                clientName: lead.partner_id ? lead.partner_id[1] : 'N/A', // Partner name
-                property: lead.x_studio_property_address || 'N/A', // Property address
-                city: lead.partner_id && lead.partner_id[2] ? lead.partner_id[2] : 'N/A', // Partner city
-                price: lead.planned_revenue || 0, // Price
-                estimatedCommission: lead.total_commercial_commission_earned || 0, // Estimated Commission
-                estimatedClosingDate: lead.date_deadline || 'N/A', // Estimated Closing Date
-            }));
+            this.state.propertyDetails = leads.map(lead => {
+                const company = companyMap[lead.company_id[0]]; // Get the company details
+
+                // Determine which fields to use based on the company's setting
+                const price = company && company.is_calculate_commercial_commission
+                    ? lead.planned_revenue || 0
+                    : lead.total_amount || 0;
+
+                const estimatedCommission = company && company.is_calculate_commercial_commission
+                    ? lead.total_commercial_commission_earned || 0
+                    : lead.commission_to_be_paid || 0;
+
+                return {
+                    clientName: lead.partner_id ? lead.partner_id[1] : 'N/A', // Partner name
+                    property: lead.x_studio_property_address || 'N/A', // Property address
+                    city: lead.partner_id && lead.partner_id[2] ? lead.partner_id[2] : 'N/A', // Partner city
+                    price: this.formatCurrency(price), // Price (formatted as currency)
+                    estimatedCommission: this.formatCurrency(estimatedCommission), // Estimated Commission (formatted as currency)
+                    estimatedClosingDate: lead.date_deadline || 'N/A', // Estimated Closing Date
+                };
+            });
 
             this.state.isLoading = false; // Data has been loaded
         } catch (error) {

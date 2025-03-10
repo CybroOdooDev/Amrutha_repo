@@ -6,6 +6,7 @@ class CRMDashboard(models.Model):
     _inherit = 'crm.lead'
     _description = 'CRM Dashboard Details'
 
+
     def get_dashboard_data(self):
         """
         Compute and return dynamic data for the CRM dashboard.

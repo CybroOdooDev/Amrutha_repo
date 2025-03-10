@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Define the custom user group for Agent Dashboard access -->
+    <record id="group_crm_agent_dashboard" model="res.groups">
+        <field name="name">Agent Dashboard</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
+</odoo>
+

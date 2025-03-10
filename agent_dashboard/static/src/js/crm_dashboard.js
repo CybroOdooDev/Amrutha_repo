@@ -6,8 +6,11 @@ import { Component } from "@odoo/owl";
 import { onWillStart, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
+import { PieChart } from "./PieChart"; // Import the PieChart component
+import { GoalVsActualChart } from "./GoalVsActualChart";
 
 export class CRMDashboard extends Component {
+    static components = { PieChart, GoalVsActualChart }; // Register the PieChart component
     setup() {
         super.setup(...arguments);
         this.orm = useService('orm'); // ORM service to interact with the backend
@@ -33,16 +36,138 @@ export class CRMDashboard extends Component {
             newTask: "", // Input field for adding a new task
             selectedDay: "monday", // Default selected day for adding tasks
             weekStartDate: this.getWeekStartDate(), // Add weekStartDate to state
+            stageLabels: [], // Dynamic labels for the pie chart
 
         });
         // Bind `this` to the method
         this.removeTask = this.removeTask.bind(this);
+        this.toggleTaskCompletion = this.toggleTaskCompletion.bind(this);
 
         // Fetch data when the component is about to start
         onWillStart(async () => {
             await this.fetchDashboardData();
             await this.fetchWeeklyTasks();
+            await this.fetchStageData(); // Fetch stage labels
+            await this.fetchGoalVsActualData(); // Fetch data for Goal vs Actual chart
         });
+    }
+    /**
+     * Fetch data for the Goal vs Actual chart, grouped by months and filtered for the current year.
+     */
+    async fetchGoalVsActualData() {
+        try {
+            // Get the current year
+            const currentYear = new Date().getFullYear();
+
+            // Fetch leads created in the current year
+            const leads = await this.orm.searchRead(
+                'crm.lead', // Model name
+                [
+                    ['create_date', '>=', `${currentYear}-01-01`], // Filter for the current year
+                    ['create_date', '<=', `${currentYear}-12-31`],
+                ],
+                [
+                    'total_commission',
+                    'commission_to_be_paid',
+                    'total_commercial_commission',
+                    'total_commercial_commission_earned',
+                    'company_id',
+                    'create_date', // Include create_date to group by month
+                ],
+            );
+
+            // Extract unique company IDs from the leads
+            const companyIds = [...new Set(leads.map(lead => lead.company_id[0]))];
+
+            // Fetch company details for the unique company IDs
+            const companies = await this.orm.searchRead(
+                'res.company', // Model name
+                [['id', 'in', companyIds]], // Domain to fetch only relevant companies
+                ['id', 'is_calculate_commission', 'is_calculate_commercial_commission'], // Fields to fetch
+            );
+
+            // Create a map of company ID to company details for quick lookup
+            const companyMap = {};
+            companies.forEach(company => {
+                companyMap[company.id] = company;
+            });
+
+            // Initialize arrays to store monthly data
+            const monthlyGoalData = new Array(12).fill(0); // 12 months, initialized to 0
+            const monthlyActualData = new Array(12).fill(0); // 12 months, initialized to 0
+
+            // Iterate through leads and aggregate data by month
+            leads.forEach(lead => {
+                const createDate = new Date(lead.create_date); // Convert create_date to a Date object
+                const month = createDate.getMonth(); // Get the month (0 = January, 11 = December)
+
+                const companyId = lead.company_id[0]; // Get the company ID
+                const company = companyMap[companyId]; // Get the company details
+
+                if (company && company.is_calculate_commission) {
+                    // Use total_commission and commission_to_be_paid fields
+                    monthlyGoalData[month] += lead.total_commission || 0;
+                    monthlyActualData[month] += lead.commission_to_be_paid || 0;
+                } else if (company && company.is_calculate_commercial_commission) {
+                    // Use total_commercial_commission and total_commercial_commission_earned fields
+                    monthlyGoalData[month] += lead.total_commercial_commission || 0;
+                    monthlyActualData[month] += lead.total_commercial_commission_earned || 0;
+                }
+            });
+
+            // Update the state with the fetched data
+            this.state.goalData = monthlyGoalData;
+            this.state.actualData = monthlyActualData;
+            console.log(this.state.goalData,"this.state.goalData")
+            console.log(this.state.actualData,"this.state.actualData")
+            this.state.isLoadingGoalVsActual = false; // Data has been loaded
+        } catch (error) {
+            console.error("Error fetching Goal vs Actual data:", error);
+            this.state.errorGoalVsActual = _t("Failed to load Goal vs Actual data. Please try again later.");
+            this.state.isLoadingGoalVsActual = false; // Stop loading
+        }
+    }
+    /**
+     * Fetch stage labels and data from the crm.lead model.
+     */
+    async fetchStageData() {
+        try {
+            const leads = await this.orm.searchRead(
+                'crm.lead', // Model name
+                [['x_studio_opportunity_stage', '!=', false]], // Domain to filter leads with a stage
+                ['x_studio_opportunity_stage'], // Fields to fetch
+            );
+
+            console.log("Fetched leads:", leads); // Debugging log
+
+            // Group leads by stage and count them
+            const stageCounts = {};
+            leads.forEach(lead => {
+                const stage = lead.x_studio_opportunity_stage; // Corrected field name
+                if (stage && stage[1]) { // Check if stage exists and has a display name
+                    const stageName = stage[1]; // Get the stage name
+                    if (stageCounts[stageName]) {
+                        stageCounts[stageName]++;
+                    } else {
+                        stageCounts[stageName] = 1;
+                    }
+                } else {
+                    console.log("Lead with undefined or invalid stage:", lead); // Debugging log
+                }
+            });
+
+            console.log("Stage counts:", stageCounts); // Debugging log
+
+            // Extract labels and data
+            this.state.stageLabels = Object.keys(stageCounts);
+            this.state.stageData = Object.values(stageCounts);
+
+            console.log("Stage labels:", this.state.stageLabels); // Debugging log
+            console.log("Stage data:", this.state.stageData); // Debugging log
+        } catch (error) {
+            console.error("Error fetching stage data:", error);
+            this.state.error = _t("Failed to load stage data. Please try again later.");
+        }
     }
 
     /**
@@ -50,6 +175,7 @@ export class CRMDashboard extends Component {
      */
     async fetchDashboardData() {
         try {
+            // Fetch dashboard summary data
             const data = await this.orm.call(
                 'crm.lead', // Model name
                 'get_dashboard_data', // Method name
@@ -63,6 +189,30 @@ export class CRMDashboard extends Component {
             this.state.closingThisWeek = data.closingThisWeek;
             this.state.expiringThisMonth = data.expiringThisMonth;
             this.state.closingThisMonth = data.closingThisMonth;
+
+            // Fetch property details from crm.lead
+            const leads = await this.orm.searchRead(
+                'crm.lead', // Model name
+                [], // Domain (empty to fetch all records)
+                [
+                    'partner_id', // Client Name
+                    'x_studio_property_address', // Property
+                    'planned_revenue', // Price
+                    'total_commercial_commission_earned', // Estimated Commission
+                    'date_deadline', // Estimated Closing Date
+                ],
+            );
+
+            // Map the fetched leads to the required format
+            this.state.propertyDetails = leads.map(lead => ({
+                clientName: lead.partner_id ? lead.partner_id[1] : 'N/A', // Partner name
+                property: lead.x_studio_property_address || 'N/A', // Property address
+                city: lead.partner_id && lead.partner_id[2] ? lead.partner_id[2] : 'N/A', // Partner city
+                price: lead.planned_revenue || 0, // Price
+                estimatedCommission: lead.total_commercial_commission_earned || 0, // Estimated Commission
+                estimatedClosingDate: lead.date_deadline || 'N/A', // Estimated Closing Date
+            }));
+
             this.state.isLoading = false; // Data has been loaded
         } catch (error) {
             this.state.error = _t("Failed to load dashboard data. Please try again later.");

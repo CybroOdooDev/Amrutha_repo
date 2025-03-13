@@ -41,7 +41,7 @@ export class GoalVsActualChart extends Component {
                 datasets: [
                     {
                         label: 'Actual',
-                        data: actualData,
+                        data: actualData || [' '],
                         backgroundColor: '#0000ff',
                         borderColor: '#0000ff',
                         barPercentage: 0.5,
@@ -54,7 +54,7 @@ export class GoalVsActualChart extends Component {
                     },
                     {
                         label: 'Goal',
-                        data: goalData,
+                        data: goalData || [' '],
                         backgroundColor: '#71d927',
                         borderColor: '#71d927',
                         barPercentage: 0.5,

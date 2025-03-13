@@ -32,7 +32,8 @@ class ResCompany(models.Model):
     referral_fee_rate=fields.Float(
         string="Referral Fee rate",
         default=25,
-        help="Amount paid to the inside salesperson that brought in the lead.",
+        help="Percentage paid to referral agent that brought in the "
+             "lead.",
     )
     co_agent_fee_rate = fields.Float(
         string="Co-agent Fee rate",
@@ -45,5 +46,6 @@ class ResCompany(models.Model):
     commercial_referral_fee_rate = fields.Float(
         string="Referral Fee rate",
         default=25,
-        help="Amount paid to the inside salesperson that brought in the lead.",
+        help="Percentage paid to the  referral agent that brought in the "
+             "lead.",
     )

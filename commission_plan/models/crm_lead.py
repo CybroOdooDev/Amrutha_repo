@@ -39,7 +39,8 @@ class Lead(models.Model):
     co_agent_fee = fields.Float(string="Co-agent Fee")
     flat_fee = fields.Float(string="Flat Fee",
                             help="Custom flat fee adjustment to the commission.")
-    referer_id = fields.Many2one('res.partner', string="Referrer Person")
+    referer_id = fields.Many2one('res.partner', string="External Referral "
+                                                       "Agent")
     co_agent_id = fields.Many2one('res.partner', string="Co-Agent ")
     inside_sale_person_id = fields.Many2one('res.users',
                                             string="Inside Sale Person ")
@@ -65,6 +66,16 @@ class Lead(models.Model):
                                                string="Attachments",
                                                help="Add attachment file")
     pdf_report = fields.Binary('PDF')
+
+    referral_fee_rate = fields.Float(
+        string="Referral rate",
+        help="Percentage paid to the referral agent that brought in the lead.",
+        default=lambda self: self._default_referral_fee_rate()
+    )
+
+    def _default_referral_fee_rate(self):
+        # Return the referral_fee_rate from the current company
+        return self.env.company.referral_fee_rate
 
     # Commercial commission plan
 
@@ -102,6 +113,17 @@ class Lead(models.Model):
         string="Landlord Percentage (%)",
         help="The percentage of the lease base rent charged to the landlord.",
     )
+    commercial_referral_fee_rate = fields.Float(
+        string="Referral Fee rate",
+        help="Percentage paid to the  referral agent that brought in the "
+             "lead.",
+        default=lambda self: self._default_commercial_referral_fee_rate()
+    )
+
+    def _default_commercial_referral_fee_rate(self):
+        # Return the referral_fee_rate from the current company
+        return self.env.company.commercial_referral_fee_rate
+
 
     @api.onchange('x_studio_opportunity_type_1')
     def _onchange_x_studio_opportunity_type_1(self):
@@ -233,7 +255,7 @@ class Lead(models.Model):
         if lead.referer_id:  # Check for external referral fee
             external_referral_fee = (
                     lead.total_commercial_commission * (
-                    self.company_id.commercial_referral_fee_rate or 0.0)
+                    self.commercial_referral_fee_rate or 0.0)
             )
             self.external_referral_fee = external_referral_fee
         total_commercial_commission_earned = (
@@ -263,7 +285,7 @@ class Lead(models.Model):
         if lead.referer_id:  # Check for external referral fee
             external_referral_fee = (
                     lead.total_commercial_commission * (
-                    self.company_id.commercial_referral_fee_rate or 0.0)
+                    self.commercial_referral_fee_rate or 0.0)
             )
             self.external_referral_fee = external_referral_fee
         total_commercial_commission_earned = (
@@ -286,6 +308,7 @@ class Lead(models.Model):
                     'move_type': 'in_invoice',
                     'partner_id': self.referer_id.id,
                     'crm_lead_id': self.id,
+                    'ref':self.x_studio_property_address,
                     'invoice_line_ids': [(0, 0, {
                         'product_id': self.env.ref(
                             'commission_payout_sign.product_referral').id,
@@ -298,6 +321,7 @@ class Lead(models.Model):
                 'move_type': 'in_invoice',
                 'partner_id': self.user_id.id,
                 'crm_lead_id': self.id,
+                'ref': self.x_studio_property_address,
                 'invoice_line_ids': [(0, 0, {
                     'product_id': self.env.ref(
                         'commission_payout_sign.product_commission').id,
@@ -429,9 +453,9 @@ class Lead(models.Model):
                 self.inside_sale_fee = self.company_id.inside_sale_fee
 
             # Referral Fee (skip if manually set)
-            if not self.is_manual_referral_fee and self.company_id.referral_fee_rate and self.referer_id:
+            if not self.is_manual_referral_fee and self.referral_fee_rate and self.referer_id:
                 self.referral_fee = self.total_commission * (
-                        self.company_id.referral_fee_rate / 100)
+                        self.referral_fee_rate / 100)
 
             # Coagent Fee (skip if manually set)
             if not self.is_manual_referral_fee and self.company_id.co_agent_fee_rate and self.co_agent_id:

@@ -60,6 +60,7 @@ class CrmLead(models.Model):
                 if self.user_id.secondary_related_partner_id else
                 self.user_id.partner_id.id,
                 'crm_lead_id':self.id,
+                'ref': self.x_studio_property_address,
                 'invoice_line_ids': [(0, 0, {
                     'product_id': self.env.ref(
                         'commission_payout_sign.product_commission').id,
@@ -73,6 +74,7 @@ class CrmLead(models.Model):
                     'move_type': 'in_invoice',
                     'partner_id': self.referer_id.id,
                     'crm_lead_id': self.id,
+                    'ref': self.x_studio_property_address,
                     'invoice_line_ids': [(0, 0, {
                         'product_id': self.env.ref(
                             'commission_payout_sign.product_referral').id,
@@ -86,6 +88,7 @@ class CrmLead(models.Model):
                     'move_type': 'in_invoice',
                     'partner_id':  self.inside_sale_person_id.secondary_related_partner_id.id if self.inside_sale_person_id.secondary_related_partner_id else self.inside_sale_person_id.partner_id.id,
                     'crm_lead_id': self.id,
+                    'ref': self.x_studio_property_address,
                     'invoice_line_ids': [(0, 0, {
                         'product_id': self.env.ref(
                             'commission_payout_sign.product_inside_sale').id,

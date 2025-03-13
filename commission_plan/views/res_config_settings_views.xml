@@ -10,33 +10,42 @@
             <block name="generate_lead_setting_container" position="after">
                 <block name="Commission " title="Commission">
                     <setting help="Apply Commission for this company">
-                        <field name="is_calculate_commission" company_dependent="1"/>
+                        <field name="is_calculate_commission"
+                               company_dependent="1"/>
                     </setting>
                     <setting help="Assign Transaction Coordinator Fee">
                         <field name="is_tc_enabled" company_dependent="1"/>
                     </setting>
-                    <setting help="Transaction Coordinator Threshold" invisible="not is_tc_enabled">
-                        <field name="tc_threshold" widget="monetary" company_dependent="1"/>
+                    <setting help="Transaction Coordinator Threshold"
+                             invisible="not is_tc_enabled">
+                        <field name="tc_threshold" widget="monetary"
+                               company_dependent="1"/>
                     </setting>
-                    <setting help="Transaction Coordinator Fee" invisible="not is_tc_enabled">
-                        <field name="tc_fee" widget="monetary" company_dependent="1"/>
+                    <setting help="Transaction Coordinator Fee"
+                             invisible="not is_tc_enabled">
+                        <field name="tc_fee" widget="monetary"
+                               company_dependent="1"/>
                     </setting>
-                    <setting help="Inside Sales Fee" >
-                        <field name="inside_sale_fee" widget="monetary" company_dependent="1"/>
+                    <setting help="Inside Sales Fee">
+                        <field name="inside_sale_fee" widget="monetary"
+                               company_dependent="1"/>
                     </setting>
-                    <setting help="Referral Fee Rate" >
-                        <field name="referral_fee_rate" company_dependent="1" />
+                    <setting help="Referral Fee Rate">
+                        <field name="referral_fee_rate" company_dependent="1"/>
                     </setting>
-                    <setting help="Referral Fee Rate" >
-                        <field name="co_agent_fee_rate" company_dependent="1" />
+                    <setting help="Referral Fee Rate">
+                        <field name="co_agent_fee_rate" company_dependent="1"/>
                     </setting>
                 </block>
-<!--                commercial commission-->
+                <!--                commercial commission-->
                 <block name="Commission " title="Commission">
                     <setting help="Apply Commission for this company">
-                        <field name="is_calculate_commercial_commission" company_dependent="1"/>
+                        <field name="is_calculate_commercial_commission"
+                               company_dependent="1"/>
                     </setting>
-
+                    <setting help="Referral Fee Rate">
+                        <field name="commercial_referral_fee_rate" company_dependent="1"/>
+                    </setting>
                 </block>
             </block>
         </field>

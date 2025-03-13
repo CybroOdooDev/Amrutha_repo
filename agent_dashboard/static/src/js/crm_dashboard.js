@@ -37,6 +37,13 @@ export class CRMDashboard extends Component {
             selectedDay: "monday", // Default selected day for adding tasks
             weekStartDate: this.getWeekStartDate(), // Add weekStartDate to state
             stageLabels: [], // Dynamic labels for the pie chart
+            totalActivities: 0,
+            plannedActivities: 0,
+            overdueActivities: 0,
+            todayActivities: 0,
+            activityList: [], // To store the list of activities
+            isLoadingActivities: true,
+            errorActivities: null,
 
         });
         // Bind `this` to the method
@@ -49,8 +56,48 @@ export class CRMDashboard extends Component {
             await this.fetchWeeklyTasks();
             await this.fetchStageData(); // Fetch stage labels
             await this.fetchGoalVsActualData(); // Fetch data for Goal vs Actual chart
+            await this.fetchActivityData(); // Fetch activity data
         });
     }
+
+    /**
+ * Fetch activity data from the crm.lead model.
+ */
+async fetchActivityData() {
+    try {
+        const activities = await this.orm.searchRead(
+            'crm.lead', // Model name
+            [], // Domain (empty to fetch all records)
+            ['activity_ids'], // Fields to fetch
+        );
+
+        // Flatten the list of activities
+        const allActivities = activities.flatMap(lead => lead.activity_ids);
+
+        // Fetch detailed activity data
+        const activityDetails = await this.orm.searchRead(
+            'mail.activity', // Model name
+            [['id', 'in', allActivities]], // Domain to fetch only relevant activities
+            ['summary', 'date_deadline', 'state'], // Fields to fetch
+        );
+
+        // Calculate counts
+        const today = new Date().toISOString().split('T')[0];
+        this.state.totalActivities = activityDetails.length;
+        this.state.plannedActivities = activityDetails.filter(activity => activity.state === 'planned').length;
+        this.state.overdueActivities = activityDetails.filter(activity => activity.state === 'overdue').length;
+        this.state.todayActivities = activityDetails.filter(activity => activity.date_deadline === today).length;
+
+        // Update the activity list
+        this.state.activityList = activityDetails;
+
+        this.state.isLoadingActivities = false;
+    } catch (error) {
+        console.error("Error fetching activity data:", error);
+        this.state.errorActivities = _t("Failed to load activity data. Please try again later.");
+        this.state.isLoadingActivities = false;
+    }
+}
     /**
      * Fetch data for the Goal vs Actual chart, grouped by months and filtered for the current year.
      */

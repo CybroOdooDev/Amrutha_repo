@@ -43,8 +43,8 @@
                 </div>
                 <div class="property-details" style="margin-top: 20px;">
                     <h3 style="color: #2c3e50; font-size: 18px;">Property Details</h3>
-                                    <table class="table"
-                                           style="width: 100%; border-collapse: collapse;">
+                    <table class="table"
+                           style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background-color: #3498db; color: #ffffff;">
                                 <th style="padding: 10px; text-align: left;">Client Name</th>
@@ -55,8 +55,9 @@
                                 <th style="padding: 10px; text-align: left;">Estimated Closing Date</th>
                             </tr>
                         </thead>
-                                        <tbody>
-                            <t t-foreach="state.propertyDetails" t-as="property"
+                        <tbody>
+                            <t t-foreach="state.propertyDetails"
+                               t-as="property"
                                t-key="property.clientName">
                                 <tr style="border-bottom: 1px solid #ecf0f1;">
                                     <td style="padding: 10px; color: #34495e;"><t t-esc="property.clientName"/></td>
@@ -107,7 +108,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                            <t t-foreach="state.propertyDetails" t-as="property"
+                            <t t-foreach="state.propertyDetails"
+                               t-as="property"
                                t-key="property.clientName">
                                 <tr style="border-bottom: 1px solid #ecf0f1;">
                                     <td style="padding: 10px; color: #34495e;"><t t-esc="property.clientName"/></td>
@@ -321,6 +323,61 @@
                             </li>
                         </ul>
                     </div>
+                </div>
+            </div>
+
+            <!-- Activity Planner Section -->
+            <div>
+                <div class="activity-summary"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Activity Summary</h3>
+                    <div class="activity-counts"
+                         style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Total Activities</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.totalActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Planned</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.plannedActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Overdue</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.overdueActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1;">
+                            <span style="font-size: 16px;">Today</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.todayActivities"/></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="activity-list"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Activity List</h3>
+                    <table class="table"
+                           style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #3498db; color: #ffffff;">
+                                <th style="padding: 10px; text-align: left;">Summary</th>
+                                <th style="padding: 10px; text-align: left;">Due Date</th>
+                                <th style="padding: 10px; text-align: left;">State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.activityList" t-as="activity"
+                               t-key="activity.id">
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.summary"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.date_deadline"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.state"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -27,6 +27,8 @@
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="referer_id"
                        invisible="not is_calculate_commission"/>
+                <field name="referral_fee_rate"
+                       invisible="not is_calculate_commission"/>
                 <field name="co_agent_id"
                        invisible="not is_calculate_commission"/>
                 <field name="inside_sale_person_id"
@@ -72,6 +74,8 @@
                         <field name="landlord_percentage"
                                invisible="is_sale_lead"/>
                         <field name="referer_id"
+                               invisible="is_calculate_commercial_commission"/>
+                        <field name="commercial_referral_fee_rate"
                                invisible="is_calculate_commercial_commission"/>
                         <field name="agent_payout_tier" readonly="1"/>
                         <field name="total_commercial_commission"

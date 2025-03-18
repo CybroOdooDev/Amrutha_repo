@@ -12,10 +12,18 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
+    <record id="lot_serial_import_action" model="ir.actions.act_window">
+        <field name="name">Import Lot/Serial Number</field>
+        <field name="res_model">import.lot.serial.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
     <menuitem id="import_menu" name="Import"
               parent="sale_renting.rental_menu_root" sequence="6"/>
+    <menuitem id="import_lot_serial_menu" name="Import Lot/Serial Number" action="rental_customization.lot_serial_import_action"
+              parent="rental_customization.import_menu" sequence="1"/>
     <menuitem id="import_order_menu" name="Import Rental Orders" action="rental_customization.active_order_action"
-              parent="rental_customization.import_menu"/>
+              parent="rental_customization.import_menu" sequence="2"/>
     <menuitem id="import_invoice_menu" name="Import Invoices" action="rental_customization.invoices_import_action"
-              parent="rental_customization.import_menu" />
+              parent="rental_customization.import_menu" sequence="3"/>
 </odoo>

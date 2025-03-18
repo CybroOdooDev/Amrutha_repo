@@ -5,6 +5,7 @@
         <record id="default_delivery_product" model="product.product">
             <field name="name">Rental Delivery</field>
             <field name="charges_ok">True</field>
+            <field name="service_category">delivery</field>
             <field name="lst_price">0.00</field>
             <field name="standard_price">0.00</field>
             <field name="type">service</field>
@@ -22,6 +23,7 @@
             <field name="type">service</field>
             <field name="service_policy">delivered_manual</field>
             <field name="charges_ok">True</field>
+            <field name="service_category">dwpp</field>
             <field name="sale_ok">False</field>
             <field name="rent_ok">False</field>
             <field name="purchase_ok">False</field>
@@ -33,6 +35,7 @@
             <field name="lst_price">0.00</field>
             <field name="standard_price">0.00</field>
             <field name="charges_ok">True</field>
+            <field name="service_category">pickup</field>
             <field name="type">service</field>
             <field name="service_policy">delivered_manual</field>
             <field name="sale_ok">False</field>
@@ -46,6 +49,7 @@
             <field name="lst_price">0.00</field>
             <field name="standard_price">0.00</field>
             <field name="charges_ok">True</field>
+            <field name="service_category">delivery-fuel</field>
             <field name="type">service</field>
             <field name="service_policy">delivered_manual</field>
             <field name="sale_ok">False</field>
@@ -59,6 +63,7 @@
             <field name="lst_price">0.00</field>
             <field name="standard_price">0.00</field>
             <field name="charges_ok">True</field>
+            <field name="service_category">pickup-fuel</field>
             <field name="type">service</field>
             <field name="service_policy">delivered_manual</field>
             <field name="sale_ok">False</field>

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-
-# from addons.product.models.product_template import PRICE_CONTEXT_KEYS
 from odoo import models, fields, _
 import openpyxl
 import base64
@@ -53,20 +51,19 @@ class ImportFileWizard(models.TransientModel):
             order_obj = self.env["sale.order"]
             partner_obj = self.env["res.partner"]
             product_obj = self.env["product.template"]
-        # Mapping imported values to match the selection field
             bill_terms_mapping = {'Advance Bill': 'advance','Not Advance Bill': 'late'}
             created_orders = []
-        # Dictionary to store serial number → delivery date mapping
             serial_delivery_date_map = {}
             serial_delivery_date_order_map = {}
             serial_pickup_date_map = {}
             serial_pickup_date_order_map = {}
             serial_delivery_driver_map = {}
             serial_pickup_driver_map = {}
+            line_qty_delivered = {}
             counter = 0
             for row in ws.iter_rows(min_row=2):
                 # counter += 1
-                # if counter > 13:
+                # if counter > 21:
                 #     break
                 order_ref = row[0].value
                 order_date = row[1].value
@@ -78,7 +75,9 @@ class ImportFileWizard(models.TransientModel):
                 rental_end_date = self.normalize_datetime(row[16].value)  # Converting to odoo's date format
                 next_bill_date = self.normalize_datetime(row[26].value)
                 product_name = row[17].value.strip() if row[17].value else None
+                description = row[18].value.strip() if row[18].value else None
                 product_qty = row[20].value
+                qty_delivered = row[21].value
                 unit_price = row[27].value
                 recurring_plan = row[8].value
                 price_list = row[4].value.strip() if row[4].value else None
@@ -92,19 +91,19 @@ class ImportFileWizard(models.TransientModel):
                 picked_lot_ids = self.env["stock.lot"]
                 delivery_driver = row[41].value if row[41].value else None
                 pickup_driver = row[43].value if row[43].value else None
-            # Get Drivers
-                if delivery_driver:
-                    delivery_driver_id = partner_obj.search([('name', '=', delivery_driver.strip())], limit=1)
-                    if not delivery_driver_id:
-                        raise ValidationError (f"Delivery Driver '{delivery_driver}' is not found. Please create it first. ")
-                if pickup_driver:
-                    pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
-                    if not pickup_driver_id:
-                        raise ValidationError (f"Pick-Up Driver '{pickup_driver}' is not found. Please create it first. ")
-            # Store serial number and values in dictionaries
                 serial_number = row[38].value if row[38].value else None
                 delivery_date = self.normalize_datetime(row[40].value) if row[40].value else None
                 pickup_date = row[42].value if row[42].value else None
+            # Get Drivers
+                #     if delivery_driver:
+                #         delivery_driver_id = partner_obj.search([('name', '=', delivery_driver.strip())], limit=1)
+                #         if not delivery_driver_id:
+                #             raise ValidationError (f"Delivery Driver '{delivery_driver}' is not found. Please create it first. ")
+                #     if pickup_driver:
+                #         pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
+                #         if not pickup_driver_id:
+                #             raise ValidationError (f"Pick-Up Driver '{pickup_driver}' is not found. Please create it first. ")
+            # Store serial number and values in dictionaries
                 if serial_number and delivery_date:
                     serial_delivery_date_map[serial_number] = delivery_date
                     serial_delivery_date_order_map[delivery_date] = order_ref
@@ -117,6 +116,8 @@ class ImportFileWizard(models.TransientModel):
                     serial_pickup_driver_map[serial_number] = pickup_driver
                 if serial_number and not picked_lot :
                         picked_lot = serial_number
+                if importing_external_id and qty_delivered:
+                    line_qty_delivered[importing_external_id]=qty_delivered
                 if not ([order_ref and order_date and customer_name and product_name and price_list]):
                     continue
                 if (order_ref and order_date and customer_name and price_list and  row[18].value):
@@ -126,46 +127,25 @@ class ImportFileWizard(models.TransientModel):
                         raise UserError(f"Customer '{customer_name}' in the order {order_ref},is not found. Please create it first.")
             # Get Product
                     if product_name:
-                        product = product_obj.search([('name', 'ilike', product_name)], limit=1)
-                        print('product name',product.name,order_ref)
+                        product = product_obj.search(['|',('name', 'ilike', product_name),('default_code', '=', product_name)], limit=1)
                         if not product:
-                            raise UserError(f"Product '{product_name}'  in the order {order_ref},is not found. Please create it first.")
-            # Get or Create serial numbers
+                            product_name = description
+                            product = product_obj.search([('name', 'ilike', product_name)], limit=1)
+                            if not product:
+                                raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
+            # Get  serial numbers
                     if picked_lot:
                         if not product.charges_ok:
-                            lot_names = [lot.strip() for lot in picked_lot.split(",")]  # Split and strip spaces
-                            picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
-                            if not picked_lot_ids or len(picked_lot_ids) < len(lot_names):
-                                existing_lot_names = picked_lot_ids.mapped('name')  # Get already existing lot names
-                                new_lots = []
-                                for name in lot_names:
-                                    if name not in existing_lot_names:  # Avoid duplication
-                                        new_lot = self.env["stock.lot"].create(
-                                            {'name': name, 'product_id': product.id, 'product_qty': 1,'company_id': company_id.id})
-                                        stock_location = self.env['stock.location'].search([('company_id','=',company_id.id),
-                                                                                         ('usage','=','internal'),
-                                                                                         ('replenish_location','=',True),])
-                                        self.env["stock.quant"].create([{'location_id': stock_location.id,
-                                                                         'product_id': product.id,
-                                                                         'lot_id': new_lot.id,
-                                                                         'in_date': order_date,
-                                                                         'inventory_quantity': 1.0}]).action_apply_inventory()
-                                        stock_valuation_layer = self.env['stock.valuation.layer'].search([('company_id','=',company_id.id),
-                                                                                  ('product_id', '=', product.id),
-                                                                                  ('lot_id','=', new_lot.id)])
-                                        if stock_valuation_layer:
-                                            query = """
-                                                UPDATE stock_valuation_layer
-                                                SET create_date = %s
-                                                WHERE id = %s
-                                            """
-                                            params = (order_date, stock_valuation_layer.id)
-                                            self.env.cr.execute(query, params)
-                                            stock_valuation_layer.stock_move_id.write({'date': order_date})
-                                            stock_valuation_layer.stock_move_id.move_line_ids.write({'date': order_date})
-                                        new_lots.append(new_lot.id)
-                                # Merge newly created lots with already existing ones
-                                picked_lot_ids |= self.env["stock.lot"].browse(new_lots)
+                            picked_lot_str = str(picked_lot)
+                            lot_names = [lot.strip().replace(" ", "") for lot in picked_lot_str.split(",")] if "," in picked_lot_str else [picked_lot_str]
+                            if lot_names:
+                                for lot in lot_names:
+                                    if lot not in ['NULL','Null','null']:
+                                        lot = lot.upper().strip()
+                                        picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
+                                        if not picked_lots:
+                                            raise ValidationError(f'Lot/Serial Number {lot} in the order {order_ref},is not found. Please create it first.')
+                                picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
                     else:
                         picked_lot_ids = None
             # Check if Order Already Exists
@@ -180,16 +160,22 @@ class ImportFileWizard(models.TransientModel):
                             'pricelist_id': self.env['product.pricelist'].search([('name', '=', price_list_name)], limit=1).id,
                             'company_id': self.env['res.company'].search([('name', '=', company_name)], limit=1).id,
                             'warehouse_id': self.env['stock.warehouse'].search([('name', '=', warehouse_name)], limit=1).id,
-                            'recurring_plan_id': self.env['rental.recurring.plan'].search([('name', '=', recurring_plan)],
-                                                                                          limit=1).id,
+                            'recurring_plan_id': self.env['rental.recurring.plan'].search([('name', '=', recurring_plan)],limit=1).id,
                             'is_rental_order': True,
                             'bill_terms': bill_terms,
                             'rental_start_date': rental_start_date,
                             'rental_return_date': rental_end_date,
-                            'order_line': []
+                            'imported_order': True,
+                            'order_line': [],
                         }])
                         created_orders.append(rental_order)
             # Add Order Line
+            # Search for existing order line
+                    existing_order_line = self.env['sale.order.line'].search([
+                        ('order_id', '=', rental_order.id),
+                        ('sequence', '=', row[35].value),
+                        ('importing_external_id', '=', importing_external_id)
+                    ], limit=1)
                     if row[19].value and row[19].value.strip() == 'Section':
                         order_line_vals = {
                             'order_id': rental_order.id,
@@ -202,6 +188,7 @@ class ImportFileWizard(models.TransientModel):
                         order_line_vals = {
                             'order_id': rental_order.id,
                             'product_id': product.id,
+                            'name' : product_name,
                             'display_type': False,
                             'sequence': row[35].value,
                             'is_sale': is_sale,
@@ -215,29 +202,41 @@ class ImportFileWizard(models.TransientModel):
                             'rental_pickable_lot_ids': picked_lot_ids if picked_lot_ids else None,
                             # 'returned_lot_ids': returned_lot_ids if returned_lot_ids else None,
                             'importing_external_id': importing_external_id if importing_external_id else None,
+                            'need_bill_importing': True if row[46].value and row[46].value.strip() == 'Bill' else False,
                         }
-                    order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
+                    if existing_order_line:
+                        existing_order_line.with_context(import_from_sheet=True).write(order_line_vals)
+                    else:
+                        order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
             for order in created_orders:
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
                 order.with_context(import_from_sheet=True).action_confirm()
                 action_dict = order.action_open_pickup()
                 pickup_wizard = self.env['rental.order.wizard'].with_context(action_dict['context']).create({})
                 pickup_wizard._get_wizard_lines()
+                lines= pickup_wizard.rental_wizard_line_ids.filtered(lambda p:p.product_id.charges_ok)
+                lines.sudo().unlink()
                 pickup_wizard.apply()
                 for line in order.order_line:
+            #updating all line's qty_delivered
+                    if line.importing_external_id in line_qty_delivered:
+                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
+            #Return
                     if line.rental_pickable_lot_ids:
                         for lot in line.rental_pickable_lot_ids:
                             if lot.name in serial_pickup_date_map and order.name in serial_pickup_date_order_map.values():
                                 return_action_dict = order.action_open_return()
                                 return_wizard = self.env['rental.order.wizard'].with_context(return_action_dict['context']).create({})
                                 return_wizard._get_wizard_lines()
+                                lines = return_wizard.rental_wizard_line_ids.filtered(lambda p: p.product_id.charges_ok)
+                                lines.sudo().unlink()
                                 for line in return_wizard.rental_wizard_line_ids:
                                     if line.product_id == lot.product_id:
                                         line.returned_lot_ids = lot
                                     else:
                                         line.qty_returned = 0
                                 return_wizard.apply()
-                # Update the delivery date of Stock move and Stock move line
+            # Update the delivery date of Stock move and Stock move line
                 for line in order.order_line.filtered(lambda l: l.rental_pickable_lot_ids):
                     for lot in line.rental_pickable_lot_ids:
                         # delivery_date = serial_delivery_date_map.get(lot.name)

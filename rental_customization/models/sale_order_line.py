@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 from ast import literal_eval
 from email.policy import default
@@ -32,6 +33,7 @@ class SaleOrderLine(models.Model):
     rental_pickable_lot_ids = fields.Many2many('stock.lot',domain="[('id','in',rental_available_lot_ids),('reserved','!=',True)]")
     is_service_charge = fields.Boolean()
     importing_external_id = fields.Char(help="External Id Provided during importing")
+    need_bill_importing = fields.Boolean()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -45,16 +47,18 @@ class SaleOrderLine(models.Model):
             prod_price = 0
 
             # Check price list and distance range if mileage is enabled
-            if product and product.transportation_rate:
+            if product and not product.charges_ok and product.transportation_rate:
                 order = self.env['sale.order'].browse(vals.get('order_id'))
                 if order.mileage_enabled and order.pricelist_id and order.pricelist_id.distance_range_line_ids:
 
                     mileage = order.mileage
                     for range in order.pricelist_id.distance_range_line_ids:
-                        delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
-                        pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
-                        if delivery_product_name in range.name.mapped(
-                                'name') or pickup_product_name in range.name.mapped('name'):
+                        delivery_products = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'delivery')]).mapped('name')
+
+                        pickup_products = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                    ('service_category', '=', 'pickup')]).mapped('name')
+                        if any(prod in range.name.mapped('name') for prod in delivery_products + pickup_products):
                             if range.distance_end != 0:
                                 if range.distance_begin <= mileage <= range.distance_end:
                                     prod_price = range.transportation_rate
@@ -65,11 +69,10 @@ class SaleOrderLine(models.Model):
             # Adding service charges while saving
             if product_template_id and not is_sale:
                 product_charges = product.charges_ids
-                products = [
-                    self.env.ref('rental_customization.default_delivery_product'),
-                    self.env.ref('rental_customization.default_pickup_product'),
-                    self.env.ref('rental_customization.default_dwpp_product')
-                ]
+                products = self.env['product.product'].search([
+                    ('charges_ok', '=', True),
+                    ('service_category', 'in', ['delivery', 'pickup',])
+                ]).mapped('name')
                 order = self.env['sale.order'].browse(vals.get('order_id'))
                 if product_charges:
                     for prod in product_charges:
@@ -85,10 +88,14 @@ class SaleOrderLine(models.Model):
                         })
                 # Fuel Surcharges
                 if prod_price > 0:
-                    products = [
-                        self.env.ref('rental_customization.delivery_fuel_surcharge_product'),
-                        self.env.ref('rental_customization.pickup_fuel_surcharge_product')
-                    ]
+                    # products = [
+                    #     self.env.ref('rental_customization.delivery_fuel_surcharge_product'),
+                    #     self.env.ref('rental_customization.pickup_fuel_surcharge_product')
+                    # ]
+                    products = self.env['product.product'].search([
+                    ('charges_ok', '=', True),
+                    ('service_category', 'in', ['delivery-fuel', 'pickup-fuel'])
+                ])
                     for prod in products:
                         fuel_charge = order.fuel_surcharge_percentage
                         order.order_line.create({
@@ -123,7 +130,7 @@ class SaleOrderLine(models.Model):
                     # to calculate the main product's price according to the pricelist
                     if "display_type" in vals and vals['display_type'] != 'line_section':
                         product = self.env['product.template'].browse(vals.get('product_template_id'))
-                        if product and product.transportation_rate:
+                        if product and not product.charges_ok and product.transportation_rate:
                             if product in line.order_id.pricelist_id.product_pricing_ids.product_template_id:
                                 for range in line.order_id.pricelist_id.product_pricing_ids:
                                     if range.product_template_id == product and line.product_template_id == product:
@@ -237,106 +244,123 @@ class SaleOrderLine(models.Model):
         section_prod = self.order_id.get_sections_with_products()
         for line in self:
             if line.order_id.is_rental_order and line.product_template_id and line.order_id.state != "draft" and not line.is_sale:
-                # Find the section this product belongs to
+            # Find the section this product belongs to
                 for section, order_line in section_prod.items():
                     if line in order_line and not line.product_template_id.charges_ok:
-                    # Check if "rental delivery" product exists in the section
-                        delivery_prod = self.env.ref('rental_customization.default_delivery_product').name
-                        # rental_delivery_line = next(
-                        #     (line for line in order_line if line.product_template_id.name == delivery_prod), None
-                        # )
-                        rental_delivery_line = next(
-                            (line for line in order_line if line.product_template_id.name in [delivery_prod, "SBDEL"]), None
-                        )
-                        if rental_delivery_line:
-                            # Update the qty_delivered for "rental delivery" product
-                            sale_order_line = self.env['sale.order.line'].browse(rental_delivery_line._origin.id)
-                            sale_order_line.write({
-                                'qty_delivered': line.qty_delivered -rental_delivery_line.qty_invoiced,
-                                'next_bill_date': line.next_bill_date,
-                                'rental_start_date':line.rental_start_date,
-                                'rental_end_date':line.rental_end_date,
-                            })
-                    # Check if "delivery fuel surcharge" product exists in the section
-                        delivery_fuel_surcharge_prod = self.env.ref('rental_customization.delivery_fuel_surcharge_product').name
-                        delivery_fuel_surcharge_line = next(
-                            (line for line in order_line if line.product_template_id.name in [delivery_fuel_surcharge_prod, "SBDELFS"]),
-                            None
-                        )
-                        if delivery_fuel_surcharge_line:
-                            # Update the qty_delivered for "delivery fuel surcharge" product
-                            sale_order_line = self.env['sale.order.line'].browse(delivery_fuel_surcharge_line._origin.id)
-                            sale_order_line.write({
-                                'qty_delivered': line.qty_delivered - rental_delivery_line.qty_invoiced,
-                                'next_bill_date': line.next_bill_date,
-                                'rental_start_date': line.rental_start_date,
-                                'rental_end_date': line.rental_end_date,
-                            })
-
-                    # Check if "rental dwpp" product exists in the section
-                        rental_dwpp_prod = self.env.ref('rental_customization.default_dwpp_product').name
-                        rental_dwpp_line = next(
-                            (line for line in order_line if line.product_template_id.name in [rental_dwpp_prod, "SBLOSSWAV-STCO","SBLOSSWAV-40OF"]), None
-                        )
-                        if rental_dwpp_line:
-                            # Update the qty_delivered for "rental dwpp" product
-                            sale_order_line = self.env['sale.order.line'].browse(rental_dwpp_line._origin.id)
-                            sale_order_line.write({
-                                'qty_delivered': line.qty_delivered - line.qty_returned,
-                                'next_bill_date': line.next_bill_date,
-                                'rental_start_date': line.rental_start_date,
-                                'rental_end_date': line.rental_end_date,
-
-                            })
-
-                    # Check if "rental pick-up" product exists in the section
-                        rental_pickup_prod = self.env.ref('rental_customization.default_pickup_product').name
-                        rental_pickup_line = next(
-                            (line for line in order_line if line.product_template_id.name in [rental_pickup_prod, "SBPIC"]), None
-                        )
-                        if rental_pickup_line:
-                            # Update the qty_delivered for "rental dwpp" product
-                            sale_order_line = self.env['sale.order.line'].browse(rental_pickup_line._origin.id)
-                            if line.product_template_id.charges_in_first_invoice:
+            # Check if "rental delivery" product exists in the section
+                        delivery_prod =self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'delivery')]).mapped('name')
+                        rental_delivery_lines =(line for line in order_line if line.product_template_id.name in delivery_prod)
+                        if rental_delivery_lines:
+                            for rental_delivery_line in rental_delivery_lines:
+                                # Update the qty_delivered for "rental delivery" product
+                                sale_order_line = self.env['sale.order.line'].browse(rental_delivery_line._origin.id)
                                 sale_order_line.write({
-                                    'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
-                                    'next_bill_date': line.next_bill_date,
-                                    'rental_start_date':line.rental_start_date,
-                                    'rental_end_date':line.rental_end_date,
-
-                                })
-                            else:
-                                sale_order_line.write({
-                                    'qty_delivered': line.qty_returned -rental_pickup_line.qty_invoiced,
+                                    'qty_delivered': line.qty_delivered -rental_delivery_line.qty_invoiced,
                                     'next_bill_date': line.next_bill_date,
                                     'rental_start_date':line.rental_start_date,
                                     'rental_end_date':line.rental_end_date,
                                 })
-
-                    # Check if "pickup fuel surcharge" product exists in the section
-                        pickup_fuel_surcharge_prod = self.env.ref('rental_customization.default_pickup_product').name
-                        pickup_fuel_surcharge_line = next(
-                            (line for line in order_line if line.product_template_id.name in [pickup_fuel_surcharge_prod, "SBPICFS"]),
-                            None
-                        )
-                        if pickup_fuel_surcharge_line:
-                            # Update the qty_delivered for "pick up fuel surcharge" product
-                            sale_order_line = self.env['sale.order.line'].browse(pickup_fuel_surcharge_line._origin.id)
-                            if line.product_template_id.charges_in_first_invoice:
+            # Check if "delivery fuel surcharge" product exists in the section
+                        delivery_fuel_surcharge_prod = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'delivery-fuel')]).mapped('name')
+                        delivery_fuel_surcharge_lines = (line for line in order_line if line.product_template_id.name in delivery_fuel_surcharge_prod)
+                        if delivery_fuel_surcharge_lines:
+                            for delivery_fuel_surcharge_line in delivery_fuel_surcharge_lines:
+                                # Update the qty_delivered for "delivery fuel surcharge" product
+                                sale_order_line = self.env['sale.order.line'].browse(delivery_fuel_surcharge_line._origin.id)
                                 sale_order_line.write({
-                                    'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
+                                    'qty_delivered': line.qty_delivered - rental_delivery_line.qty_invoiced,
+                                    'next_bill_date': line.next_bill_date,
+                                    'rental_start_date': line.rental_start_date,
+                                    'rental_end_date': line.rental_end_date,
+                                })
+            # Check if "rental dwpp" product exists in the section
+                        rental_dwpp_prod = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'dwpp')]).mapped('name')
+                        rental_dwpp_lines = (line for line in order_line if line.product_template_id.name in rental_dwpp_prod)
+                        if rental_dwpp_lines:
+                            for rental_dwpp_line in rental_dwpp_lines:
+                                # Update the qty_delivered for "rental dwpp" product
+                                sale_order_line = self.env['sale.order.line'].browse(rental_dwpp_line._origin.id)
+                                sale_order_line.write({
+                                    'qty_delivered': line.qty_delivered - line.qty_returned,
                                     'next_bill_date': line.next_bill_date,
                                     'rental_start_date': line.rental_start_date,
                                     'rental_end_date': line.rental_end_date,
 
                                 })
-                            else:
-                                sale_order_line.write({
-                                'qty_delivered': line.qty_returned - rental_pickup_line.qty_invoiced,
-                                'next_bill_date': line.next_bill_date,
-                                'rental_start_date': line.rental_start_date,
-                                'rental_end_date': line.rental_end_date,
-                            })
+            # Check if "rental pick-up" product exists in the section
+                        rental_pickup_prod = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'pickup')]).mapped('name')
+                        rental_pickup_lines = (line for line in order_line if line.product_template_id.name in rental_pickup_prod)
+                        if rental_pickup_lines:
+                            for rental_pickup_line in rental_pickup_lines:
+                                # Update the qty_delivered for "rental pickup" product
+                                sale_order_line = self.env['sale.order.line'].browse(rental_pickup_line._origin.id)
+                                if line.product_template_id.charges_in_first_invoice:
+                                    sale_order_line.write({
+                                        'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
+                                        'next_bill_date': line.next_bill_date,
+                                        'rental_start_date':line.rental_start_date,
+                                        'rental_end_date':line.rental_end_date,
+
+                                    })
+                                else:
+                                    sale_order_line.write({
+                                        'qty_delivered': line.qty_returned -rental_pickup_line.qty_invoiced,
+                                        'next_bill_date': line.next_bill_date,
+                                        'rental_start_date':line.rental_start_date,
+                                        'rental_end_date':line.rental_end_date,
+                                    })
+            # Check if "pickup fuel surcharge" product exists in the section
+                        pickup_fuel_surcharge_prod = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                ('service_category', '=', 'pickup-fuel')]).mapped('name')
+                        pickup_fuel_surcharge_lines = (line for line in order_line if line.product_template_id.name in pickup_fuel_surcharge_prod)
+                        if pickup_fuel_surcharge_lines:
+                            for pickup_fuel_surcharge_line in pickup_fuel_surcharge_lines:
+                                # Update the qty_delivered for "pick up fuel surcharge" product
+                                sale_order_line = self.env['sale.order.line'].browse(pickup_fuel_surcharge_line._origin.id)
+                                if line.product_template_id.charges_in_first_invoice:
+                                    sale_order_line.write({
+                                        'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
+                                        'next_bill_date': line.next_bill_date,
+                                        'rental_start_date': line.rental_start_date,
+                                        'rental_end_date': line.rental_end_date,
+
+                                    })
+                                else:
+                                    sale_order_line.write({
+                                    'qty_delivered': line.qty_returned - rental_pickup_line.qty_invoiced,
+                                    'next_bill_date': line.next_bill_date,
+                                    'rental_start_date': line.rental_start_date,
+                                    'rental_end_date': line.rental_end_date,
+                                })
+            # Check if 'no service charge' product exists in the section
+                        no_service_charge_prod = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                         ('service_category', '=',None)]).mapped('name')
+                        no_service_charge_prod_lines = (line for line in order_line if line.product_template_id.name in no_service_charge_prod)
+                        if no_service_charge_prod_lines:
+                            for no_service_charge_prod_line in no_service_charge_prod_lines:
+                                # Update the qty_delivered for "rental delivery" product
+                                sale_order_line = self.env['sale.order.line'].browse(
+                                    no_service_charge_prod_line._origin.id)
+                                if sale_order_line and not sale_order_line.need_bill_importing:
+                                    qty = line.qty_delivered - line.qty_invoiced
+                                    sale_order_line.write({
+                                        'qty_delivered': qty if qty >0 else 0,
+                                        'next_bill_date': line.next_bill_date,
+                                        'rental_start_date': line.rental_start_date,
+                                        'rental_end_date': line.rental_end_date,
+                                    })
+                                if sale_order_line and  sale_order_line.need_bill_importing:
+                                    qty = line.qty_delivered - line.qty_returned
+                                    sale_order_line.write({
+                                        'qty_delivered': qty if qty > 0 else 0,
+                                        'next_bill_date': line.next_bill_date,
+                                        'rental_start_date': line.rental_start_date,
+                                        'rental_end_date': line.rental_end_date,
+                                    })
 
     @api.onchange('is_sale')
     def _onchange_is_sale(self):
@@ -369,7 +393,7 @@ class SaleOrderLine(models.Model):
                 if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
                     product = self.product_template_id
                     # to check the price list and the pricing rule
-                    if product and product.transportation_rate and line.order_id.pricelist_id and line.order_id.pricelist_id.product_pricing_ids:
+                    if product and not product.charges_ok and product.transportation_rate and line.order_id.pricelist_id and line.order_id.pricelist_id.product_pricing_ids:
                         for range in line.order_id.pricelist_id.product_pricing_ids:
                             if range.product_template_id == product:
                                 # Check the rental period in the pricelist and recurring plan in the order
@@ -436,7 +460,8 @@ class SaleOrderLine(models.Model):
     def write(self, vals):
         """Supering Write function for reserving serial no. once it's added to the line
            and un-reserving once it is removed"""
-        return_value = super().write(vals)
+        if self._context.get('import_from_sheet'):
+            return super().write(vals)
         for line in self:
             prev_lots = line.rental_pickable_lot_ids
             return_value = super().write(vals)

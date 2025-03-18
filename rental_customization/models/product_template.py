@@ -13,3 +13,7 @@ class ProductTemplate(models.Model):
     charges_ok = fields.Boolean('Service Charge')
     transportation_rate = fields.Boolean(default=False,help="If selected,the unit price in the orders will be based"
                                                     " on the transportation rate specified in the selected price list.")
+    service_category = fields.Selection([('delivery', 'Delivery Charge'),
+                                         ('delivery-fuel', 'Delivery Fuel Surcharge'),
+                                         ('pickup', 'Pick-Up charge'),('pickup-fuel', 'Pick-Up Fuel Surcharge'),
+                                         ('dwpp', 'DWPP')])

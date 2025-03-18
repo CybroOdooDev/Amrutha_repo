@@ -15,7 +15,7 @@ class ImportInvoicesWizard(models.TransientModel):
     _name = "import.invoices.wizard"
     _description = "Import Invoices Wizard"
 
-    file = fields.Binary(string="File To Import",)
+    file = fields.Binary(string="File To Import",required=1)
 
     def action_import_invoices(self):
         """ Create rental orders and order lines through the 'Import' button action """

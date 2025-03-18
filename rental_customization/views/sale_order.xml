@@ -17,6 +17,7 @@
                        widget="label" width="120px" column_invisible=" not parent.is_rental_order"/>
                 <field name="parent_line" column_invisible="True"/>
                 <field name="importing_external_id" column_invisible="True"/>
+                <field name="need_bill_importing" column_invisible="False"/>
             </xpath>
 
             <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
@@ -48,7 +49,7 @@
             </xpath>
 
             <xpath expr="//button[@name='action_open_pickup']" position="after">
-                <button name="action_add_sale_order" string="Sale Order" type="object" class="btn-primary"
+                <button name="action_add_sale_order" string="Sale Order" type="object"
                         invisible="state != 'sale' or not is_rental_order"/>
             </xpath>
 
@@ -111,6 +112,13 @@
                             <field name="fuel_surcharge_unit" />
                         </td>
                     </tr>
+                </div>
+            </xpath>
+
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <label for="imported_order" invisible="not is_rental_order"/>
+                <div>
+                    <field name="imported_order" invisible="not is_rental_order"/>
                 </div>
             </xpath>
 

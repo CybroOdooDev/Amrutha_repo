@@ -7,6 +7,7 @@ from odoo.tools.safe_eval import datetime
 from odoo.exceptions import ValidationError
 
 
+
 class RentalOrderWizardLine(models.TransientModel):
     """To add new fields in the rental order"""
     _inherit = 'rental.order.wizard.line'
@@ -48,7 +49,7 @@ class RentalOrderWizardLine(models.TransientModel):
                                     elif sale_order.bill_terms == 'late':
                                         date_lines = self.env['product.return.dates'].create([{
                                             'order_id': sale_order.id,
-                                            'product_id': product.id,
+                                            'product_id': product_id,
                                             'serial_number': lot.id,
                                             'quantity': 1,
                                             'delivery_date': fields.Date.today(),
@@ -57,23 +58,27 @@ class RentalOrderWizardLine(models.TransientModel):
                                     elif sale_order.bill_terms == 'advance':
                                         date_lines = self.env['product.return.dates'].create([{
                                             'order_id': sale_order.id,
-                                            'product_id': product.id,
+                                            'product_id': product_id,
                                             'serial_number': lot.id,
                                             'quantity': 1,
                                             'delivery_date': fields.Date.today(),
                                             'order_line_id': lines.order_line_id.id,
                                         }])
 
-                        # Handle case where no pricing record is found
-                        if not date_lines:
-                            date_lines = self.env['product.return.dates'].create([{
-                                'order_id': sale_order.id,
-                                'product_id': product.id,
-                                'serial_number': lot.id,
-                                'quantity': 1,
-                                'delivery_date': fields.Date.today(),
-                                'order_line_id': lines.order_line_id.id,
-                            }])
+                                # Handle case where no pricing record is found
+                                else:
+                                    if not self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                                                                ('order_id', '=', sale_order.id),
+                                                                                ('order_line_id', '=',lines.order_line_id.id)
+                                                                                ], limit=1):
+                                        date_lines = self.env['product.return.dates'].create([{
+                                            'order_id': sale_order.id,
+                                            'product_id': product_id,
+                                            'serial_number': lot.id,
+                                            'quantity': 1,
+                                            'delivery_date': fields.Date.today(),
+                                            'order_line_id': lines.order_line_id.id,
+                                        }])
 
                         # Update warehouse_id if available
                         stock_quant = self.env['stock.lot'].search(

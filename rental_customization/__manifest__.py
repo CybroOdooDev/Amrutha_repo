@@ -25,6 +25,7 @@
         'wizard/import_file_wizard.xml',
         'views/rental_import_menu.xml',
         'views/account_move.xml',
+        'views/stock_location.xml',
     ],
-
+    "license": "LGPL-3",
 }

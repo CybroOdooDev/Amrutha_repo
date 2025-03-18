@@ -4,13 +4,15 @@ from importlib.metadata import requires
 from itertools import product
 from re import search
 from google.auth import default
-from odoo import api,models, fields, Command, _
+from odoo import api, models, fields, Command, _
 import pytz
 from odoo.tools import date_utils
 from odoo.exceptions import ValidationError
 import base64
 import requests
 import re
+from odoo.tools import float_compare
+
 
 RENTAL_STATUS = [
     ('draft', "Quotation"),
@@ -21,30 +23,40 @@ RENTAL_STATUS = [
     ('cancel', "Cancelled"),
 ]
 
+
 class SaleOrder(models.Model):
     """To add new fields in the rental order"""
     _inherit = "sale.order"
 
-    recurring_plan_id = fields.Many2one("rental.recurring.plan",string="Rental Recurring Plan",
+    _sql_constraints = [(
+        'rental_period_coherence',
+        "CHECK(rental_start_date <= rental_return_date)",
+        "The rental start date must be before the rental return date if any.",
+    )]
+
+    recurring_plan_id = fields.Many2one("rental.recurring.plan", string="Rental Recurring Plan",
                                         default=lambda self: self._get_default_recurring_plan())
-    bill_terms = fields.Selection(selection=[('advance', "Advance Bill"),('late', "Not Advance Bill")],
-                                  string="Bill Terms",default='late')
+    bill_terms = fields.Selection(selection=[('advance', "Advance Bill"), ('late', "Not Advance Bill")],
+                                  string="Bill Terms", default='late')
     show_update_button = fields.Boolean(string="Show Update Button", default=False, store=True)
     header_start_date = fields.Date(help="Header level start date for lines")
     header_return_date = fields.Date(help="Header level end date for lines")
-    date_records_line = fields.One2many(comodel_name='product.return.dates',inverse_name='order_id',
-                                        string="Date Records Lines",copy=True, auto_join=True)
+    date_records_line = fields.One2many(comodel_name='product.return.dates', inverse_name='order_id',
+                                        string="Date Records Lines", copy=True, auto_join=True)
     description = fields.Html(string='Description', translate=True)
-    mileage = fields.Float(help="Distance between Customer location and default warehouse",compute='_compute_mileage', default=0)
-    mileage_unit = fields.Selection(selection=[('ft',"ft"),('m', "M"),('km',"KM"),('mi',"Miles")],compute='_compute_mileage',default='mi')
-    mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled",compute='_compute_mileage_enabled')
+    mileage = fields.Float(help="Distance between Customer location and default warehouse", compute='_compute_mileage',
+                           default=0)
+    mileage_unit = fields.Selection(selection=[('ft', "ft"), ('m', "M"), ('km', "KM"), ('mi', "Miles")],
+                                    compute='_compute_mileage', default='mi')
+    mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled", compute='_compute_mileage_enabled')
     fuel_surcharge_percentage = fields.Integer(compute='_compute_fuel_surcharge')
-    fuel_surcharge_unit = fields.Char(default='%',readonly=True)
+    fuel_surcharge_unit = fields.Char(default='%', readonly=True)
     rental_status = fields.Selection(
         selection=RENTAL_STATUS,
         string="Rental Status",
         compute='_compute_rental_status',
         store=True)
+    imported_order = fields.Boolean()
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -60,7 +72,7 @@ class SaleOrder(models.Model):
 
     def _get_default_recurring_plan(self):
         """Get the default recurring plan (e.g., monthly)."""
-        default_plan = self.env['rental.recurring.plan'].search([('is_default','=','True')])
+        default_plan = self.env['rental.recurring.plan'].search([('is_default', '=', 'True')])
         return default_plan.id if default_plan else False
 
     @api.onchange('bill_terms')
@@ -86,11 +98,11 @@ class SaleOrder(models.Model):
         self.header_return_date = self.rental_return_date.astimezone(pytz.utc).replace(tzinfo=None)
 
         for order_line in self.order_line:
-            if self.header_start_date and self.header_return_date :
-                    order_line.rental_start_date = self.header_start_date
-                    if not order_line.is_sale:
-                        order_line.rental_end_date = self.header_return_date
-                    self.show_update_button = False
+            if self.header_start_date and self.header_return_date:
+                order_line.rental_start_date = self.header_start_date
+                if not order_line.is_sale:
+                    order_line.rental_end_date = self.header_return_date
+                self.show_update_button = False
             if not self.header_start_date and self.header_return_date:
                 raise ValueError("Start Date and End Date must be set on the order before updating lines.")
 
@@ -104,16 +116,16 @@ class SaleOrder(models.Model):
                         line.product_template_id.invoice_policy = "delivery"
 
                 # Ensuring one product within a section
-                for line in self.order_line:
-                    if not line.display_type and not line.product_template_id.charges_ok:
-                        current_sequence = line.sequence
-                        section_above = any(
-                            ol.sequence == current_sequence-1 and ol.display_type == 'line_section'
-                            for ol in self.order_line
-                        )
-
-                        if not section_above:
-                            raise ValidationError("Ensure each product is in a section and only one product per section.")
+                #     if not line.is_service_charge:
+                #         current_sequence = line.sequence
+                #         section_above = any(
+                #             ol.sequence == current_sequence - 1 and ol.display_type == 'line_section'
+                #             for ol in self.order_line
+                #         )
+                #
+                #         if not section_above and not line.is_service_charge:
+                #             raise ValidationError(
+                #                 "Ensure each product is in a section and only one product per section.")
 
     def get_sections_with_products(self):
         """ Returns a dictionary with sections as keys and their products as values """
@@ -147,7 +159,6 @@ class SaleOrder(models.Model):
             if line.product_template_id.charges_ok and not line.price_unit:
                 raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
         self.order_line._action_launch_stock_rule()
-
         # validation for mileage calculation
         if self.mileage_enabled:
             delivery_address = 0
@@ -183,14 +194,31 @@ class SaleOrder(models.Model):
 
     def action_open_pickup(self):
         """ Pick-Up button validation """
+        self.ensure_one()
         for line in self.order_line:
             if not line.is_sale and not line.next_bill_date and not line.display_type and not line.is_service_charge:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
-            if line.product_template_id.charges_ok and not line.price_unit :
+            if line.product_template_id.charges_ok and not line.price_unit:
                 raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        lines_to_pickup = self.order_line.filtered(
+            lambda r:
+            r.is_rental
+            and not r.is_service_charge
+            and r.product_type != 'combo'
+            and float_compare(r.product_uom_qty, r.qty_delivered, precision_digits=precision) > 0)
+        return self._open_rental_wizard('pickup', lines_to_pickup.ids)
 
-        return super().action_open_pickup()
-
+    def action_open_return(self):
+        self.ensure_one()
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        lines_to_return = self.order_line.filtered(
+            lambda r:
+            r.is_rental
+            and not r.is_service_charge
+            and r.product_type != 'combo'
+            and float_compare(r.qty_delivered, r.qty_returned, precision_digits=precision) > 0)
+        return self._open_rental_wizard('return', lines_to_return.ids)
     def _open_rental_wizard(self, status, order_line_ids):
         """over-writting the '_open_rental_wizard' function to change the pick-up wizard name"""
         context = {
@@ -209,6 +237,7 @@ class SaleOrder(models.Model):
 
     def generate_recurring_bills(self):
         """Continuous Bill creation based on the selected Rental recurring plan"""
+        service_prod = self.env['product.product'].search([('charges_ok', '=', True),('service_category', 'in', ['delivery-fuel', 'pickup-fuel','delivery','pickup','dwpp'])]).mapped('name')
         today = fields.Date.today()
         main_prod = None
         lines_to_invoice = self.env['sale.order.line'].search([])
@@ -220,9 +249,9 @@ class SaleOrder(models.Model):
             )
         else:
             filtered_order_lines = lines_to_invoice.filtered(
-                lambda line: ((
-                line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered !=0
+                lambda line: ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered != 0
             )
+
         # Group order lines by sale order
         orders_grouped = {}
         for line in filtered_order_lines:
@@ -245,8 +274,9 @@ class SaleOrder(models.Model):
                 'team_id': sale_order.team_id.id,
                 'partner_id': sale_order.partner_invoice_id.id,
                 'partner_shipping_id': sale_order.partner_shipping_id.id,
-                'fiscal_position_id': (sale_order.fiscal_position_id or sale_order.fiscal_position_id._get_fiscal_position(
-                                       sale_order.partner_invoice_id)).id,
+                'fiscal_position_id': (
+                            sale_order.fiscal_position_id or sale_order.fiscal_position_id._get_fiscal_position(
+                        sale_order.partner_invoice_id)).id,
                 'invoice_origin': sale_order.name,
                 'date': today,
                 'invoice_date': today,
@@ -264,8 +294,8 @@ class SaleOrder(models.Model):
             # Adding all the order lines to the invoice
             for line in order_lines:
                 for section, order_line in section_prod.items():
-                    if line in order_line  and line.qty_delivered:
-                        if line.is_sale and line.product_template_id.charges_ok== False :
+                    if line in order_line and line.qty_delivered:
+                        if line.is_sale and line.product_template_id.charges_ok == False:
                             invoice_vals['invoice_line_ids'].append(Command.create(
                                 line._prepare_invoice_line(
                                     name=f"Sale",
@@ -286,7 +316,7 @@ class SaleOrder(models.Model):
                                     )
                                 ))
                                 main_prod = line.product_id.name
-                            if sale_order.bill_terms == 'late' and not  sale_order.pricelist_id.product_pricing_ids:
+                            if sale_order.bill_terms == 'late' and not sale_order.pricelist_id.product_pricing_ids:
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
                                         name=f"Rental",
@@ -299,7 +329,7 @@ class SaleOrder(models.Model):
                             if sale_order.bill_terms == 'late' and sale_order.pricelist_id.product_pricing_ids:
                                 for range in sale_order.pricelist_id.product_pricing_ids:
                                     if range.product_template_id == line.product_template_id:
-                                    # Check the rental period in the pricelist and recurring plan in the order
+                                        # Check the rental period in the pricelist and recurring plan in the order
                                         pricelist_period_duration = range.recurrence_id.duration
                                         pricelist_period_unit = range.recurrence_id.unit
                                         if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
@@ -341,39 +371,50 @@ class SaleOrder(models.Model):
                                     quantity=line.qty_delivered - line.qty_returned,
                                 )
                             ))
-
-                        if (line.product_template_id.name == "Rental Delivery" or line.product_template_id.name == "Rental Pick-Up"
-                            or line.product_template_id.name == "Delivery Fuel Surcharge" or line.product_template_id.name == "Pick Up Fuel Surcharge"):
-                            line.qty_delivered = 0
+                        # if (
+                        #         line.product_template_id.name == "Rental Delivery" or line.product_template_id.name == "Rental Pick-Up"
+                        #         or line.product_template_id.name == "Delivery Fuel Surcharge" or line.product_template_id.name == "Pick Up Fuel Surcharge"):
+                        #     line.qty_delivered = 0
+                        # if line.is_service_charge and line.product_template_id.name not in service_prod:
+                        #     line.qty_delivered = 0
 
             # Removing lines with zero qty and zero price from the invoice
             invoice_vals['invoice_line_ids'] = [
                 vals for vals in invoice_vals['invoice_line_ids']
                 if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
             ]
-            invoice = self.env['account.move'].create(invoice_vals)
-            if invoice.invoice_payment_term_id:
-                invoice._onchange_invoice_payment_term_id()
-        # Updating the Next bill date
-            if invoice:
-                sale_order = invoice.line_ids.sale_line_ids.order_id
-                for lines in invoice.line_ids.sale_line_ids:
-                    if not lines.product_template_id.charges_ok:
-                        start_date = lines.next_bill_date
+            # Check if any product in invoice lines has charges_ok = False
+            has_non_charge_product = any(
+                self.env['product.product'].browse(vals[2].get('product_id')).charges_ok == False
+                for vals in invoice_vals['invoice_line_ids']
+            )
 
-                        billing_period_unit = sale_order.recurring_plan_id.billing_period_unit
-                        billing_period_value = sale_order.recurring_plan_id.billing_period_value
+            # Create invoice only if there is at least one non-chargeable product
+            if has_non_charge_product:
+                invoice = self.env['account.move'].create(invoice_vals)
+            # Updating the Next bill date
+                if invoice:
+                    if invoice.invoice_payment_term_id:
+                        invoice._onchange_invoice_payment_term_id()
 
-                        if billing_period_unit == "day":
-                            lines.next_bill_date = date_utils.add(start_date, days=billing_period_value)
-                        elif billing_period_unit == "month":
-                            lines.next_bill_date = date_utils.add(start_date, months=billing_period_value)
-                        elif billing_period_unit == "year":
-                            lines.next_bill_date = date_utils.add(start_date, years=billing_period_value)
-                        else:
-                            raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")
+                    sale_order = invoice.line_ids.sale_line_ids.order_id
+                    for lines in invoice.line_ids.sale_line_ids:
+                        if not lines.product_template_id.charges_ok:
+                            start_date = lines.next_bill_date
 
-    @api.depends('partner_id','partner_id.city', 'warehouse_id','warehouse_id.partner_id.city','mileage_enabled')
+                            billing_period_unit = sale_order.recurring_plan_id.billing_period_unit
+                            billing_period_value = sale_order.recurring_plan_id.billing_period_value
+
+                            if billing_period_unit == "day":
+                                lines.next_bill_date = date_utils.add(start_date, days=billing_period_value)
+                            elif billing_period_unit == "month":
+                                lines.next_bill_date = date_utils.add(start_date, months=billing_period_value)
+                            elif billing_period_unit == "year":
+                                lines.next_bill_date = date_utils.add(start_date, years=billing_period_value)
+                            else:
+                                raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")
+
+    @api.depends('partner_id', 'partner_id.city', 'warehouse_id', 'warehouse_id.partner_id.city', 'mileage_enabled')
     def _compute_mileage(self):
         """ To compute the Mileage if only the boolean field inside the setting is enabled """
         try:
@@ -405,8 +446,9 @@ class SaleOrder(models.Model):
                                 if response.status_code == 200:
                                     data = response.json()
                                     if data["destination_addresses"] != data["origin_addresses"]:
-                                        if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS' and data["rows"][0]["elements"][0]["status"] != 'NOT_FOUND':
-                                             # by road transportations only
+                                        if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS' and \
+                                                data["rows"][0]["elements"][0]["status"] != 'NOT_FOUND':
+                                            # by road transportations only
                                             distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
                                             distance_parts = distance_text.split()
                                             if distance_parts:
@@ -445,9 +487,10 @@ class SaleOrder(models.Model):
         res = super(SaleOrder, self).action_update_prices()
         if self.pricelist_id:
             for line in self.order_line:
-                if line.display_type != 'line_section' and (not line.product_template_id.charges_ok) and line.product_template_id.transportation_rate:
+                if line.display_type != 'line_section' and (
+                not line.product_template_id.charges_ok) and line.product_template_id.transportation_rate:
                     product = line.product_template_id
-                    if product and product.transportation_rate and self.pricelist_id and self.pricelist_id.product_pricing_ids:
+                    if product and not product.charges_ok and product.transportation_rate and self.pricelist_id and self.pricelist_id.product_pricing_ids:
                         for range in self.pricelist_id.product_pricing_ids:
                             if range.product_template_id == product:
                                 # Check the rental period in the pricelist and recurring plan in the order
@@ -465,17 +508,30 @@ class SaleOrder(models.Model):
                         if product and self.pricelist_id and self.pricelist_id.distance_range_line_ids:
                             mileage = self.mileage
                             for range in self.pricelist_id.distance_range_line_ids:
-                                delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
-                                pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
-                                delivery_fuel_surcharge = self.env.ref(
-                                    'rental_customization.delivery_fuel_surcharge_product').name
-                                pickup_fuel_surcharge = self.env.ref(
-                                    'rental_customization.pickup_fuel_surcharge_product').name
+                                # delivery_product_name = self.env.ref('rental_customization.default_delivery_product').name
+                                delivery_product_name = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                                             ('service_category', '=',
+                                                                                              'delivery')]).mapped(
+                                    'name')
+                                # pickup_product_name = self.env.ref('rental_customization.default_pickup_product').name
+                                pickup_product_name = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                                           ('service_category', '=',
+                                                                                            'pickup')]).mapped('name')
+                                # delivery_fuel_surcharge = self.env.ref(
+                                # 'rental_customization.delivery_fuel_surcharge_product').name
+                                delivery_fuel_surcharge = self.env['product.template'].search(
+                                    [('charges_ok', '=', True),
+                                     ('service_category', '=', 'delivery-fuel')]).mapped('name')
+                                # pickup_fuel_surcharge = self.env.ref(
+                                #     'rental_customization.pickup_fuel_surcharge_product').name
+                                pickup_fuel_surcharge = self.env['product.template'].search([('charges_ok', '=', True),
+                                                                                             ('service_category', '=',
+                                                                                              'pickup-fuel')]).mapped(
+                                    'name')
                                 fuel_charge = self.fuel_surcharge_percentage
-
-                                if delivery_product_name in range.name.mapped(
-                                        'name') or pickup_product_name in range.name.mapped('name'):
-                                    if line.product_template_id.name in (delivery_product_name,pickup_product_name) :
+                                if set(delivery_product_name) & set(range.name.mapped('name')) or set(
+                                        pickup_product_name) & set(range.name.mapped('name')):
+                                    if line.product_template_id.name in delivery_product_name or line.product_template_id.name in pickup_product_name:
                                         if range.distance_end != 0:
                                             if range.distance_begin <= mileage <= range.distance_end:
                                                 line.price_unit = range.transportation_rate
@@ -483,11 +539,10 @@ class SaleOrder(models.Model):
                                             if range.distance_begin <= mileage:
                                                 line.price_unit = mileage * range.transportation_rate
                                         price_unit = line.price_unit
-                                    if line.product_template_id.name in (delivery_fuel_surcharge,pickup_fuel_surcharge) :
-                                        # line.price_unit = (price_unit * 15) / 100
+                                    if line.product_template_id.name in delivery_fuel_surcharge or line.product_template_id.name in pickup_fuel_surcharge:
                                         line.price_unit = (price_unit * fuel_charge) / 100
-        # res = super(SaleOrder, self).action_update_prices()
-                elif line.display_type != 'line_section' and not line.product_template_id.transportation_rate:
+                # res = super(SaleOrder, self).action_update_prices()
+                elif line.display_type != 'line_section' and not line.product_template_id.transportation_rate and not line.product_template_id.charges_ok:
                     line.price_unit = line.product_template_id.list_price
         return res
 

@@ -26,6 +26,10 @@
                     <field name="charges_ok" help="charges to be applied for renting"/>
                     <label for="charges_ok"/>
                 </span>
+                 <span class="d-inline-block">
+                    <label for="service_category" invisible="not charges_ok"/>
+                    <field name="service_category" invisible="not charges_ok" />
+                </span>
             </xpath>
             <xpath expr="//field[@name='lot_valuated']" position="after">
                 <field name="transportation_rate"/>

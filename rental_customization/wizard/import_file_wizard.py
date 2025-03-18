@@ -94,6 +94,8 @@ class ImportFileWizard(models.TransientModel):
                 serial_number = row[38].value if row[38].value else None
                 delivery_date = self.normalize_datetime(row[40].value) if row[40].value else None
                 pickup_date = row[42].value if row[42].value else None
+                if not (order_ref and order_date and customer_name and price_list and row[18].value):
+                    break
             # Get Drivers
                 #     if delivery_driver:
                 #         delivery_driver_id = partner_obj.search([('name', '=', delivery_driver.strip())], limit=1)

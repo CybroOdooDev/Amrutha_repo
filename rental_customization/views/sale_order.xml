@@ -13,6 +13,8 @@
                 <field name="rental_start_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="rental_end_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="next_bill_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="warehouse_id" column_invisible="not parent.is_rental_order" readonly="parent.state == 'sale'"
+                                domain="[('company_id', 'in', [company_id, False])]"/>
                 <field name="rental_status"
                        widget="label" width="120px" column_invisible=" not parent.is_rental_order"/>
                 <field name="parent_line" column_invisible="True"/>
@@ -31,6 +33,13 @@
                 <field name="bill_terms" invisible="not is_rental_order" required="1"/>
                 <field name="recurring_plan_id" invisible="not is_rental_order" required="1"/>
                 <field name="show_update_button" invisible="1 or not is_rental_order"/>
+            </xpath>
+
+             <xpath expr="//field[@name='payment_term_id']" position="before" invisible="not is_rental_order">
+                <label for="warehouse_id" invisible="not is_rental_order"/>
+                <div>
+                    <field name="warehouse_id" invisible="not is_rental_order" readonly="state == 'sale'"/>
+                </div>
             </xpath>
 
             <xpath expr="//field[@name='validity_date']" position="attributes">
@@ -58,12 +67,12 @@
                     <field name="date_records_line">
                         <!--<list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">
-                            <field name="product_id" string="Product" width="150px"/>
-                            <field name="serial_number" string="Serial No." width="100px"/>
+                            <field name="product_id" string="Product" width="150px" readonly="1"/>
+                            <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
                             <field name="per_day_charges" string="Per day charge" width="100px"
                                    column_invisible="parent.bill_terms == 'advance'"/>
-                            <field name="delivery_date" string="Delivery Date" width="120px"/>
-                            <field name="return_date" string="Return Date" width="120px"/>
+                            <field name="delivery_date" string="Delivery Date" width="120px" readonly="1"/>
+                            <field name="return_date" string="Return Date" width="120px" readonly="1"/>
                             <field name="delivery_driver" width="120px"/>
                             <field name="pickup_driver" width="120px"/>
                             <field name="total_days" string="Total Days"
@@ -86,7 +95,13 @@
 
             <xpath expr="//notebook" position="inside">
                 <page string="BOL Notes" name="bol_notes">
-                    <field name="description" placeholder="Add a description..." options="{'collaborative': true}"/>
+                    <field name="date_records_line">
+                        <list editable="bottom">
+                            <field name="product_id" string="Product" width="150px" readonly="1"/>
+                            <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
+                            <field name="description" placeholder="Add a description..."  width="100px"/>
+                        </list>
+                    </field>
                 </page>
             </xpath>
 
@@ -116,9 +131,9 @@
             </xpath>
 
             <xpath expr="//field[@name='partner_shipping_id']" position="after">
-                <label for="imported_order" invisible="not is_rental_order"/>
+                <label for="imported_order" invisible="1"/>
                 <div>
-                    <field name="imported_order" invisible="not is_rental_order"/>
+                    <field name="imported_order" invisible="1"/>
                 </div>
             </xpath>
 

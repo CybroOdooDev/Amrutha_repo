@@ -48,4 +48,21 @@
            </form>
        </field>
    </record>
+    <record id="transfer_lot_serial_wizard_form" model="ir.ui.view">
+       <field name="name">transfer.lot.serial.wizard.form</field>
+       <field name="model">transfer.lot.serial.wizard</field>
+       <field name="arch" type="xml">
+           <form string="Transfer Lot/Serial Numbers">
+               <group>
+                   <group>
+                       <field name="file"/>
+                   </group>
+               </group>
+               <footer>
+                   <button name="action_transfer_lot_serial" string="Transfer" type="object" class="btn-primary"/>
+               </footer>
+           </form>
+       </field>
+   </record>
+
 </odoo>

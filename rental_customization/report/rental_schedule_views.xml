@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="rental_schedule_view_search_inherit_driver" model="ir.ui.view">
+        <field name="name">sale.rental.schedule.search.inherit.stock</field>
+        <field name="model">sale.rental.schedule</field>
+        <field name="inherit_id" ref="sale_stock_renting.rental_schedule_view_search_inherit_lots"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="lot_id" groups="stock.group_production_lot"/>
+            </field>
+            <filter name="Product" position="after">
+                <filter string="Delivery Driver" name="Delivery Driver" context="{'group_by': 'delivery_driver'}"/>
+                <filter string="Pick-Up Driver" name="Pick-Up Driver" context="{'group_by': 'pickup_driver'}"/>
+            </filter>
+        </field>
+    </record>
+</odoo>

@@ -63,7 +63,7 @@ class ImportLotSerialNumberWizard(models.TransientModel):
                         company_id = self.env['res.company'].search([('name', 'ilike', company_name)], limit=1)
                     if location and company_name:
                         location_id = self.env['stock.location'].search(
-                            [('company_id', '=', company_id.id), ('display_name', 'ilike', location)])
+                            [('company_id', '=', company_id.id), ('display_name', '=', location)])
                     if not location_id:
                         location_id = self.env['stock.location'].create([{'company_id' : company_id.id,
                                                                          'display_name': location,
@@ -120,11 +120,12 @@ class ImportLotSerialNumberWizard(models.TransientModel):
                                     UPDATE stock_valuation_layer
                                     SET create_date = %s
                                     WHERE id = %s
-                                """
+                                    """
                                 params = (create_on, stock_valuation_layer.id)
                                 self.env.cr.execute(query, params)
                                 stock_valuation_layer.stock_move_id.write({'date': create_on})
                                 stock_valuation_layer.stock_move_id.move_line_ids.write({'date': create_on})
+
             # raise ValidationError('success')
             return {
                 'effect': {

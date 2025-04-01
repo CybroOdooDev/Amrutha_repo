@@ -43,7 +43,6 @@ class SaleOrder(models.Model):
     header_return_date = fields.Date(help="Header level end date for lines")
     date_records_line = fields.One2many(comodel_name='product.return.dates', inverse_name='order_id',
                                         string="Date Records Lines", copy=True, auto_join=True)
-    description = fields.Html(string='Description', translate=True)
     mileage = fields.Float(help="Distance between Customer location and default warehouse", compute='_compute_mileage',
                            default=0)
     mileage_unit = fields.Selection(selection=[('ft', "ft"), ('m', "M"), ('km', "KM"), ('mi', "Miles")],
@@ -72,7 +71,7 @@ class SaleOrder(models.Model):
 
     def _get_default_recurring_plan(self):
         """Get the default recurring plan (e.g., monthly)."""
-        default_plan = self.env['rental.recurring.plan'].search([('is_default', '=', 'True')])
+        default_plan = self.env['rental.recurring.plan'].search([('is_default', '=', 'True'),('company_id','=',[self.env.company.id])])
         return default_plan.id if default_plan else False
 
     @api.onchange('bill_terms')
@@ -219,6 +218,7 @@ class SaleOrder(models.Model):
             and r.product_type != 'combo'
             and float_compare(r.qty_delivered, r.qty_returned, precision_digits=precision) > 0)
         return self._open_rental_wizard('return', lines_to_return.ids)
+
     def _open_rental_wizard(self, status, order_line_ids):
         """over-writting the '_open_rental_wizard' function to change the pick-up wizard name"""
         context = {

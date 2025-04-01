@@ -94,20 +94,15 @@
                                         ZIP :<t t-esc="docs.order_id.partner_shipping_id.zip"/><br/>
                                         COUNTRY :<t t-esc="docs.order_id.partner_shipping_id.country_id.name"/>
                                     </td>
-                                    <t t-if="location">
-                                        <td style="width:50%; border: 1px solid #000; padding: 10px;">
-                                            <b><t t-esc="location.name"/><br/></b>
-                                            STREET :<t t-esc="location.partner_id.street"/><br/>
-                                            STREET2 :<t t-esc="location.partner_id.street2"/><br/>
-                                            CITY :<t t-esc="location.partner_id.city"/><br/>
-                                            STATE :<t t-esc="location.partner_id.state_id.name"/><br/>
-                                            ZIP :<t t-esc="location.partner_id.zip"/><br/>
-                                            COUNTRY :<t t-esc="location.partner_id.country_id.name"/>
-                                        </td>
-                                    </t>
-                                    <t t-else="">
-                                        <td/>
-                                    </t>
+                                    <td style="width:50%;height:50%; border: 1px solid #000; padding: 10px;">
+                                        <b><t t-esc="location.name"/><br/></b>
+                                        STREET :<t t-esc="location.partner_id.street"/><br/>
+                                        STREET2 :<t t-esc="location.partner_id.street2"/><br/>
+                                        CITY :<t t-esc="location.partner_id.city"/><br/>
+                                        STATE :<t t-esc="location.partner_id.state_id.name"/><br/>
+                                        ZIP :<t t-esc="location.partner_id.zip"/><br/>
+                                        COUNTRY :<t t-esc="location.partner_id.country_id.name"/>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <!-- Arrival time -->

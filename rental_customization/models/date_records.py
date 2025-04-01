@@ -33,6 +33,7 @@ class ProductReturnDates(models.Model):
                                                    ('delivery', "Delivery Sent"),
                                                    ('pickup', "Pick-Up Sent"),
                                                    ],string="Signature Status",default="initial",store=True)
+    description = fields.Html(string='Description', translate=True)
 
     @api.depends('delivery_date', 'return_date', 'total_days')
     def _compute_total_days_price(self):
@@ -57,7 +58,7 @@ class ProductReturnDates(models.Model):
             else:
                 raise ValidationError("Select a Delivery Driver")
         # Taking the notes added inside the Internal Notes field and passing to the template
-        html_content = self.order_id.description
+        html_content = self.description
         if html_content:
             soup = BeautifulSoup(html_content, 'html.parser')
             plain_text = soup.get_text(separator=" ", strip=True)
@@ -70,7 +71,7 @@ class ProductReturnDates(models.Model):
             'logo': self.order_id.company_id.logo,
             'customer': self.order_id.partner_id.name,
             'notes': plain_text,
-            'location': self.warehouse_id
+            'location': self.order_id.warehouse_id
         }
         content, _report_type = self.env['ir.actions.report']._render_qweb_pdf(
             pdf_report.report_name,
@@ -133,6 +134,7 @@ class ProductReturnDates(models.Model):
                 self.order_id.message_post(body=body)
                 body = _("%s has been linked to this sign request.", self.order_id._get_html_link())
                 request.message_post(body=body)
+        # raise ValidationError('err')
 
     def action_send_pickup_signature(self):
         """ Button action for sending Pick-Up signature request to the driver """
@@ -145,7 +147,7 @@ class ProductReturnDates(models.Model):
                 self.signature_status = 'pickup'
 
         # Taking the notes added inside the Internal Notes field and passing to the template
-        html_content = self.order_id.description
+        html_content = self.description
         if html_content:
             soup = BeautifulSoup(html_content, 'html.parser')
             plain_text = soup.get_text(separator=" ", strip=True)
@@ -155,10 +157,11 @@ class ProductReturnDates(models.Model):
         pdf_report = self.env.ref('rental_customization.action_pickup_pdf_slip')
         stock_quant = self.env['stock.lot'].search(
             [('name', '=', self.serial_number.name), ('product_id', '=', self.product_id.id)])
-        if stock_quant:
-            location = stock_quant.location_id.warehouse_id
+        if stock_quant and (self.warehouse_id or stock_quant.location_id.warehouse_id):
+            # location = stock_quant.location_id.warehouse_id
+            location = self.warehouse_id
         else:
-            location = ""
+            location = self.order_id.warehouse_id
         data = {
             'ticket_no': self.order_id.name,
             'logo': self.order_id.company_id.logo,
@@ -213,7 +216,6 @@ class ProductReturnDates(models.Model):
                 self.order_id.message_post(body=body)
                 body = _("%s has been linked to this sign request.", self.order_id._get_html_link())
                 request.message_post(body=body)
-
     def action_signature_msg(self):
         """ Button action for showing validation message """
         if self.signature_status == 'pickup':

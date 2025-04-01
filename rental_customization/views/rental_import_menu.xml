@@ -18,6 +18,12 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
+    <record id="lot_serial_transfer_action" model="ir.actions.act_window">
+        <field name="name">Transfer Lot/Serial Number</field>
+        <field name="res_model">transfer.lot.serial.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
     <menuitem id="import_menu" name="Import"
               parent="sale_renting.rental_menu_root" sequence="6"/>
     <menuitem id="import_lot_serial_menu" name="Import Lot/Serial Number" action="rental_customization.lot_serial_import_action"
@@ -26,4 +32,6 @@
               parent="rental_customization.import_menu" sequence="2"/>
     <menuitem id="import_invoice_menu" name="Import Invoices" action="rental_customization.invoices_import_action"
               parent="rental_customization.import_menu" sequence="3"/>
+    <menuitem id="transfer_serial_menu" name="Transfer Lot/Serial Number" action="rental_customization.lot_serial_transfer_action"
+              parent="rental_customization.import_menu" sequence="4"/>
 </odoo>

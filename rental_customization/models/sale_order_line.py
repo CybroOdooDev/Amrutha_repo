@@ -50,7 +50,6 @@ class SaleOrderLine(models.Model):
             if product and not product.charges_ok and product.transportation_rate:
                 order = self.env['sale.order'].browse(vals.get('order_id'))
                 if order.mileage_enabled and order.pricelist_id and order.pricelist_id.distance_range_line_ids:
-
                     mileage = order.mileage
                     for range in order.pricelist_id.distance_range_line_ids:
                         delivery_products = self.env['product.template'].search([('charges_ok', '=', True),
@@ -63,7 +62,9 @@ class SaleOrderLine(models.Model):
                                 if range.distance_begin <= mileage <= range.distance_end:
                                     prod_price = range.transportation_rate
                             else:
-                                if range.distance_begin <= mileage:
+                                if range.pricelist_id.name == "WTR":
+                                    prod_price = range.transportation_rate
+                                elif range.distance_begin <= mileage:
                                     prod_price = mileage * range.transportation_rate
 
             # Adding service charges while saving
@@ -88,14 +89,11 @@ class SaleOrderLine(models.Model):
                         })
                 # Fuel Surcharges
                 if prod_price > 0:
-                    # products = [
-                    #     self.env.ref('rental_customization.delivery_fuel_surcharge_product'),
-                    #     self.env.ref('rental_customization.pickup_fuel_surcharge_product')
-                    # ]
                     products = self.env['product.product'].search([
-                    ('charges_ok', '=', True),
-                    ('service_category', 'in', ['delivery-fuel', 'pickup-fuel'])
-                ])
+                    ('charges_ok', '=', True),('company_id', '=', self.env.company.id),
+                    ('service_category', 'in', ['delivery-fuel', 'pickup-fuel'])])
+                    # products = self.env['product.product'].search([
+                    #     ('charges_ok', '=', True),('service_category', 'in', ['delivery-fuel', 'pickup-fuel'])])
                     for prod in products:
                         fuel_charge = order.fuel_surcharge_percentage
                         order.order_line.create({
@@ -304,7 +302,6 @@ class SaleOrderLine(models.Model):
                                         'next_bill_date': line.next_bill_date,
                                         'rental_start_date':line.rental_start_date,
                                         'rental_end_date':line.rental_end_date,
-
                                     })
                                 else:
                                     sale_order_line.write({
@@ -388,7 +385,7 @@ class SaleOrderLine(models.Model):
             if lines_to_delete:
                 lines_to_delete.write({
                     'active': True})
-            # Setting theunit price for products
+            # Setting the unit price for products
             for line in self:
                 if line.display_type != 'line_section' and (not line.product_template_id.charges_ok):
                     product = self.product_template_id
@@ -460,6 +457,7 @@ class SaleOrderLine(models.Model):
     def write(self, vals):
         """Supering Write function for reserving serial no. once it's added to the line
            and un-reserving once it is removed"""
+        return_value = True
         if self._context.get('import_from_sheet'):
             return super().write(vals)
         for line in self:

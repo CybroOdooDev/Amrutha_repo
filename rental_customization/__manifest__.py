@@ -8,7 +8,8 @@
 
     'data': [
         'data/default_products.xml',
-        'data/default_pricelist.xml',
+        'data/default_rental_recurring_plan.xml',
+        # 'data/default_pricelist.xml',
         'security/ir.model.access.csv',
         'security/security_rules.xml',
         'data/ir_cron_data.xml',
@@ -22,6 +23,7 @@
         'report/delivery_pdf_templates.xml',
         'report/pickup_pdf_templates.xml',
         'report/manage_reports_action.xml',
+        'report/rental_schedule_views.xml',
         'wizard/import_file_wizard.xml',
         'views/rental_import_menu.xml',
         'views/account_move.xml',

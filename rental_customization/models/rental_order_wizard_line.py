@@ -28,6 +28,7 @@ class RentalOrderWizardLine(models.TransientModel):
                     })
                     for lot in lines.pickedup_lot_ids:
                         lot.reserved = True
+                        warehouse = lot.location_id.warehouse_id
                         if sale_order.pricelist_id.product_pricing_ids:
                             for range in sale_order.pricelist_id.product_pricing_ids:
                                 if range.product_template_id == product:
@@ -37,33 +38,75 @@ class RentalOrderWizardLine(models.TransientModel):
 
                                     if sale_order.bill_terms == 'late' and (
                                             (pricelist_period_duration == 1) and (pricelist_period_unit == 'day')):
-                                        date_lines = self.env['product.return.dates'].create([{
-                                            'order_id': sale_order.id,
-                                            'product_id': product_id,
-                                            'serial_number': lot.id,
-                                            'quantity': 1,
-                                            'per_day_charges': lines.order_line_id.price_unit,
-                                            'delivery_date': fields.Date.today(),
-                                            'order_line_id':lines.order_line_id.id,
-                                        }])
+                                        if not self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                           ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                            lines.order_line_id.id)], limit=1):
+                                            date_lines = self.env['product.return.dates'].create([{
+                                                'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'per_day_charges': lines.order_line_id.price_unit,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id':lines.order_line_id.id,
+                                            }])
+                                        else:
+                                            date_lines = self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                                       ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                                        lines.order_line_id.id)], limit=1)
+                                            date_lines.update({'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'per_day_charges': lines.order_line_id.price_unit,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id':lines.order_line_id.id,})
                                     elif sale_order.bill_terms == 'late':
-                                        date_lines = self.env['product.return.dates'].create([{
-                                            'order_id': sale_order.id,
-                                            'product_id': product_id,
-                                            'serial_number': lot.id,
-                                            'quantity': 1,
-                                            'delivery_date': fields.Date.today(),
-                                            'order_line_id': lines.order_line_id.id,
-                                        }])
+                                        if not self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                           ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                            lines.order_line_id.id)],limit=1):
+                                            date_lines = self.env['product.return.dates'].create([{
+                                                'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id': lines.order_line_id.id,
+                                            }])
+                                        else:
+                                            date_lines = self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                                       ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                                        lines.order_line_id.id)], limit=1)
+                                            date_lines.update({
+                                                'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id': lines.order_line_id.id,
+                                            })
                                     elif sale_order.bill_terms == 'advance':
-                                        date_lines = self.env['product.return.dates'].create([{
-                                            'order_id': sale_order.id,
-                                            'product_id': product_id,
-                                            'serial_number': lot.id,
-                                            'quantity': 1,
-                                            'delivery_date': fields.Date.today(),
-                                            'order_line_id': lines.order_line_id.id,
-                                        }])
+                                        if not self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                           ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                             lines.order_line_id.id)],limit=1):
+                                            date_lines = self.env['product.return.dates'].create([{
+                                                'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id': lines.order_line_id.id,
+                                            }])
+                                        else:
+                                            date_lines = self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                                       ('order_id', '=', sale_order.id),('order_line_id', '=',
+                                                        lines.order_line_id.id)], limit=1)
+                                            date_lines.update({'order_id': sale_order.id,
+                                                'product_id': product_id,
+                                                'serial_number': lot.id,
+                                                'quantity': 1,
+                                                'delivery_date': fields.Date.today(),
+                                                'order_line_id': lines.order_line_id.id,})
 
                                 # Handle case where no pricing record is found
                                 else:
@@ -84,9 +127,9 @@ class RentalOrderWizardLine(models.TransientModel):
                         stock_quant = self.env['stock.lot'].search(
                             [('name', '=', lot.name), ('product_id', '=', lines.product_id.id)]
                         )
-                        if stock_quant and stock_quant.location_id.warehouse_id and date_lines:
+                        if stock_quant and warehouse and date_lines:
                             date_lines.update({
-                                'warehouse_id': stock_quant.location_id.warehouse_id.id
+                                'warehouse_id': warehouse
                             })
 
                 if lines.returned_lot_ids and lines['status'] == 'return' and product.is_storable:
@@ -112,5 +155,3 @@ class RentalOrderWizardLine(models.TransientModel):
                 'qty_delivered': len(remaining_lot_ids),
             })
         return default_line_vals
-
-

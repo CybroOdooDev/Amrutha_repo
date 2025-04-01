@@ -9,7 +9,7 @@
             <list js_class="dispatch_schedule">
                 <field name="product_lines"/>
                 <field name="project_id"/>
-                <field name="order_id"/>
+                <field name="order_id" widget="many2one_link"/>
                 <field name="stop_rent"/>
                 <field name="requested_delivery_date"/>
                 <field name="projected_delivery_date"/>

@@ -12,6 +12,7 @@ class RentalRecurringPlan(models.Model):
 
     name = fields.Char(translate=True, required=True, default="Monthly")
     company_id = fields.Many2one('res.company',default=lambda self: self.env.company, required=True, string="Company")
+    # company_id = fields.Many2one('res.company', string="Company")
 
     billing_period_value = fields.Integer(string="Duration", required=True, default=1)
     billing_period_unit = fields.Selection([("day","Days"), ("month", "Months"), ('year', 'Years')],
@@ -41,5 +42,6 @@ class RentalRecurringPlan(models.Model):
         """ Only one Default Recurirng Plan at a time """
         if self.is_default == True:
             is_default = self.env['rental.recurring.plan'].search([('is_default','=','True')])
-            if is_default and is_default.id != self.id:
-                raise ValidationError("Already exists a default Recurring Plan")
+            for is_default in is_default:
+                if is_default and is_default.id != self.id and is_default.company_id == self.company_id:
+                    raise ValidationError("Already exists a default Recurring Plan")

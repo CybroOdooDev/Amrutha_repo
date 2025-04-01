@@ -135,6 +135,12 @@ class ImportFileWizard(models.TransientModel):
                             product = product_obj.search([('name', 'ilike', product_name)], limit=1)
                             if not product:
                                 raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
+            # Get Pricelist
+                    if price_list:
+                        price_list_name = price_list.split(" (")[0]  # Extracts "ICT" from "ICT (USD)"
+                        pricelist = self.env['product.pricelist'].search([('name', '=', price_list_name)], limit=1)
+                        if not pricelist:
+                            raise UserError(f"Pricelist '{price_list_name}' in the order {order_ref},is not found. Please create it first.")
             # Get  serial numbers
                     if picked_lot:
                         if not product.charges_ok:
@@ -154,12 +160,12 @@ class ImportFileWizard(models.TransientModel):
                     rental_order = order_obj.search([('name', '=', order_ref)], limit=1)
             # creating new order
                     if not rental_order:
-                        price_list_name = price_list.split(" (")[0]  # Extracts "ICT" from "ICT (USD)"
+                        # price_list_name = price_list.split(" (")[0]  # Extracts "ICT" from "ICT (USD)"
                         rental_order = order_obj.create([{
                             'name': order_ref,
                             'date_order': order_date,
                             'partner_id': customer.id,
-                            'pricelist_id': self.env['product.pricelist'].search([('name', '=', price_list_name)], limit=1).id,
+                            'pricelist_id': pricelist.id,
                             'company_id': self.env['res.company'].search([('name', '=', company_name)], limit=1).id,
                             'warehouse_id': self.env['stock.warehouse'].search([('name', '=', warehouse_name)], limit=1).id,
                             'recurring_plan_id': self.env['rental.recurring.plan'].search([('name', '=', recurring_plan)],limit=1).id,

@@ -25,9 +25,8 @@ export class GoalVsActualChart extends Component {
 
     renderChart() {
         // Convert Proxy objects to plain arrays and normalize data
-        const goalData = [...this.props.goalData].map(value => value / 1000000); // Convert to millions
-        const actualData = [...this.props.actualData].map(value => value / 1000000); // Convert to millions
-
+        const goalData = this.props.goalData ? [...this.props.goalData].map(value => value / 1000000) : [];
+        const actualData = this.props.actualData ? [...this.props.actualData].map(value => value / 1000000) : [];
         console.log("Goal Data (normalized):", goalData);
         console.log("Actual Data (normalized):", actualData);
 

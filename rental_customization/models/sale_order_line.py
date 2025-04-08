@@ -3,9 +3,10 @@
 from ast import literal_eval
 from email.policy import default
 from itertools import product
+from time import process_time
 from venv import create
 from datetime import datetime
-from odoo import api, fields, models
+from odoo import api, fields, models, _
 import pytz
 from odoo.tools import date_utils
 from odoo.exceptions import ValidationError
@@ -320,7 +321,7 @@ class SaleOrderLine(models.Model):
                                 sale_order_line = self.env['sale.order.line'].browse(pickup_fuel_surcharge_line._origin.id)
                                 if line.product_template_id.charges_in_first_invoice:
                                     sale_order_line.write({
-                                        'qty_delivered': line.qty_delivered - rental_pickup_line.qty_invoiced,
+                                        'qty_delivered': line.qty_delivered - pickup_fuel_surcharge_line.qty_invoiced,
                                         'next_bill_date': line.next_bill_date,
                                         'rental_start_date': line.rental_start_date,
                                         'rental_end_date': line.rental_end_date,
@@ -328,7 +329,7 @@ class SaleOrderLine(models.Model):
                                     })
                                 else:
                                     sale_order_line.write({
-                                    'qty_delivered': line.qty_returned - rental_pickup_line.qty_invoiced,
+                                    'qty_delivered': line.qty_returned - pickup_fuel_surcharge_line.qty_invoiced,
                                     'next_bill_date': line.next_bill_date,
                                     'rental_start_date': line.rental_start_date,
                                     'rental_end_date': line.rental_end_date,
@@ -476,3 +477,57 @@ class SaleOrderLine(models.Model):
             if len(line.rental_pickable_lot_ids) > line.product_uom_qty:
                 line.product_uom_qty = len(line.rental_pickable_lot_ids)
         return return_value
+
+    def _move_serials(self, lot_ids, location_id, location_dest_id):
+        """Move the given lots from location_id to location_dest_id.
+
+        :param stock.lot lot_ids:
+        :param stock.location location_id:
+        :param stock.location location_dest_id:
+        """
+        if not lot_ids:
+            return
+        rental_stock_move = self.env['stock.move'].create([{
+            'product_id': self.product_id.id,
+            'product_uom_qty': len(lot_ids),
+            'product_uom': self.product_id.uom_id.id,
+            'location_id': location_id.id,
+            'location_dest_id': location_dest_id.id,
+            'partner_id': self.order_partner_id.id,
+            'sale_line_id': self.id,
+            'name': _("Rental move: %(order)s", order=self.order_id.name),
+        }])
+
+        for lot_id in lot_ids:
+            lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
+            lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
+            print('_move_serials',location_id,location_id.name,lot_id.name,self.order_id.name)
+            if not lot_quant:
+                location_id =self.env['stock.location'].search(
+                                                [('company_id', '=', self.order_id.company_id.parent_id.id), ('name', '=', 'Stock')])
+                print('new loc',location_id)
+                # location_dest_id =self.order_id.company_id.parent_id.rental_loc_id
+                rental_stock_move = self.env['stock.move'].create([{
+                    'product_id': self.product_id.id,
+                    'product_uom_qty': len(lot_ids),
+                    'product_uom': self.product_id.uom_id.id,
+                    'location_id': location_id.id,
+                    'location_dest_id': location_dest_id.id,
+                    'partner_id': self.order_partner_id.id,
+                    'sale_line_id': self.id,
+                    'name': _("Rental move: %(order)s", order=self.order_id.name),
+                }])
+                lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
+                lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
+                print('lasttttttttt',location_dest_id,self.company_id.rental_loc_id)
+                if not lot_quant:
+                    raise ValidationError(_("No valid quant has been found in location %(location)s for serial number %(serial_number)s!", location=location_id.name, serial_number=lot_id.name))
+                # Best fallback strategy??
+                # Make a stock move without specifying quants and lots?
+                # Let the move be created with the erroneous quant???
+            # As we are using serial numbers, only one quant is expected
+            ml = self.env['stock.move.line'].create(rental_stock_move._prepare_move_line_vals(reserved_quant=lot_quant))
+            ml['quantity'] = 1
+
+        rental_stock_move.picked = True
+        rental_stock_move._action_done()

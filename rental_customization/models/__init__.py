@@ -13,3 +13,4 @@ from . import stock_lot
 from . import sale_advance_payment_inv
 from . import account_move_line
 from . import stock_location
+# from . import res_partner

@@ -122,7 +122,19 @@ class RentalOrderWizardLine(models.TransientModel):
                                             'delivery_date': fields.Date.today(),
                                             'order_line_id': lines.order_line_id.id,
                                         }])
-
+                        else:
+                            if not self.env['product.return.dates'].search([('serial_number', '=', lot.id),
+                                                                            ('order_id', '=', sale_order.id),
+                                                                            ('order_line_id', '=', lines.order_line_id.id)
+                                                                            ], limit=1):
+                                date_lines = self.env['product.return.dates'].create([{
+                                    'order_id': sale_order.id,
+                                    'product_id': product_id,
+                                    'serial_number': lot.id,
+                                    'quantity': 1,
+                                    'delivery_date': fields.Date.today(),
+                                    'order_line_id': lines.order_line_id.id,
+                                }])
                         # Update warehouse_id if available
                         stock_quant = self.env['stock.lot'].search(
                             [('name', '=', lot.name), ('product_id', '=', lines.product_id.id)]

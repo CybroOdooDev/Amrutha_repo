@@ -50,7 +50,7 @@ class ImportFileWizard(models.TransientModel):
             ws = wb.active
             order_obj = self.env["sale.order"]
             partner_obj = self.env["res.partner"]
-            product_obj = self.env["product.template"]
+            product_obj = self.env["product.product"]
             bill_terms_mapping = {'Advance Bill': 'advance','Not Advance Bill': 'late'}
             created_orders = []
             serial_delivery_date_map = {}
@@ -60,22 +60,35 @@ class ImportFileWizard(models.TransientModel):
             serial_delivery_driver_map = {}
             serial_pickup_driver_map = {}
             line_qty_delivered = {}
+
+            no_product = []
+            no_customer = []
+            no_serial = []
+            not_in_company =[]
+            serial_from_another_company =[]
+            skipped_orders = []
+            used_serials = []
+            ignored_already_used_serail = []
+            skip_line = False
             counter = 0
             for row in ws.iter_rows(min_row=2):
+                skip_line = False
+                print(row)
                 # counter += 1
                 # if counter > 21:
                 #     break
                 order_ref = row[0].value
                 order_date = row[1].value
                 customer_name = row[2].value.strip() if row[2].value else None
+                delivery_address = row[3].value.strip() if row[3].value else None
                 company_name = row[5].value.strip() if row[5].value else None
                 company_id = self.env['res.company'].search([('name', '=', company_name)], limit=1)
                 warehouse_name = row[6].value.strip() if row[6].value else None
                 rental_start_date = self.normalize_datetime(row[15].value)  # Converting to odoo's date format
                 rental_end_date = self.normalize_datetime(row[16].value)  # Converting to odoo's date format
                 next_bill_date = self.normalize_datetime(row[26].value)
-                product_name = row[17].value.strip() if row[17].value else None
-                description = row[18].value.strip() if row[18].value else None
+                product_name = row[17].value.strip() if row[17].value and isinstance(row[17].value, str) else None
+                description = row[18].value.strip() if row[18].value and isinstance(row[18].value, str) else None
                 product_qty = row[20].value
                 qty_delivered = row[21].value
                 unit_price = row[27].value
@@ -94,17 +107,15 @@ class ImportFileWizard(models.TransientModel):
                 serial_number = row[38].value if row[38].value else None
                 delivery_date = self.normalize_datetime(row[40].value) if row[40].value else None
                 pickup_date = row[42].value if row[42].value else None
-                if not (order_ref and order_date and customer_name and price_list and row[18].value):
+                if not (order_ref and order_date and customer_name):
                     break
-            # Get Drivers
-                #     if delivery_driver:
-                #         delivery_driver_id = partner_obj.search([('name', '=', delivery_driver.strip())], limit=1)
-                #         if not delivery_driver_id:
-                #             raise ValidationError (f"Delivery Driver '{delivery_driver}' is not found. Please create it first. ")
-                #     if pickup_driver:
-                #         pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
-                #         if not pickup_driver_id:
-                #             raise ValidationError (f"Pick-Up Driver '{pickup_driver}' is not found. Please create it first. ")
+                if not description:
+                    skipped_orders.append(order_ref)
+                    continue
+                if not product_name and not row[19].value:
+                    skipped_orders.append(order_ref)
+                    continue
+            # Get Drivers - (pasted to the last)
             # Store serial number and values in dictionaries
                 if serial_number and delivery_date:
                     serial_delivery_date_map[serial_number] = delivery_date
@@ -122,25 +133,53 @@ class ImportFileWizard(models.TransientModel):
                     line_qty_delivered[importing_external_id]=qty_delivered
                 if not ([order_ref and order_date and customer_name and product_name and price_list]):
                     continue
-                if (order_ref and order_date and customer_name and price_list and  row[18].value):
+                if (order_ref and order_date and customer_name and  row[18].value):
             # Get Customer
                     customer = partner_obj.search([('name', '=', customer_name)], limit=1)
                     if not customer:
-                        raise UserError(f"Customer '{customer_name}' in the order {order_ref},is not found. Please create it first.")
+                        customer = partner_obj.search(['|',('name', '=', customer_name.upper()),('name', '=', customer_name.lower())], limit=1)
+                        if not customer:
+                            no_customer.append(customer_name)
+                            customer = partner_obj.create([{'name': customer_name,
+                                                             'company_id': company_id.id,}])
+                        # raise UserError(f"Customer '{customer_name}' in the order {order_ref},is not found. Please create it first.")
+                    shipping_addr = partner_obj.search([('name', '=', delivery_address)], limit=1)
             # Get Product
                     if product_name:
-                        product = product_obj.search(['|',('name', 'ilike', product_name),('default_code', '=', product_name)], limit=1)
+                        product = product_obj.search(['|',('name', '=', product_name),('default_code', '=', product_name)], limit=1)
                         if not product:
-                            product_name = description
-                            product = product_obj.search([('name', 'ilike', product_name)], limit=1)
+                            product_name_cleaned = product_name.replace(" ", "")
+                            product = product_obj.search([
+                                ('rent_ok', '=', True),'|',
+                                ('name', '=', product_name_cleaned),
+                                ('default_code', '=', product_name_cleaned)
+                            ], limit=1)
                             if not product:
-                                raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
+                                product = product_obj.search([('name', '=', description)], limit=1)
+                                if not product:
+                                    product = product_obj.search([('description_sale', '=', description)], limit=1)
+                                    if not product:
+                                        no_product.append(product_name)
+                                        # cleaned_text = description.replace(product_name, "",1)  # The `1` ensures only the first occurrence is removed
+                                        skipped_orders.append(order_ref)
+                                        continue
+                                        # raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
+                        if product and product.company_id and (product.company_id != company_id and product.company_id != company_id.parent_id):
+                            not_in_company.append(product_name)
+                            skipped_orders.append(order_ref)
+                            continue
+                            # raise UserError(f"Product '{product_name}' in the order {order_ref},belongs to another company ")
             # Get Pricelist
                     if price_list:
                         price_list_name = price_list.split(" (")[0]  # Extracts "ICT" from "ICT (USD)"
-                        pricelist = self.env['product.pricelist'].search([('name', '=', price_list_name)], limit=1)
+                        pricelist = self.env['product.pricelist'].search([('name', '=', price_list_name),('company_ids','=',company_id.id)], limit=1)
                         if not pricelist:
-                            raise UserError(f"Pricelist '{price_list_name}' in the order {order_ref},is not found. Please create it first.")
+                            pricelist = self.env['product.pricelist'].search(
+                                [('name', '=', 'Default'), ('company_id', '=', company_id.id)], limit=1)
+                            if not pricelist:
+                                raise UserError(f"Pricelist '{price_list_name}' in the order {order_ref},is not found. Please create it first.")
+                    else:
+                        pricelist = self.env['product.pricelist'].search([('name', '=', 'Default'),('company_id','=',company_id.id)], limit=1)
             # Get  serial numbers
                     if picked_lot:
                         if not product.charges_ok:
@@ -148,24 +187,53 @@ class ImportFileWizard(models.TransientModel):
                             lot_names = [lot.strip().replace(" ", "") for lot in picked_lot_str.split(",")] if "," in picked_lot_str else [picked_lot_str]
                             if lot_names:
                                 for lot in lot_names:
+                                    if lot  in used_serials:
+                                        lot_names.remove(lot)
+                                        ignored_already_used_serail.append(lot)
+                                    else:
+                                        used_serials.append(lot)
                                     if lot not in ['NULL','Null','null']:
                                         lot = lot.upper().strip()
                                         picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
+                                        if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id != company_id.parent_id:
+                                            serial_from_another_company.append(lot)
+                                            skipped_orders.append(order_ref)
+                                            # raise ValidationError (f'serial not in company or parent company, {lot}')
+                                            continue
+                                        if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id == company_id.parent_id:
+                                            skip_line = True
+                                            print('not in company',lot)
+                                            continue
                                         if not picked_lots:
-                                            raise ValidationError(f'Lot/Serial Number {lot} in the order {order_ref},is not found. Please create it first.')
+                                            no_serial.append(lot)
+                                            stock_loc = self.env['stock.location'].search(
+                                                [('company_id', '=', company_id.id), ('name', '=', 'Stock')])
+                                            picked_lots = self.env["stock.lot"].create([{'name': lot,
+                                                                                     'product_id': product.id,
+                                                                                     'company_id': company_id.id if company_id else None,
+                                                                                     'location_id': stock_loc.id if stock_loc else None}])
+                                            self.env["stock.quant"].create([{'location_id': stock_loc.id if stock_loc else None,
+                                                                             'product_id': product.id,
+                                                                             'lot_id': picked_lots.id,
+                                                                             'inventory_quantity': 1.0}]).action_apply_inventory()
+                                            # raise ValidationError(f'Lot/Serial Number {lot} in the order {order_ref},is not found. Please create it first.')
+                                if skip_line :
+                                    continue
+                                print('lot_names',lot_names)
                                 picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
+                                # picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
                     else:
                         picked_lot_ids = None
             # Check if Order Already Exists
                     rental_order = order_obj.search([('name', '=', order_ref)], limit=1)
             # creating new order
                     if not rental_order:
-                        # price_list_name = price_list.split(" (")[0]  # Extracts "ICT" from "ICT (USD)"
                         rental_order = order_obj.create([{
                             'name': order_ref,
                             'date_order': order_date,
                             'partner_id': customer.id,
-                            'pricelist_id': pricelist.id,
+                            'partner_shipping_id': shipping_addr if shipping_addr else customer.id,
+                            'pricelist_id': pricelist.id if pricelist else None,
                             'company_id': self.env['res.company'].search([('name', '=', company_name)], limit=1).id,
                             'warehouse_id': self.env['stock.warehouse'].search([('name', '=', warehouse_name)], limit=1).id,
                             'recurring_plan_id': self.env['rental.recurring.plan'].search([('name', '=', recurring_plan)],limit=1).id,
@@ -200,7 +268,7 @@ class ImportFileWizard(models.TransientModel):
                             'display_type': False,
                             'sequence': row[35].value,
                             'is_sale': is_sale,
-                            'is_rental': is_rental,
+                            'is_rental': True,
                             'is_service_charge': is_service_charge,
                             'product_uom_qty': product_qty or 1,
                             'price_unit': float(unit_price),
@@ -216,15 +284,16 @@ class ImportFileWizard(models.TransientModel):
                         existing_order_line.with_context(import_from_sheet=True).write(order_line_vals)
                     else:
                         order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
+            # raise ValidationError('stop')
             for order in created_orders:
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
-                order.with_context(import_from_sheet=True).action_confirm()
-                action_dict = order.action_open_pickup()
+                order.with_context(import_from_sheet=True).with_context(import_from_sheet=True).action_confirm()
+                action_dict = order.with_context(import_from_sheet=True).action_open_pickup()
                 pickup_wizard = self.env['rental.order.wizard'].with_context(action_dict['context']).create({})
                 pickup_wizard._get_wizard_lines()
                 lines= pickup_wizard.rental_wizard_line_ids.filtered(lambda p:p.product_id.charges_ok)
                 lines.sudo().unlink()
-                pickup_wizard.apply()
+                pickup_wizard.with_context(import_from_sheet=True).apply()
                 for line in order.order_line:
             #updating all line's qty_delivered
                     if line.importing_external_id in line_qty_delivered:
@@ -282,6 +351,14 @@ class ImportFileWizard(models.TransientModel):
                                     pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
                                     if pickup_driver_id:
                                         return_date_record.write({'pickup_driver': pickup_driver_id})
+            print('no_product',no_product)
+            print('no_customer',no_customer)
+            print('no_serial',no_serial)
+            print('not_in_company',not_in_company)
+            print('serial_from_another_company',serial_from_another_company)
+            print('skipped_orders',skipped_orders)
+            print('ignored_already_used_serail',ignored_already_used_serail)
+            print('created_orders',len(created_orders))
             # raise ValidationError('Success')
             return {
                 'effect': {
@@ -294,3 +371,12 @@ class ImportFileWizard(models.TransientModel):
             }
         except ValidationError as e:
             raise e
+
+ # if delivery_driver:
+    #         delivery_driver_id = partner_obj.search([('name', '=', delivery_driver.strip())], limit=1)
+    #         if not delivery_driver_id:
+    #             raise ValidationError (f"Delivery Driver '{delivery_driver}' is not found. Please create it first. ")
+    #     if pickup_driver:
+    #         pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
+    #         if not pickup_driver_id:
+    #             raise ValidationError (f"Pick-Up Driver '{pickup_driver}' is not found. Please create it first. ")

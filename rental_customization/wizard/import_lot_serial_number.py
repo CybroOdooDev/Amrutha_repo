@@ -8,7 +8,8 @@ from io import BytesIO
 from odoo.exceptions import ValidationError, UserError
 import pytz
 from odoo.tools import date_utils
-
+import logging
+logger = logging.getLogger(__name__)
 
 class ImportLotSerialNumberWizard(models.TransientModel):
     _name = "import.lot.serial.wizard"
@@ -50,6 +51,8 @@ class ImportLotSerialNumberWizard(models.TransientModel):
             product_obj = self.env["product.product"]
             created_serialnumber = []
             for row in ws.iter_rows(min_row=2):
+                print(row)
+                # logger.debug(row)
                 name = str(row[0].value).strip() if row[0].value else None
                 product_name = row[1].value.strip() if row[1].value else None
                 create_on = self.normalize_datetime(row[2].value) if row[2].value else None
@@ -62,23 +65,35 @@ class ImportLotSerialNumberWizard(models.TransientModel):
                     if company_name:
                         company_id = self.env['res.company'].search([('name', 'ilike', company_name)], limit=1)
                     if location and company_name:
-                        location_id = self.env['stock.location'].search(
-                            [('company_id', '=', company_id.id), ('display_name', '=', location)])
-                    if not location_id:
-                        location_id = self.env['stock.location'].create([{'company_id' : company_id.id,
-                                                                         'display_name': location,
-                                                                         'name': location,}])
+                        if '/Stock' in location:
+                            # For transfered lot/serial numbers
+                            location_id = self.env['stock.location'].search(
+                                [('company_id', '=', company_id.id), ('display_name', '=', location)])
+                        else:
+                            stock_loc = self.env['stock.location'].search(
+                                [('company_id', '=', company_id.id), ('name', '=', 'Stock')])
+                            location_id = self.env['stock.location'].search(
+                                [('company_id', '=', company_id.id), ('name', '=', location),('location_id','=',stock_loc.id)])
+                        if not location_id:
+                            location_id = self.env['stock.location'].create([{'company_id' : company_id.id,
+                                                                         'name': location,
+                                                                         'location_id':stock_loc.id}])
+                            # raise ValidationError (f'No Location {name}')
+
                 # Get Product
-                    product = product_obj.search(['|',('name', 'ilike', product_name),('default_code', 'ilike', product_name)], limit=1)
+                    product = product_obj.search([('rent_ok', '=', True),('default_code', 'ilike', product_name)], limit=1)
                     if product:
                         product.tracking = 'serial' #changing the product's tracking
                         product.lot_valuated = True
                     else:
-                        product = product_obj.create([{'name': product_name,
-                                                      'type': 'consu',
-                                                      'is_storable':True,}])
-                        # raise UserError(
-                        #     f"Product '{product_name}'  in the Lot/Serial Number {name},is not found. Please create it first.")
+                        product_name = product_name.replace(" ", "")
+                        product = product_obj.search(
+                            [('rent_ok', '=', True), ('default_code', 'ilike', product_name)], limit=1)
+                        # product = product_obj.create([{'name': product_name,
+                        #                               'type': 'consu',
+                        #                               'is_storable':True,}])
+                        if not product:
+                            raise UserError(f"Product '{product_name}'  in the Lot/Serial Number {name},is not found. Please create it first.")
                     if name and product and location_id:
                         serial_exists = self.env["stock.lot"].search(
                             [('name', 'ilike', name), ('product_id', '=', product.id)])

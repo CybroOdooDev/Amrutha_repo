@@ -56,6 +56,11 @@ class SaleOrder(models.Model):
         compute='_compute_rental_status',
         store=True)
     imported_order = fields.Boolean()
+    parent_company_id = fields.Many2one(
+        'res.company',
+        store=True,
+        related = 'company_id.parent_id'
+    )
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -150,26 +155,27 @@ class SaleOrder(models.Model):
         """ For creating sale order if is_sale boolean is enabled """
         if self._context.get('import_from_sheet'):
             return super(SaleOrder, self)._action_confirm()
-        if not self.pricelist_id:
-            raise ValidationError("Add a Price List")
-        for line in self.order_line:
-            if line.is_sale:
-                line.is_rental = False
-            if line.product_template_id.charges_ok and not line.price_unit:
-                raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
-        self.order_line._action_launch_stock_rule()
-        # validation for mileage calculation
-        if self.mileage_enabled:
-            delivery_address = 0
-            if self.partner_id.child_ids:
-                for child in self.partner_id.child_ids:
-                    if child.type == 'delivery':
-                        delivery_address += 1
-                if delivery_address == 0:
+        else:
+            if not self.pricelist_id:
+                raise ValidationError("Add a Price List")
+            for line in self.order_line:
+                if line.is_sale:
+                    line.is_rental = False
+                if line.product_template_id.charges_ok and not line.price_unit:
+                    raise ValidationError("Add unit Price for Service Charges if applicable;otherwise remove the line.")
+            self.order_line._action_launch_stock_rule()
+            # validation for mileage calculation
+            if self.mileage_enabled:
+                delivery_address = 0
+                if self.partner_id.child_ids:
+                    for child in self.partner_id.child_ids:
+                        if child.type == 'delivery':
+                            delivery_address += 1
+                    if delivery_address == 0:
+                        raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
+                else:
                     raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
-            else:
-                raise ValidationError("Add a Delivery Address for the customer for Mileage calculation")
-        return super(SaleOrder, self)._action_confirm()
+            return super(SaleOrder, self)._action_confirm()
 
     def _prepare_confirmation_values(self):
         """ Over-writing the function - Prepare the sales order confirmation values."""
@@ -195,6 +201,8 @@ class SaleOrder(models.Model):
         """ Pick-Up button validation """
         self.ensure_one()
         for line in self.order_line:
+            if self._context.get('import_from_sheet'):
+                continue
             if not line.is_sale and not line.next_bill_date and not line.display_type and not line.is_service_charge:
                 raise ValidationError("Rental Start Date and Next Bill Date is mandatory before Delivery And Return")
             if line.product_template_id.charges_ok and not line.price_unit:

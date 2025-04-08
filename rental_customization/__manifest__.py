@@ -3,7 +3,7 @@
     'name': 'Rental Customization',
     'version': '18.0.1.0.0',
     'description': """ Customisation for Rental module """,
-    'depends': ['base', 'product', 'sale_management', 'sale_project', 'sale_renting', 'account', 'sale_stock', 'stock'],
+    'depends': ['base','base_setup','contacts', 'product', 'sale_management', 'sale_project', 'sale_renting', 'account', 'sale_stock', 'stock'],
     'installable': True,
 
     'data': [
@@ -14,6 +14,7 @@
         'security/security_rules.xml',
         'data/ir_cron_data.xml',
         'data/paperformat.xml',
+        # 'views/res_partner.xml',
         'views/product_template.xml',
         'views/sale_order.xml',
         'views/recurring_plan.xml',

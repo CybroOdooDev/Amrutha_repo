@@ -1,0 +1,9 @@
+# -*- coding: utf-8 -*-
+
+from odoo import fields, models
+
+
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
+
+    street_3 = fields.Char('Street 3')

@@ -71,6 +71,7 @@ class ImportFileWizard(models.TransientModel):
             skipped_orders = []
             used_serials = []
             ignored_already_used_serail = []
+            serial_exists_for_another_prod = []
             skip_line = False
             counter = 0
             for row in ws.iter_rows(min_row=2):
@@ -185,26 +186,42 @@ class ImportFileWizard(models.TransientModel):
                     if picked_lot:
                         if not product.charges_ok:
                             picked_lot_str = str(picked_lot)
-                            lot_names = [lot.strip().replace(" ", "") for lot in picked_lot_str.split(",")] if "," in picked_lot_str else [picked_lot_str]
+                            # lot_names = [lot.strip().replace(" ", "") for lot in picked_lot_str.split(",")] if "," in picked_lot_str else [picked_lot_str]
+                            lot_names = picked_lot_str.split(",") if "," in picked_lot_str else [picked_lot_str]
                             if lot_names:
                                 for lot in lot_names:
                                     if lot  in used_serials:
                                         lot_names.remove(lot)
+                                        skip_line = True
                                         ignored_already_used_serail.append(lot)
+                                        continue
                                     else:
                                         used_serials.append(lot)
                                     if lot not in ['NULL','Null','null']:
                                         lot = lot.upper().strip()
                                         picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
+                                        if not picked_lots:
+                                            lot =lot.strip().replace(" ", "")
+                                            picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
+                                        if picked_lots and picked_lots.reserved:
+                                            print('reserved',lot)
+                                            skip_line = True
+                                            ignored_already_used_serail.append(lot)
+                                            continue
                                         # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id != company_id.parent_id:
                                         #     serial_from_another_company.append(lot)
                                         #     skipped_orders.append(order_ref)
                                         #     # raise ValidationError (f'serial not in company or parent company, {lot}')
                                         #     continue
+
                                         # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id == company_id.parent_id:
                                         if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id:
                                             serial_from_another_company.append(lot)
                                             skipped_orders.append(order_ref)
+                                            skip_line = True
+                                            continue
+                                        if picked_lots and picked_lots.product_id != product:
+                                            serial_exists_for_another_prod.append(lot)
                                             skip_line = True
                                             continue
                                         if not picked_lots:
@@ -361,7 +378,8 @@ class ImportFileWizard(models.TransientModel):
             _logger.info('skipped_orders',skipped_orders)
             _logger.info('ignored_already_used_serail',ignored_already_used_serail)
             _logger.info('created_orders',len(created_orders))
-            raise ValidationError('Success')
+            _logger.info('serial_exists_for_another_prod',serial_exists_for_another_prod)
+            # raise ValidationError('Success')
             return {
                 'effect': {
                     'fadeout': 'slow',

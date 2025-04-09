@@ -155,7 +155,7 @@
         <field name="arch" type="xml">
             <xpath expr="//notebook/page[@name='order_lines']/field/list/field[@name='product_template_id']"
                    position='attributes'>
-                <attribute name="domain">[('rent_ok', '=', True), '|', '|', ('company_id', '=', False), ('company_id',
+                <attribute name="domain">['|',('rent_ok', '=', True),('charges_ok', '=', True), '|', '|', ('company_id', '=', False), ('company_id',
                     '=', parent.company_id), ('company_id', '=', parent.parent_company_id)]
                 </attribute>
             </xpath>

@@ -9,6 +9,8 @@ from odoo.exceptions import ValidationError, UserError
 from datetime import datetime
 import pytz
 from odoo.tools import date_utils
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class ImportFileWizard(models.TransientModel):
@@ -73,7 +75,6 @@ class ImportFileWizard(models.TransientModel):
             counter = 0
             for row in ws.iter_rows(min_row=2):
                 skip_line = False
-                print(row)
                 # counter += 1
                 # if counter > 21:
                 #     break
@@ -195,14 +196,16 @@ class ImportFileWizard(models.TransientModel):
                                     if lot not in ['NULL','Null','null']:
                                         lot = lot.upper().strip()
                                         picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
-                                        if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id != company_id.parent_id:
+                                        # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id != company_id.parent_id:
+                                        #     serial_from_another_company.append(lot)
+                                        #     skipped_orders.append(order_ref)
+                                        #     # raise ValidationError (f'serial not in company or parent company, {lot}')
+                                        #     continue
+                                        # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id == company_id.parent_id:
+                                        if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id:
                                             serial_from_another_company.append(lot)
                                             skipped_orders.append(order_ref)
-                                            # raise ValidationError (f'serial not in company or parent company, {lot}')
-                                            continue
-                                        if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id == company_id.parent_id:
                                             skip_line = True
-                                            print('not in company',lot)
                                             continue
                                         if not picked_lots:
                                             no_serial.append(lot)
@@ -219,7 +222,6 @@ class ImportFileWizard(models.TransientModel):
                                             # raise ValidationError(f'Lot/Serial Number {lot} in the order {order_ref},is not found. Please create it first.')
                                 if skip_line :
                                     continue
-                                print('lot_names',lot_names)
                                 picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
                                 # picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
                     else:
@@ -351,15 +353,15 @@ class ImportFileWizard(models.TransientModel):
                                     pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
                                     if pickup_driver_id:
                                         return_date_record.write({'pickup_driver': pickup_driver_id})
-            print('no_product',no_product)
-            print('no_customer',no_customer)
-            print('no_serial',no_serial)
-            print('not_in_company',not_in_company)
-            print('serial_from_another_company',serial_from_another_company)
-            print('skipped_orders',skipped_orders)
-            print('ignored_already_used_serail',ignored_already_used_serail)
-            print('created_orders',len(created_orders))
-            # raise ValidationError('Success')
+            _logger.info('no_product',no_product)
+            _logger.info('no_customer',no_customer)
+            _logger.info('no_serial',no_serial)
+            _logger.info('not_in_company',not_in_company)
+            _logger.info('serial_from_another_company',serial_from_another_company)
+            _logger.info('skipped_orders',skipped_orders)
+            _logger.info('ignored_already_used_serail',ignored_already_used_serail)
+            _logger.info('created_orders',len(created_orders))
+            raise ValidationError('Success')
             return {
                 'effect': {
                     'fadeout': 'slow',

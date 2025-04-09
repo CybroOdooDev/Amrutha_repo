@@ -240,6 +240,8 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
+        if self._context.get('import_from_sheet'):
+            return
         section_prod = self.order_id.get_sections_with_products()
         for line in self:
             if line.order_id.is_rental_order and line.product_template_id and line.order_id.state != "draft" and not line.is_sale:
@@ -501,11 +503,10 @@ class SaleOrderLine(models.Model):
         for lot_id in lot_ids:
             lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
             lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
-            print('_move_serials',location_id,location_id.name,lot_id.name,self.order_id.name)
+            # print('_move_serials',location_id,location_id.name,lot_id.name,self.order_id.name)
             if not lot_quant:
                 location_id =self.env['stock.location'].search(
                                                 [('company_id', '=', self.order_id.company_id.parent_id.id), ('name', '=', 'Stock')])
-                print('new loc',location_id)
                 # location_dest_id =self.order_id.company_id.parent_id.rental_loc_id
                 rental_stock_move = self.env['stock.move'].create([{
                     'product_id': self.product_id.id,
@@ -519,7 +520,6 @@ class SaleOrderLine(models.Model):
                 }])
                 lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
                 lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
-                print('lasttttttttt',location_dest_id,self.company_id.rental_loc_id)
                 if not lot_quant:
                     raise ValidationError(_("No valid quant has been found in location %(location)s for serial number %(serial_number)s!", location=location_id.name, serial_number=lot_id.name))
                 # Best fallback strategy??

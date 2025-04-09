@@ -51,7 +51,6 @@ class ImportLotSerialNumberWizard(models.TransientModel):
             product_obj = self.env["product.product"]
             created_serialnumber = []
             for row in ws.iter_rows(min_row=2):
-                print(row)
                 # logger.debug(row)
                 name = str(row[0].value).strip() if row[0].value else None
                 product_name = row[1].value.strip() if row[1].value else None

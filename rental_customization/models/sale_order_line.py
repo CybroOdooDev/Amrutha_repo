@@ -240,10 +240,11 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
-        if not self.order_id.imported_order:
-            print('context',self.product_id.name,self.order_id.imported_order)            # return
-            section_prod = self.order_id.get_sections_with_products()
-            for line in self:
+        # if not self.order_id.imported_order:
+        #     print('context',self.product_id.name,self.order_id.imported_order)            # return
+        section_prod = self.order_id.get_sections_with_products()
+        for line in self:
+            if not line.order_id.imported_order:
                 if line.order_id.is_rental_order and line.product_template_id and line.order_id.state != "draft" and not line.is_sale:
                 # Find the section this product belongs to
                     for section, order_line in section_prod.items():

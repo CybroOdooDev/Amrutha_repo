@@ -55,7 +55,7 @@ class SaleOrder(models.Model):
         string="Rental Status",
         compute='_compute_rental_status',
         store=True)
-    imported_order = fields.Boolean()
+    imported_order = fields.Boolean(default=False)
     parent_company_id = fields.Many2one(
         'res.company',
         store=True,

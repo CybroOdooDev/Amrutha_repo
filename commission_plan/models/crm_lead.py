@@ -22,7 +22,7 @@ class Lead(models.Model):
         related='company_id.currency_id', readonly=True)
     _is_applicable_for_commission = fields.Boolean(
         string="Is applicable for Commission")
-    total_amount = fields.Float(string="Amount",
+    total_amount = fields.Float(string="Total Commission Received by LRE",
                                 help="This field represents the overall amount from which the commission is calculated.")
     total_commission = fields.Float(string="Total Commission",
                                     help="This field represents the calculated commission based on the total amount and applicable percentage.")
@@ -72,6 +72,16 @@ class Lead(models.Model):
         help="Percentage paid to the referral agent that brought in the lead.",
         default=lambda self: self._default_referral_fee_rate()
     )
+    total_sales_price = fields.Float(string="Total Sales Price",
+                                     help="Total Sales price")
+    minimum_commission_due = fields.Float(string="Minimum Commission Due",
+                                          compute="_compute_minimum_commission_due",
+                                          store=True)
+    commission_to_be_converted_by_agent = fields.Float(string="Commission to "
+                                                              "be covered by "
+                                                              "Agent",
+                                                       compute="_compute_commission_to_be_converted_by_agent",
+                                                       store=True)
 
     def _default_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company
@@ -120,10 +130,27 @@ class Lead(models.Model):
         default=lambda self: self._default_commercial_referral_fee_rate()
     )
 
+    @api.depends('total_sales_price')
+    def _compute_commission_to_be_converted_by_agent(self):
+        for lead in self:
+            print("_compute_commission_to_be_converted_by_agent")
+            lead.commission_to_be_converted_by_agent = 0.0
+            if lead.total_amount < lead.minimum_commission_due:
+                lead.commission_to_be_converted_by_agent = (
+                        lead.minimum_commission_due - lead.total_amount)
+
+    @api.depends('total_sales_price')
+    def _compute_minimum_commission_due(self):
+        print("_compute_minimum_commission_due")
+        for lead in self:
+            lead.minimum_commission_due = 0.0
+            if lead.total_sales_price:
+                lead.minimum_commission_due = lead.total_sales_price * (
+                            3 / 100)
+
     def _default_commercial_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company
         return self.env.company.commercial_referral_fee_rate
-
 
     @api.onchange('x_studio_opportunity_type_1')
     def _onchange_x_studio_opportunity_type_1(self):

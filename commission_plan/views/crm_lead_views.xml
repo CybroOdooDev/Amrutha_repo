@@ -23,6 +23,18 @@
                 />
             </xpath>
 
+            <xpath expr="//field[@name='phone']"
+                   position="after">
+                <div>
+                    <label for="total_sales_price"/>
+                    <field class="oe_inline" name="total_sales_price"
+                           invisible="not is_calculate_commission"
+                           widget="monetary"
+                           options="{'currency_field': 'currency_id'}"/>
+                </div>
+
+            </xpath>
+
             <!-- Add Commission Information on Lead Form -->
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="referer_id"
@@ -61,6 +73,15 @@
                                    widget="monetary"/>
                             <field name="commission_attachment_id"
                                    invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="minimum_commission_due"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="commission_to_be_converted_by_agent"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+
                         </group>
                     </group>
                 </page>

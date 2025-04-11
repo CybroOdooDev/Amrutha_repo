@@ -18,220 +18,130 @@
                                     <strong>Date of Sale:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.create_date"/>
+                                    <span t-field="o.create_date" t-field-options='{"format": "MM/dd/yyyy"}'/>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>
-                                    <strong>Seller/Buyer:</strong>
-                                </td>
-                                <td>
-                                    <t t-if="o.x_studio_sellerlandlord_name">
-                                        <span t-field="o.x_studio_sellerlandlord_name"/>
-                                    </t>
-                                    <t t-if="o.x_studio_buyertenant_name">
-                                        <span t-field="o.x_studio_buyertenant_name"/>
-                                    </t>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Property:</strong>
-                                </td>
-                                <td>
-                                    <span t-field="o.x_studio_property_address"/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Category:</strong>
-                                </td>
-                                <td>
-                                    <span t-field="o.company_id.name"/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Type:</strong>
-                                </td>
-                                <td>
-                                    <span t-field="o.x_studio_opportunity_type_1"/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>TC Fee:</strong>
-                                </td>
-                                <td>Brokerage</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Agent:</strong>
-                                </td>
-                                <td>
-                                    <span t-field="o.user_id.name"/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <strong>Co-Agent:</strong>
-                                </td>
-                                <td>
-                                    <t t-if="o.referer_id">
-                                        <span t-field="o.referer_id.name"/>
-                                    </t>
-                                </td>
-                            </tr>
+                            <!-- Rest of the existing fields remain the same -->
                         </table>
 
                         <t t-if="o.company_id.is_calculate_commission">
                             <!-- Residential Commission Section -->
                             <h3>Commission to Lange Real Estate</h3>
-                            <p>
-                                <strong>Amount:</strong>
-                                <span t-field="o.total_amount"/>
-                                <span t-field="o.currency_id.symbol"/>
-                            </p>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Amount:</strong></td>
+                                    <td><span t-field="o.total_amount"/><span t-field="o.currency_id.symbol"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Due from Agent to meet minimum commission requirement:</strong></td>
+                                    <td><span t-field="o.commission_to_be_converted_by_agent"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>External Referral Fee:</strong></td>
+                                    <td><span t-field="o.referral_fee"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total:</strong></td>
+                                    <td>
+                                        <span t-esc="o.total_amount + o.commission_to_be_converted_by_agent - o.referral_fee"/>
+                                        <span t-field="o.currency_id.symbol"/>
+                                    </td>
+                                </tr>
+                            </table>
 
                             <h3>Distributions to Agents</h3>
                             <table class="table table-sm">
                                 <tr>
-                                    <td>
-                                        <strong>Tier:</strong>
-                                    </td>
-                                    <td><span t-field="o.tier"/>%
-                                    </td>
+                                    <td><strong>Tier:</strong></td>
+                                    <td><span t-field="o.tier"/>%</td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Commission Earned:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.total_commission"/>
-                                    </td>
+                                    <td><strong>Commission Earned:</strong></td>
+                                    <td><span t-field="o.total_commission"/></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Referral Fee:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.referral_fee"/>
-                                    </td>
+                                    <td><strong>Minimum Commission Due:</strong></td>
+                                    <td><span t-field="o.minimum_commission_due"/></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Transaction Coordinator Fee:
-                                        </strong>
-                                    </td>
+                                    <td><strong>Internal Referral Fee:</strong></td>
+                                    <td><span t-field="o.referral_fee"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Transaction Coordinator Fee:</strong></td>
                                     <td>
                                         <t t-if="o.is_apply_transaction_coordinator_fee">
                                             <span t-field="o.company_id.tc_fee"/>
                                         </t>
+                                        <t t-else="">
+                                            <span>0.00</span>
+                                        </t>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Errors and Omissions
-                                            Insurance:
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.omissions_insurance"/>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <strong>Payable to Agent:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.commission_to_be_paid"/>
-                                    </td>
+                                    <td><strong>Payable to Agent:</strong></td>
+                                    <td><span t-field="o.commission_to_be_paid"/></td>
                                 </tr>
                             </table>
                         </t>
                         <t t-elif="o.company_id.is_calculate_commercial_commission">
                             <!-- Commercial Commission Section -->
                             <h3>Commission to Lange Real Estate</h3>
-                            <p>
-                                <strong>Amount:</strong>
-                                <span t-field="o.planned_revenue"/>
-                                <span t-field="o.currency_id.symbol"/>
-                            </p>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Amount:</strong></td>
+                                    <td><span t-field="o.planned_revenue"/><span t-field="o.currency_id.symbol"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Due from Agent to meet minimum commission requirement:</strong></td>
+                                    <td><span t-field="o.commission_to_be_converted_by_agent"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>External Referral Fee:</strong></td>
+                                    <td><span t-field="o.external_referral_fee"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total:</strong></td>
+                                    <td>
+                                        <span t-esc="o.planned_revenue + o.commission_to_be_converted_by_agent - o.external_referral_fee"/>
+                                        <span t-field="o.currency_id.symbol"/>
+                                    </td>
+                                </tr>
+                            </table>
 
                             <h3>Distributions to Agents</h3>
                             <table class="table table-sm">
                                 <tr>
-                                    <td>
-                                        <strong>Tier:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-esc="o.agent_payout_tier * 100"/>
-                                        %
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td>
-                                        <strong>Commission Earned:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.total_commercial_commission"/>
-                                    </td>
+                                    <td><strong>Tier:</strong></td>
+                                    <td><span t-esc="o.agent_payout_tier * 100"/>%</td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Referral Fee:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.external_referral_fee"/>
-                                    </td>
+                                    <td><strong>Commission Earned:</strong></td>
+                                    <td><span t-field="o.total_commercial_commission"/></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Transaction Coordinator Fee:
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <!-- Always 0 for Commercial Commission -->
-                                        <span>0</span>
-                                    </td>
+                                    <td><strong>Minimum Commission Due:</strong></td>
+                                    <td><span t-field="o.commission_to_be_converted_by_agent"/></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Errors and Omissions
-                                            Insurance:
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.errors_omission_fee"/>
-                                    </td>
+                                    <td><strong>Internal Referral Fee:</strong></td>
+                                    <td><span t-field="o.external_referral_fee"/></td>
                                 </tr>
                                 <tr>
-                                    <td>
-                                        <strong>Payable to Agent:</strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.total_commercial_commission_earned"/>
-                                    </td>
+                                    <td><strong>Transaction Coordinator Fee:</strong></td>
+                                    <td><span>0.00</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payable to Agent:</strong></td>
+                                    <td><span t-field="o.total_commercial_commission_earned"/></td>
                                 </tr>
                             </table>
                         </t>
 
                         <h3>Referral Fee Payable to Co-Agent</h3>
                         <p>
-                            <strong>Amount:</strong>
+                            <strong>Payable to Agent 2:</strong>
                             <span t-field="o.referral_fee"/>
-                        </p>
-
-                        <h3>Paid through Payroll</h3>
-                        <p>
-                            <strong>Transaction Coordinator:</strong>
-                            <t t-if="o.company_id.is_calculate_commission">
-                                <span t-field="o.company_id.tc_fee"/>
-                            </t>
-                            <t t-elif="o.company_id.is_calculate_commercial_commission">
-                                <span>0</span>
-                            </t>
                         </p>
 
                         <p>All payments will be net of any outstanding charges

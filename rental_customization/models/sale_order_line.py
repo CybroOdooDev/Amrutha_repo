@@ -240,11 +240,9 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
-        # if not self.order_id.imported_order:
-        #     print('context',self.product_id.name,self.order_id.imported_order)            # return
-        section_prod = self.order_id.get_sections_with_products()
-        for line in self:
-            if not line.order_id.imported_order:
+        if not self.order_id.imported_order:
+            section_prod = self.order_id.get_sections_with_products()
+            for line in self:
                 if line.order_id.is_rental_order and line.product_template_id and line.order_id.state != "draft" and not line.is_sale:
                 # Find the section this product belongs to
                     for section, order_line in section_prod.items():
@@ -451,6 +449,9 @@ class SaleOrderLine(models.Model):
             if not line.product_id.charges_ok or line.display_type != 'line_section':
                 pickeable_lot_ids = self.env['stock.lot']._get_available_lots(line.product_id,
                                                                       line.order_id.warehouse_id.lot_stock_id)
+                pickeable_lot_ids = pickeable_lot_ids.filtered(
+                    lambda lot: not lot.company_id or lot.company_id == self.order_id.company_id
+                )
                 if pickeable_lot_ids:
                     line.rental_available_lot_ids = pickeable_lot_ids
                 else:
@@ -504,6 +505,7 @@ class SaleOrderLine(models.Model):
         for lot_id in lot_ids:
             lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
             lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
+            # print('_move_serials',self.product_id.name,lot_quant,lot_id.product_id.name,location_id,location_id.name,lot_id.name,self.order_id.name)
             if not lot_quant:
                 location_id =self.env['stock.location'].search(
                                                 [('company_id', '=', self.order_id.company_id.parent_id.id), ('name', '=', 'Stock')])

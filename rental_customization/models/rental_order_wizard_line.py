@@ -3,6 +3,7 @@
 from itertools import product
 from google.auth import default
 from odoo import api, models, fields, Command
+from odoo.api import readonly
 from odoo.tools.safe_eval import datetime
 from odoo.exceptions import ValidationError
 
@@ -11,6 +12,7 @@ from odoo.exceptions import ValidationError
 class RentalOrderWizardLine(models.TransientModel):
     """To add new fields in the rental order"""
     _inherit = 'rental.order.wizard.line'
+
 
     def _apply(self):
         """ Record the Delivery and Return dates in the Sale order Page; Date Details """
@@ -164,6 +166,9 @@ class RentalOrderWizardLine(models.TransientModel):
         if status == 'pickup' and line.product_id.is_storable and line.product_id.tracking == 'serial':
             default_line_vals.update({
                 'pickedup_lot_ids': remaining_lot_ids,
+                'pickeable_lot_ids': line.rental_available_lot_ids,
                 'qty_delivered': len(remaining_lot_ids),
             })
         return default_line_vals
+
+

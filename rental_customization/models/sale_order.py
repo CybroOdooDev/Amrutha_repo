@@ -76,8 +76,11 @@ class SaleOrder(models.Model):
 
     def _get_default_recurring_plan(self):
         """Get the default recurring plan (e.g., monthly)."""
-        default_plan = self.env['rental.recurring.plan'].search([('is_default', '=', 'True'),('company_id','=',[self.env.company.id])])
-        return default_plan.id if default_plan else False
+        if not self.imported_order:
+            default_plan = self.env['rental.recurring.plan'].search([('is_default', '=', 'True'),('company_id','=',[self.env.company.id])])
+            return default_plan.id if default_plan else False
+        else:
+            return False
 
     @api.onchange('bill_terms')
     def _onchange_bill_terms(self):

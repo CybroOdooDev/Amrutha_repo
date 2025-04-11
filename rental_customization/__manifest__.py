@@ -29,6 +29,7 @@
         'views/rental_import_menu.xml',
         'views/account_move.xml',
         'views/stock_location.xml',
+        'views/transfer_lot_serials.xml',
     ],
     "license": "LGPL-3",
 }

@@ -55,14 +55,39 @@
            <form string="Transfer Lot/Serial Numbers">
                <group>
                    <group>
-                       <field name="file"/>
+                       <field name="upload_file"/>
+                   </group>
+                   <group>
+                      <field name="upload_details"/>
                    </group>
                </group>
+               <group>
+                   <group>
+                       <field name="file" invisible="not upload_file"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="lot_ids" widget="many2many_tags" invisible="not upload_details"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="destination_company_id" invisible="not upload_details"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="destination_location_id" invisible="not upload_details"/>
+                   </group>
+               </group>
+                   <group>
+                       <field name="location_ids" invisible="1"/>
+                   </group>
                <footer>
                    <button name="action_transfer_lot_serial" string="Transfer" type="object" class="btn-primary"/>
                </footer>
            </form>
        </field>
    </record>
-
 </odoo>

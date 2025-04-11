@@ -54,7 +54,6 @@ class ImportFileWizard(models.TransientModel):
             partner_obj = self.env["res.partner"]
             product_obj = self.env["product.product"]
             bill_terms_mapping = {'Advance Bill': 'advance','Not Advance Bill': 'late'}
-            created_orders = []
             serial_delivery_date_map = {}
             serial_delivery_date_order_map = {}
             serial_pickup_date_map = {}
@@ -62,9 +61,13 @@ class ImportFileWizard(models.TransientModel):
             serial_delivery_driver_map = {}
             serial_pickup_driver_map = {}
             line_qty_delivered = {}
+            order_recurring_plan = {}
 
+            created_orders = []
+            created_orders_names = []
             no_product = []
             no_customer = []
+            customer_from_another_company = []
             no_serial = []
             not_in_company =[]
             serial_from_another_company =[]
@@ -72,6 +75,7 @@ class ImportFileWizard(models.TransientModel):
             used_serials = []
             ignored_already_used_serail = []
             serial_exists_for_another_prod = []
+            order_ref_names = []
             skip_line = False
             counter = 0
             for row in ws.iter_rows(min_row=2):
@@ -112,10 +116,12 @@ class ImportFileWizard(models.TransientModel):
                 if not (order_ref and order_date and customer_name):
                     break
                 if not description:
-                    skipped_orders.append(order_ref)
+                    if order_ref not in skipped_orders:
+                        skipped_orders.append(order_ref)
                     continue
                 if not product_name and not row[19].value:
-                    skipped_orders.append(order_ref)
+                    if order_ref not in skipped_orders:
+                        skipped_orders.append(order_ref)
                     continue
             # Get Drivers - (pasted to the last)
             # Store serial number and values in dictionaries
@@ -136,14 +142,25 @@ class ImportFileWizard(models.TransientModel):
                 if not ([order_ref and order_date and customer_name and product_name and price_list]):
                     continue
                 if (order_ref and order_date and customer_name and  row[18].value):
+                    if order_ref not in order_ref_names:
+                        order_ref_names.append(order_ref)
             # Get Customer
-                    customer = partner_obj.search([('name', '=', customer_name)], limit=1)
+                    customer = partner_obj.search([('name', '=', customer_name),'|',('company_id', '=', company_id.id),('company_id', '=', company_id.parent_id.id)], limit=1)
                     if not customer:
-                        customer = partner_obj.search(['|',('name', '=', customer_name.upper()),('name', '=', customer_name.lower())], limit=1)
+                        customer = partner_obj.search([('name', '=', customer_name)], limit=1)
+                        if customer and customer.company_id != company_id and customer.company_id != company_id.parent_id:
+                            if customer_name not in customer_from_another_company:
+                                customer_from_another_company.append(customer_name)
+                            if order_ref not in skipped_orders:
+                                skipped_orders.append(order_ref)
+                            continue
+                            # raise ValidationError(f"Customer Belongs to another Company {customer_name}")
                         if not customer:
-                            no_customer.append(customer_name)
-                            customer = partner_obj.create([{'name': customer_name,
-                                                             'company_id': company_id.id,}])
+                            customer = partner_obj.search(['|',('name', '=', customer_name.upper()),('name', '=', customer_name.lower())], limit=1)
+                            if not customer:
+                                no_customer.append(customer_name)
+                                customer = partner_obj.create([{'name': customer_name,
+                                                                 'company_id': company_id.id,}])
                         # raise UserError(f"Customer '{customer_name}' in the order {order_ref},is not found. Please create it first.")
                     shipping_addr = partner_obj.search([('name', '=', delivery_address)], limit=1)
             # Get Product
@@ -163,12 +180,10 @@ class ImportFileWizard(models.TransientModel):
                                     if not product:
                                         no_product.append(product_name)
                                         # cleaned_text = description.replace(product_name, "",1)  # The `1` ensures only the first occurrence is removed
-                                        skipped_orders.append(order_ref)
                                         continue
                                         # raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
                         if product and product.company_id and (product.company_id != company_id and product.company_id != company_id.parent_id):
                             not_in_company.append(product_name)
-                            skipped_orders.append(order_ref)
                             continue
                             # raise UserError(f"Product '{product_name}' in the order {order_ref},belongs to another company ")
             # Get Pricelist
@@ -194,6 +209,7 @@ class ImportFileWizard(models.TransientModel):
                                         lot_names.remove(lot)
                                         skip_line = True
                                         ignored_already_used_serail.append(lot)
+                                        # raise UserError(f"Serial '{lot}' in the order {order_ref},is already used")
                                         continue
                                     else:
                                         used_serials.append(lot)
@@ -204,26 +220,26 @@ class ImportFileWizard(models.TransientModel):
                                             lot =lot.strip().replace(" ", "")
                                             picked_lots = self.env["stock.lot"].search([('name', '=', lot)])
                                         if picked_lots and picked_lots.reserved:
-                                            print('reserved',lot)
                                             skip_line = True
                                             ignored_already_used_serail.append(lot)
+                                            # raise UserError(f"Serial '{lot}' in the order {order_ref},is already used")
                                             continue
                                         # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id != company_id.parent_id:
                                         #     serial_from_another_company.append(lot)
-                                        #     skipped_orders.append(order_ref)
                                         #     # raise ValidationError (f'serial not in company or parent company, {lot}')
                                         #     continue
 
                                         # if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id and picked_lots.company_id == company_id.parent_id:
                                         if picked_lots and picked_lots.company_id and picked_lots.company_id != company_id:
                                             serial_from_another_company.append(lot)
-                                            skipped_orders.append(order_ref)
                                             skip_line = True
+                                            # raise UserError(f"Serial '{lot}' in the order {order_ref},is from another company")
                                             continue
                                         if picked_lots and picked_lots.product_id != product:
                                             serial_exists_for_another_prod.append(lot)
                                             skip_line = True
                                             continue
+                                            # raise UserError(f"Serial '{lot}' in the order {order_ref},is exist for another prod")
                                         if not picked_lots:
                                             no_serial.append(lot)
                                             stock_loc = self.env['stock.location'].search(
@@ -243,6 +259,9 @@ class ImportFileWizard(models.TransientModel):
                                 # picked_lot_ids = self.env["stock.lot"].search([('name', 'in', lot_names)])
                     else:
                         picked_lot_ids = None
+                    rental_recurring_plan = self.env['rental.recurring.plan'].search([('name', '=', recurring_plan),('company_id','=',company_id.id)], limit=1)
+                    order_recurring_plan[order_ref] = rental_recurring_plan
+
             # Check if Order Already Exists
                     rental_order = order_obj.search([('name', '=', order_ref)], limit=1)
             # creating new order
@@ -255,7 +274,7 @@ class ImportFileWizard(models.TransientModel):
                             'pricelist_id': pricelist.id if pricelist else None,
                             'company_id': self.env['res.company'].search([('name', '=', company_name)], limit=1).id,
                             'warehouse_id': self.env['stock.warehouse'].search([('name', '=', warehouse_name)], limit=1).id,
-                            'recurring_plan_id': self.env['rental.recurring.plan'].search([('name', '=', recurring_plan)],limit=1).id,
+                            'recurring_plan_id': rental_recurring_plan.id,
                             'is_rental_order': True,
                             'bill_terms': bill_terms,
                             'rental_start_date': rental_start_date,
@@ -264,6 +283,7 @@ class ImportFileWizard(models.TransientModel):
                             'order_line': [],
                         }])
                         created_orders.append(rental_order)
+                        created_orders_names.append(rental_order.name)
             # Add Order Line
             # Search for existing order line
                     existing_order_line = self.env['sale.order.line'].search([
@@ -305,6 +325,7 @@ class ImportFileWizard(models.TransientModel):
                         order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
             # raise ValidationError('stop')
             for order in created_orders:
+                order.write({'recurring_plan_id':order_recurring_plan[order.name]})
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
                 order.with_context(import_from_sheet=True).with_context(import_from_sheet=True).action_confirm()
                 action_dict = order.with_context(import_from_sheet=True).action_open_pickup()
@@ -314,9 +335,6 @@ class ImportFileWizard(models.TransientModel):
                 lines.sudo().unlink()
                 pickup_wizard.with_context(import_from_sheet=True).apply()
                 for line in order.order_line:
-            #updating all line's qty_delivered
-                    if line.importing_external_id in line_qty_delivered:
-                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
             #Return
                     if line.rental_pickable_lot_ids:
                         for lot in line.rental_pickable_lot_ids:
@@ -332,6 +350,9 @@ class ImportFileWizard(models.TransientModel):
                                     else:
                                         line.qty_returned = 0
                                 return_wizard.apply()
+            # updating all line's qty_delivered
+                    if line.importing_external_id in line_qty_delivered:
+                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
             # Update the delivery date of Stock move and Stock move line
                 for line in order.order_line.filtered(lambda l: l.rental_pickable_lot_ids):
                     for lot in line.rental_pickable_lot_ids:
@@ -370,15 +391,18 @@ class ImportFileWizard(models.TransientModel):
                                     pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
                                     if pickup_driver_id:
                                         return_date_record.write({'pickup_driver': pickup_driver_id})
+                    if line.importing_external_id in line_qty_delivered:
+                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
             _logger.info('no_product',no_product)
             _logger.info('no_customer',no_customer)
+            _logger.info('customer_from_another_company',customer_from_another_company)
             _logger.info('no_serial',no_serial)
             _logger.info('not_in_company',not_in_company)
             _logger.info('serial_from_another_company',serial_from_another_company)
             _logger.info('skipped_orders',skipped_orders)
             _logger.info('ignored_already_used_serail',ignored_already_used_serail)
-            _logger.info('created_orders',len(created_orders))
             _logger.info('serial_exists_for_another_prod',serial_exists_for_another_prod)
+            _logger.info('created_orders',len(created_orders))
             # raise ValidationError('Success')
             return {
                 'effect': {

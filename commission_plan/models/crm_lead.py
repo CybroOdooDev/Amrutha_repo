@@ -24,7 +24,7 @@ class Lead(models.Model):
         string="Is applicable for Commission")
     total_amount = fields.Float(string="Total Commission Received by LRE",
                                 help="This field represents the overall amount from which the commission is calculated.")
-    total_commission = fields.Float(string="Total Commission",
+    total_commission = fields.Float(string="“Total Commission Earned by Agent",
                                     help="This field represents the calculated commission based on the total amount and applicable percentage.")
     tier = fields.Float(string="Tier")
     commission_to_be_paid = fields.Float(string="Commission Paid",
@@ -34,6 +34,7 @@ class Lead(models.Model):
     is_apply_transaction_coordinator_fee = fields.Boolean(
         string="Apply Transaction Coordinator Fee",
         help="For residential deals, $200 is either subtracted from the agent’s commission if the deal amount is under $125,000, or it’s paid by the brokerage if the deal is $125,000 or above.")
+    transaction_coordinator_fee = fields.Float(string="Transaction Coordinator Fee")
     inside_sale_fee = fields.Float(string="Inside sales fee")
     referral_fee = fields.Float(string="Referral Fee")
     co_agent_fee = fields.Float(string="Co-agent Fee")
@@ -307,7 +308,7 @@ class Lead(models.Model):
             raise UserError(
                 _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
         lead.total_commercial_commission = base_rent * (
-                    landlord_percentage / 100)
+                landlord_percentage / 100)
         print(lead.total_commercial_commission, "total_commercial_commission")
         if lead.referer_id:  # Check for external referral fee
             external_referral_fee = (
@@ -316,8 +317,8 @@ class Lead(models.Model):
             )
             self.external_referral_fee = external_referral_fee
         total_commercial_commission_earned = (
-            (lead.total_commercial_commission * lead.agent_payout_tier) -
-            lead.errors_omission_fee)
+                (lead.total_commercial_commission * lead.agent_payout_tier) -
+                lead.errors_omission_fee)
         self.total_commercial_commission_earned = total_commercial_commission_earned
         self.generate_pdf_attachment()
 
@@ -335,7 +336,7 @@ class Lead(models.Model):
                     'move_type': 'in_invoice',
                     'partner_id': self.referer_id.id,
                     'crm_lead_id': self.id,
-                    'ref':self.x_studio_property_address,
+                    'ref': self.x_studio_property_address,
                     'invoice_line_ids': [(0, 0, {
                         'product_id': self.env.ref(
                             'commission_payout_sign.product_referral').id,
@@ -465,14 +466,14 @@ class Lead(models.Model):
             if not self.is_manual_tc_fee:
                 if self.company_id.is_tc_enabled and self.total_amount < self.company_id.tc_threshold:
                     self.is_apply_transaction_coordinator_fee = True
-                    self.commission_to_be_paid -= self.company_id.tc_fee
+                    self.commission_to_be_paid -= self.transaction_coordinator_fee
 
             else:
                 if self.is_apply_transaction_coordinator_fee:
-                    self.commission_to_be_paid += self.company_id.tc_fee
+                    self.commission_to_be_paid += self.transaction_coordinator_fee
                     self.is_apply_transaction_coordinator_fee = False
                 else:
-                    self.commission_to_be_paid -= self.company_id.tc_fee
+                    self.commission_to_be_paid -= self.transaction_coordinator_fee
                     self.is_apply_transaction_coordinator_fee = False
 
             # Inside Sales Fee (skip if manually set)

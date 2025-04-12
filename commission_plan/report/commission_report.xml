@@ -18,7 +18,8 @@
                                     <strong>Date of Sale:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.create_date" t-options='{"widget": "date"}'/>
+                                    <span t-field="o.create_date"
+                                          t-options='{"widget": "date"}'/>
                                 </td>
                             </tr>
                             <tr>
@@ -92,6 +93,23 @@
                                 <span t-field="o.total_amount"/>
                                 <span t-field="o.currency_id.symbol"/>
                             </p>
+                            <p>
+                                <strong>Due From Agent to meet
+                                    minimum commission requirement:
+                                </strong>
+                                <span t-field="o.commission_to_be_converted_by_agent"/>
+                                <span t-field="o.currency_id.symbol"/>
+                            </p>
+                            <p>
+                                <strong>External Referral Fee:</strong>
+                                <span t-field="o.external_referral_fee"/>
+                                <span t-field="o.currency_id.symbol"/>
+                            </p>
+                            <p>
+                                <strong>Total:</strong>
+                                <span t-esc="o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee"/>
+                                <span t-field="o.currency_id.symbol"/>
+                            </p>
 
                             <h3>Distributions to Agents</h3>
                             <table class="table table-sm">
@@ -112,7 +130,17 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <strong>Referral Fee:</strong>
+                                        <strong>Minimum Commission Due:
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span t-field="o.commission_to_be_converted_by_agent"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong> Internal Referral
+                                            Fee:</strong>
                                     </td>
                                     <td>
                                         <span t-field="o.referral_fee"/>
@@ -125,18 +153,8 @@
                                     </td>
                                     <td>
                                         <t t-if="o.is_apply_transaction_coordinator_fee">
-                                            <span t-field="o.company_id.tc_fee"/>
+                                            <span t-field="o.transaction_coordinator_fee"/>
                                         </t>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <strong>Errors and Omissions
-                                            Insurance:
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <span t-field="o.omissions_insurance"/>
                                     </td>
                                 </tr>
                                 <tr>
@@ -223,16 +241,16 @@
                             <span t-field="o.referral_fee"/>
                         </p>
 
-<!--                        <h3>Paid through Payroll</h3>-->
-<!--                        <p>-->
-<!--                            <strong>Transaction Coordinator:</strong>-->
-<!--                            <t t-if="o.company_id.is_calculate_commission">-->
-<!--                                <span t-field="o.company_id.tc_fee"/>-->
-<!--                            </t>-->
-<!--                            <t t-elif="o.company_id.is_calculate_commercial_commission">-->
-<!--                                <span>0</span>-->
-<!--                            </t>-->
-<!--                        </p>-->
+                        <!--                        <h3>Paid through Payroll</h3>-->
+                        <!--                        <p>-->
+                        <!--                            <strong>Transaction Coordinator:</strong>-->
+                        <!--                            <t t-if="o.company_id.is_calculate_commission">-->
+                        <!--                                <span t-field="o.company_id.tc_fee"/>-->
+                        <!--                            </t>-->
+                        <!--                            <t t-elif="o.company_id.is_calculate_commercial_commission">-->
+                        <!--                                <span>0</span>-->
+                        <!--                            </t>-->
+                        <!--                        </p>-->
 
                         <p>All payments will be net of any outstanding charges
                             on agents' accounts.

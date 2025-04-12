@@ -63,9 +63,9 @@
                             <field name="total_amount" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
                             <field name="total_commission" widget="monetary"/>
-                            <field name="omissions_insurance"
-                                   widget="monetary"/>
-                            <field name="is_apply_transaction_coordinator_fee"/>
+<!--                            <field name="omissions_insurance"-->
+<!--                                   widget="monetary"/>-->
+                            <field name="transaction_coordinator_fee" widget="monetary"/>
                             <field name="inside_sale_fee" widget="monetary"/>
                             <field name="referral_fee" widget="monetary"/>
                             <field name="flat_fee" widget="monetary"/>

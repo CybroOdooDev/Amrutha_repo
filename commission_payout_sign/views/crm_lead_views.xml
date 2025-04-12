@@ -49,9 +49,9 @@
 <!--            <xpath expr="//field[@name='omissions_insurance']" position="attributes">-->
 <!--                <attribute name="readonly">is_signed</attribute>-->
 <!--            </xpath>-->
-            <xpath expr="//field[@name='is_apply_transaction_coordinator_fee']" position="attributes">
-                <attribute name="readonly">is_signed</attribute>
-            </xpath>
+<!--            <xpath expr="//field[@name='is_apply_transaction_coordinator_fee']" position="attributes">-->
+<!--                <attribute name="readonly">is_signed</attribute>-->
+<!--            </xpath>-->
             <xpath expr="//field[@name='inside_sale_fee']" position="attributes">
                 <attribute name="readonly">is_signed</attribute>
             </xpath>

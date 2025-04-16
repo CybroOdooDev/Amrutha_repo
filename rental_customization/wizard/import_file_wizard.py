@@ -61,6 +61,7 @@ class ImportFileWizard(models.TransientModel):
             serial_delivery_driver_map = {}
             serial_pickup_driver_map = {}
             line_qty_delivered = {}
+            order_qty_delivered = {}
             order_recurring_plan = {}
 
             created_orders = []
@@ -92,6 +93,8 @@ class ImportFileWizard(models.TransientModel):
                 warehouse_name = row[6].value.strip() if row[6].value else None
                 rental_start_date = self.normalize_datetime(row[15].value)  # Converting to odoo's date format
                 rental_end_date = self.normalize_datetime(row[16].value)  # Converting to odoo's date format
+                line_rental_start_date = self.normalize_datetime(row[24].value)  # Converting to odoo's date format
+                line_rental_end_date = self.normalize_datetime(row[25].value)  # Converting to odoo's date format
                 next_bill_date = self.normalize_datetime(row[26].value)
                 product_name = row[17].value.strip() if row[17].value and isinstance(row[17].value, str) else None
                 description = row[18].value.strip() if row[18].value and isinstance(row[18].value, str) else None
@@ -113,6 +116,12 @@ class ImportFileWizard(models.TransientModel):
                 serial_number = row[38].value if row[38].value else None
                 delivery_date = self.normalize_datetime(row[40].value) if row[40].value else None
                 pickup_date = row[42].value if row[42].value else None
+                # print('order_date',order_date)
+                # print('rental_start_date',rental_start_date,row[15].value)
+                # print('rental_end_date',rental_end_date,row[16].value)
+                print('next_bill_date',product_name,next_bill_date,row[26].value)
+                print('line_rental_start_date',product_name,line_rental_start_date,row[24].value)
+                print('line_rental_end_date',product_name,line_rental_end_date,row[25].value)
                 if not (order_ref and order_date and customer_name):
                     break
                 if not description:
@@ -139,6 +148,7 @@ class ImportFileWizard(models.TransientModel):
                         picked_lot = serial_number
                 if importing_external_id and qty_delivered:
                     line_qty_delivered[importing_external_id]=qty_delivered
+                    order_qty_delivered[order_ref]=line_qty_delivered
                 if not ([order_ref and order_date and customer_name and product_name and price_list]):
                     continue
                 if (order_ref and order_date and customer_name and  row[18].value):
@@ -260,6 +270,7 @@ class ImportFileWizard(models.TransientModel):
                     else:
                         picked_lot_ids = None
                     rental_recurring_plan = self.env['rental.recurring.plan'].search([('name', '=', recurring_plan),('company_id','=',company_id.id)], limit=1)
+                    print('rental_recurring_plan',company_id,company_id.name,recurring_plan,rental_recurring_plan,rental_recurring_plan.company_id.name)
                     order_recurring_plan[order_ref] = rental_recurring_plan
 
             # Check if Order Already Exists
@@ -311,8 +322,8 @@ class ImportFileWizard(models.TransientModel):
                             'is_service_charge': is_service_charge,
                             'product_uom_qty': product_qty or 1,
                             'price_unit': float(unit_price),
-                            'rental_start_date': rental_start_date,
-                            'rental_end_date': rental_end_date,
+                            'rental_start_date': line_rental_start_date,
+                            'rental_end_date': line_rental_end_date,
                             'next_bill_date': next_bill_date,
                             'rental_pickable_lot_ids': picked_lot_ids if picked_lot_ids else None,
                             # 'returned_lot_ids': returned_lot_ids if returned_lot_ids else None,
@@ -324,8 +335,9 @@ class ImportFileWizard(models.TransientModel):
                     else:
                         order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
             # raise ValidationError('stop')
+            # print('delivery', order_qty_delivered, line_qty_delivered)
             for order in created_orders:
-                order.write({'recurring_plan_id':order_recurring_plan[order.name]})
+                # order.write({'recurring_plan_id':order_recurring_plan[order.name]})
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
                 order.with_context(import_from_sheet=True).with_context(import_from_sheet=True).action_confirm()
                 action_dict = order.with_context(import_from_sheet=True).action_open_pickup()
@@ -352,7 +364,9 @@ class ImportFileWizard(models.TransientModel):
                                 return_wizard.apply()
             # updating all line's qty_delivered
                     if line.importing_external_id in line_qty_delivered:
-                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
+                        print('delivery',order,order_qty_delivered,line_qty_delivered)
+                        # line.qty_delivered = order_qty_delivered[line.order_id.name][line.importing_external_id]
+                        line.write({'qty_delivered': order_qty_delivered[line.order_id.name][line.importing_external_id]})
             # Update the delivery date of Stock move and Stock move line
                 for line in order.order_line.filtered(lambda l: l.rental_pickable_lot_ids):
                     for lot in line.rental_pickable_lot_ids:
@@ -391,8 +405,8 @@ class ImportFileWizard(models.TransientModel):
                                     pickup_driver_id = partner_obj.search([('name', '=', pickup_driver.strip())], limit=1)
                                     if pickup_driver_id:
                                         return_date_record.write({'pickup_driver': pickup_driver_id})
-                    if line.importing_external_id in line_qty_delivered:
-                        line.qty_delivered = line_qty_delivered[line.importing_external_id]
+                    # if line.importing_external_id in line_qty_delivered:
+                    #     line.qty_delivered = line_qty_delivered[line.importing_external_id]
             _logger.info('no_product',no_product)
             _logger.info('no_customer',no_customer)
             _logger.info('customer_from_another_company',customer_from_another_company)
@@ -403,6 +417,7 @@ class ImportFileWizard(models.TransientModel):
             _logger.info('ignored_already_used_serail',ignored_already_used_serail)
             _logger.info('serial_exists_for_another_prod',serial_exists_for_another_prod)
             _logger.info('created_orders',len(created_orders))
+            _logger.info('created_orders_names',created_orders_names)
             # raise ValidationError('Success')
             return {
                 'effect': {

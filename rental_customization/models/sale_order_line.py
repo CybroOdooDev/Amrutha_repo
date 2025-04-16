@@ -40,7 +40,9 @@ class SaleOrderLine(models.Model):
     def create(self, vals_list):
         """Supering Create function of sale order lines at the end"""
         if self._context.get('import_from_sheet'):
+            print("Dates on lines")
             return super().create(vals_list)
+        print("Dates on liness")
         for vals in vals_list:
             product_template_id = vals.get('product_template_id')
             product = self.env['product.template'].search([('id', '=', product_template_id)])
@@ -227,8 +229,9 @@ class SaleOrderLine(models.Model):
     def check_rental_date(self):
         """ Validating Rental dates """
         for rec in self:
-            if rec.rental_end_date and rec.rental_start_date and rec.rental_end_date < rec.rental_start_date:
-                raise ValidationError('The Return Date Must Be Greater Than Start Date.')
+            if not rec.order_id.imported_order:
+                if rec.rental_end_date and rec.rental_start_date and rec.rental_end_date < rec.rental_start_date:
+                    raise ValidationError('The Return Date Must Be Greater Than Start Date.')
 
     @api.onchange('qty_delivered', 'qty_returned')
     def _onchange_quantities(self):
@@ -240,9 +243,12 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
-        if not self.order_id.imported_order:
-            section_prod = self.order_id.get_sections_with_products()
-            for line in self:
+        # for self in self:
+        #     if  self.order_id.imported_order:
+        #         return
+        # if not self.order_id.imported_order:
+        section_prod = self.order_id.get_sections_with_products()
+        for line in self:
                 if line.order_id.is_rental_order and line.product_template_id and line.order_id.state != "draft" and not line.is_sale:
                 # Find the section this product belongs to
                     for section, order_line in section_prod.items():

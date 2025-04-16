@@ -55,7 +55,7 @@ class SaleOrder(models.Model):
         string="Rental Status",
         compute='_compute_rental_status',
         store=True)
-    imported_order = fields.Boolean(default=False)
+    imported_order = fields.Boolean(default=False,store=True)
     parent_company_id = fields.Many2one(
         'res.company',
         store=True,
@@ -254,7 +254,7 @@ class SaleOrder(models.Model):
         lines_to_invoice = self.env['sale.order.line'].search([])
 
         if self._context.get('button_action'):
-            filtered_order_lines = lines_to_invoice.filtered(
+            filtered_order_lines = self.order_line.filtered(
                 lambda line: ((line.next_bill_date) or line.is_sale)
                              and line.order_id.state == "sale" and line.qty_delivered != 0
             )
@@ -262,7 +262,6 @@ class SaleOrder(models.Model):
             filtered_order_lines = lines_to_invoice.filtered(
                 lambda line: ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered != 0
             )
-
         # Group order lines by sale order
         orders_grouped = {}
         for line in filtered_order_lines:
@@ -399,10 +398,10 @@ class SaleOrder(models.Model):
                 self.env['product.product'].browse(vals[2].get('product_id')).charges_ok == False
                 for vals in invoice_vals['invoice_line_ids']
             )
-
             # Create invoice only if there is at least one non-chargeable product
             if has_non_charge_product:
                 invoice = self.env['account.move'].create(invoice_vals)
+
             # Updating the Next bill date
                 if invoice:
                     if invoice.invoice_payment_term_id:

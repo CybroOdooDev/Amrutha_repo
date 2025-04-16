@@ -23,17 +23,17 @@
                 />
             </xpath>
 
-            <xpath expr="//field[@name='phone']"
-                   position="after">
-                <div>
-                    <label for="total_sales_price"/>
-                    <field class="oe_inline" name="total_sales_price"
-                           invisible="not is_calculate_commission"
-                           widget="monetary"
-                           options="{'currency_field': 'currency_id'}"/>
-                </div>
+<!--            <xpath expr="//field[@name='phone']" position="after">-->
+<!--                <div class="o_row o_row_readonly">-->
+<!--                    <label for="total_sales_price" string="Total Sales Price"/>-->
 
-            </xpath>
+<!--                    <field name="total_sales_price"-->
+<!--                           invisible="not is_calculate_commission"-->
+<!--                           widget="monetary"-->
+<!--                           options="{'currency_field': 'currency_id'}"/>-->
+<!--                </div>-->
+
+<!--            </xpath>-->
 
             <!-- Add Commission Information on Lead Form -->
             <xpath expr="//field[@name='user_id']" position="after">
@@ -63,9 +63,10 @@
                             <field name="total_amount" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
                             <field name="total_commission" widget="monetary"/>
-<!--                            <field name="omissions_insurance"-->
-<!--                                   widget="monetary"/>-->
-                            <field name="transaction_coordinator_fee" widget="monetary"/>
+                            <!--                            <field name="omissions_insurance"-->
+                            <!--                                   widget="monetary"/>-->
+                            <field name="transaction_coordinator_fee"
+                                   widget="monetary"/>
                             <field name="inside_sale_fee" widget="monetary"/>
                             <field name="referral_fee" widget="monetary"/>
                             <field name="flat_fee" widget="monetary"/>
@@ -75,6 +76,10 @@
                                    invisible="1"/>
                         </group>
                         <group>
+                            <field name="total_sales_price"
+                                   invisible="not is_calculate_commission"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
                             <field name="minimum_commission_due"
                                    widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>

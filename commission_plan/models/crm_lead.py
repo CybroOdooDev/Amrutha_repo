@@ -24,7 +24,7 @@ class Lead(models.Model):
         string="Is applicable for Commission")
     total_amount = fields.Float(string="Total Commission Received by LRE",
                                 help="This field represents the overall amount from which the commission is calculated.")
-    total_commission = fields.Float(string="“Total Commission Earned by Agent",
+    total_commission = fields.Float(string="Total Commission Earned by Agent",
                                     help="This field represents the calculated commission based on the total amount and applicable percentage.")
     tier = fields.Float(string="Tier")
     commission_to_be_paid = fields.Float(string="Commission Paid",

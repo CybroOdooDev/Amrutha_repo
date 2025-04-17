@@ -15,7 +15,7 @@ class TransferLotSerialNumberWizard(models.TransientModel):
     _name = "transfer.lot.serial.wizard"
     _description = "Transfer Lot/Serial Number Wizard"
 
-    company_id = fields.Integer(default=lambda self: self.env.company.id)
+    # company_id = fields.Integer(default=lambda self: self.env.company.id)
     upload_file = fields.Boolean(string="Upload file to Transfer")
     upload_details = fields.Boolean(string="Upload transfer details here")
     file = fields.Binary(string="File To Transfer", required=1)
@@ -37,7 +37,7 @@ class TransferLotSerialNumberWizard(models.TransientModel):
         if self.destination_company_id:
             self.location_ids = [fields.Command.set(self.location_ids.search([('company_id', '=', self.destination_company_id.id)]).ids)]
         else:
-            self.location_ids = self.env['stock.location'].search([])
+            self.location_ids = [fields.Command.set(self.location_ids.search([('company_id', '=', self.env.company.id)]).ids)]
 
     @api.onchange('upload_file')
     def _onchange_upload_fields(self):
@@ -104,7 +104,7 @@ class TransferLotSerialNumberWizard(models.TransientModel):
             if self.destination_company_id and self.destination_location_id:
                 destination_company_id = self.destination_company_id
                 destination_location_id = self.destination_location_id
-                current_company = self.company_id
+                current_company = self.env.company
                 for lot in self.lot_ids:
                     product_id = lot.product_id
                     if  lot.reserved or lot.location_id.name == 'Rental':

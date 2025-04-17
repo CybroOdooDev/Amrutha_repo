@@ -40,9 +40,7 @@ class SaleOrderLine(models.Model):
     def create(self, vals_list):
         """Supering Create function of sale order lines at the end"""
         if self._context.get('import_from_sheet'):
-            print("Dates on lines")
             return super().create(vals_list)
-        print("Dates on liness")
         for vals in vals_list:
             product_template_id = vals.get('product_template_id')
             product = self.env['product.template'].search([('id', '=', product_template_id)])
@@ -243,9 +241,6 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
-        # for self in self:
-        #     if  self.order_id.imported_order:
-        #         return
         # if not self.order_id.imported_order:
         section_prod = self.order_id.get_sections_with_products()
         for line in self:
@@ -274,13 +269,22 @@ class SaleOrderLine(models.Model):
                             if delivery_fuel_surcharge_lines:
                                 for delivery_fuel_surcharge_line in delivery_fuel_surcharge_lines:
                                     # Update the qty_delivered for "delivery fuel surcharge" product
-                                    sale_order_line = self.env['sale.order.line'].browse(delivery_fuel_surcharge_line._origin.id)
-                                    sale_order_line.write({
-                                        'qty_delivered': line.qty_delivered - rental_delivery_line.qty_invoiced,
-                                        'next_bill_date': line.next_bill_date,
-                                        'rental_start_date': line.rental_start_date,
-                                        'rental_end_date': line.rental_end_date,
-                                    })
+                                    if rental_delivery_lines:
+                                        for rental_delivery_line in rental_delivery_lines:
+                                            sale_order_line.write({
+                                                'qty_delivered': line.qty_delivered - rental_delivery_line.qty_invoiced,
+                                                'next_bill_date': line.next_bill_date,
+                                                'rental_start_date': line.rental_start_date,
+                                                'rental_end_date': line.rental_end_date,
+                                            })
+                                    else:
+                                        sale_order_line = self.env['sale.order.line'].browse(delivery_fuel_surcharge_line._origin.id)
+                                        sale_order_line.write({
+                                            'qty_delivered': line.qty_delivered - delivery_fuel_surcharge_line.qty_invoiced,
+                                            'next_bill_date': line.next_bill_date,
+                                            'rental_start_date': line.rental_start_date,
+                                            'rental_end_date': line.rental_end_date,
+                                        })
                 # Check if "rental dwpp" product exists in the section
                             rental_dwpp_prod = self.env['product.template'].search([('charges_ok', '=', True),
                                                                     ('service_category', '=', 'dwpp')]).mapped('name')
@@ -341,7 +345,7 @@ class SaleOrderLine(models.Model):
                                         'rental_start_date': line.rental_start_date,
                                         'rental_end_date': line.rental_end_date,
                                     })
-                # Check if 'no service charge' product exists in the section
+                # Check if 'no service category' product exists in the section
                             no_service_charge_prod = self.env['product.template'].search([('charges_ok', '=', True),
                                                                              ('service_category', '=',None)]).mapped('name')
                             no_service_charge_prod_lines = (line for line in order_line if line.product_template_id.name in no_service_charge_prod)
@@ -456,7 +460,7 @@ class SaleOrderLine(models.Model):
                 pickeable_lot_ids = self.env['stock.lot']._get_available_lots(line.product_id,
                                                                       line.order_id.warehouse_id.lot_stock_id)
                 pickeable_lot_ids = pickeable_lot_ids.filtered(
-                    lambda lot: not lot.company_id or lot.company_id == self.order_id.company_id
+                    lambda lot: not lot.company_id or lot.company_id == self.order_id.company_id and not lot.reserved
                 )
                 if pickeable_lot_ids:
                     line.rental_available_lot_ids = pickeable_lot_ids
@@ -511,7 +515,6 @@ class SaleOrderLine(models.Model):
         for lot_id in lot_ids:
             lot_quant = self.env['stock.quant']._gather(self.product_id, location_id, lot_id)
             lot_quant = lot_quant.filtered(lambda quant: quant.quantity == 1.0)
-            # print('_move_serials',self.product_id.name,lot_quant,lot_id.product_id.name,location_id,location_id.name,lot_id.name,self.order_id.name)
             if not lot_quant:
                 location_id =self.env['stock.location'].search(
                                                 [('company_id', '=', self.order_id.company_id.parent_id.id), ('name', '=', 'Stock')])

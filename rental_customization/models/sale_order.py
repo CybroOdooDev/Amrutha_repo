@@ -141,7 +141,6 @@ class SaleOrder(models.Model):
 
         for line in self.order_line.sorted(key=lambda l: l.sequence):
             if line.display_type == 'line_section':
-
                 # If the line is a section, set it as the current section
                 current_section = line.name
                 section_products[current_section] = []
@@ -253,14 +252,40 @@ class SaleOrder(models.Model):
         main_prod = None
         lines_to_invoice = self.env['sale.order.line'].search([])
 
+        # if self._context.get('button_action'):
+        #     filtered_order_lines = self.order_line.filtered(
+        #         lambda line: ((line.next_bill_date) or line.is_sale)
+        #                      and line.order_id.state == "sale" and line.qty_delivered != 0
+        #     )
+        # else:
+        #     filtered_order_lines = lines_to_invoice.filtered(
+        #         lambda line: ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered != 0
+        #     )
         if self._context.get('button_action'):
             filtered_order_lines = self.order_line.filtered(
-                lambda line: ((line.next_bill_date) or line.is_sale)
-                             and line.order_id.state == "sale" and line.qty_delivered != 0
+                lambda line: (
+                        ((line.next_bill_date) or line.is_sale)
+                        and line.order_id.state == "sale"
+                        and line.qty_delivered != 0
+                        and not (
+                        line.order_id.imported_order
+                        and not line.need_bill_importing
+                        and line.qty_invoiced > 0
+                )
+                )
             )
         else:
             filtered_order_lines = lines_to_invoice.filtered(
-                lambda line: ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered != 0
+                lambda line: (
+                        ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
+                        and line.order_id.state == "sale"
+                        and line.qty_delivered != 0
+                        and not (
+                        line.order_id.imported_order
+                        and not line.need_bill_importing
+                        and line.qty_invoiced > 0
+                )
+                )
             )
         # Group order lines by sale order
         orders_grouped = {}
@@ -268,11 +293,9 @@ class SaleOrder(models.Model):
             if line.order_id not in orders_grouped:
                 orders_grouped[line.order_id] = []
             orders_grouped[line.order_id].append(line)
-
         # Generate invoices for each sale order
         for sale_order, order_lines in orders_grouped.items():
             section_prod = sale_order.get_sections_with_products()
-
             invoice_vals = {
                 'ref': sale_order.client_order_ref or '',
                 'move_type': 'out_invoice',
@@ -337,40 +360,43 @@ class SaleOrder(models.Model):
                                 ))
                                 main_prod = line.product_id.name
                             if sale_order.bill_terms == 'late' and sale_order.pricelist_id.product_pricing_ids:
-                                for range in sale_order.pricelist_id.product_pricing_ids:
-                                    if range.product_template_id == line.product_template_id:
-                                        # Check the rental period in the pricelist and recurring plan in the order
-                                        pricelist_period_duration = range.recurrence_id.duration
-                                        pricelist_period_unit = range.recurrence_id.unit
-                                        if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
-                                            if line['pickedup_lot_ids']:
-                                                for lot in line['pickedup_lot_ids']:
-                                                    date_lines = self.env['product.return.dates'].search([
-                                                        ('order_id', '=', sale_order.id),
-                                                        ('serial_number', '=', lot.id),
-                                                    ])
-                                                    if date_lines and date_lines.return_date:
-                                                        date_lines.invoice_count += 1
-                                                    if date_lines.invoice_count <= 1:
-                                                        invoice_vals['invoice_line_ids'].append(Command.create(
-                                                            line._prepare_invoice_line(
-                                                                name=f"Rental with Per Day Charge - {lot.name}",
-                                                                product_id=date_lines.product_id.id,
-                                                                price_unit=date_lines.total_price,
-                                                                quantity=1,
-                                                            )
-                                                        ))
-                                            main_prod = line.product_id.name
-                                        else:
-                                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                                line._prepare_invoice_line(
-                                                    name=f"Rental",
-                                                    product_id=line.product_id.id,
-                                                    price_unit=line.price_unit,
-                                                    quantity=line.qty_delivered - line.qty_returned,
-                                                )
-                                            ))
-                                            main_prod = line.product_id.name
+                                pricelist_template_ids = sale_order.pricelist_id.product_pricing_ids.mapped(
+                                    'product_template_id')
+                                if line.product_template_id in pricelist_template_ids:
+                                    for range in sale_order.pricelist_id.product_pricing_ids:
+                                        if range.product_template_id == line.product_template_id:
+                                            # Check the rental period in the pricelist and recurring plan in the order
+                                            pricelist_period_duration = range.recurrence_id.duration
+                                            pricelist_period_unit = range.recurrence_id.unit
+                                            if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
+                                                if line['pickedup_lot_ids']:
+                                                    for lot in line['pickedup_lot_ids']:
+                                                        date_lines = self.env['product.return.dates'].search([
+                                                            ('order_id', '=', sale_order.id),
+                                                            ('serial_number', '=', lot.id),
+                                                        ])
+                                                        if date_lines and date_lines.return_date:
+                                                            date_lines.invoice_count += 1
+                                                        if date_lines.invoice_count <= 1:
+                                                            invoice_vals['invoice_line_ids'].append(Command.create(
+                                                                line._prepare_invoice_line(
+                                                                    name=f"Rental with Per Day Charge - {lot.name}",
+                                                                    product_id=date_lines.product_id.id,
+                                                                    price_unit=date_lines.total_price,
+                                                                    quantity=1,
+                                                                )
+                                                            ))
+                                                main_prod = line.product_id.name
+                                else:
+                                    invoice_vals['invoice_line_ids'].append(Command.create(
+                                        line._prepare_invoice_line(
+                                            name=f"Rental",
+                                            product_id=line.product_id.id,
+                                            price_unit=line.price_unit,
+                                            quantity=line.qty_delivered - line.qty_returned,
+                                        )
+                                    ))
+                                    main_prod = line.product_id.name
 
                         if not line.is_sale and line.product_template_id.charges_ok == True:
                             invoice_vals['invoice_line_ids'].append(Command.create(
@@ -409,6 +435,8 @@ class SaleOrder(models.Model):
 
                     sale_order = invoice.line_ids.sale_line_ids.order_id
                     for lines in invoice.line_ids.sale_line_ids:
+                        if lines.order_id.imported_order and not lines.need_bill_importing:
+                            lines.qty_delivered = 0
                         if not lines.product_template_id.charges_ok:
                             start_date = lines.next_bill_date
 

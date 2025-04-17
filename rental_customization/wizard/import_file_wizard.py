@@ -116,12 +116,6 @@ class ImportFileWizard(models.TransientModel):
                 serial_number = row[38].value if row[38].value else None
                 delivery_date = self.normalize_datetime(row[40].value) if row[40].value else None
                 pickup_date = row[42].value if row[42].value else None
-                # print('order_date',order_date)
-                # print('rental_start_date',rental_start_date,row[15].value)
-                # print('rental_end_date',rental_end_date,row[16].value)
-                print('next_bill_date',product_name,next_bill_date,row[26].value)
-                print('line_rental_start_date',product_name,line_rental_start_date,row[24].value)
-                print('line_rental_end_date',product_name,line_rental_end_date,row[25].value)
                 if not (order_ref and order_date and customer_name):
                     break
                 if not description:
@@ -270,7 +264,6 @@ class ImportFileWizard(models.TransientModel):
                     else:
                         picked_lot_ids = None
                     rental_recurring_plan = self.env['rental.recurring.plan'].search([('name', '=', recurring_plan),('company_id','=',company_id.id)], limit=1)
-                    print('rental_recurring_plan',company_id,company_id.name,recurring_plan,rental_recurring_plan,rental_recurring_plan.company_id.name)
                     order_recurring_plan[order_ref] = rental_recurring_plan
 
             # Check if Order Already Exists
@@ -334,8 +327,6 @@ class ImportFileWizard(models.TransientModel):
                         existing_order_line.with_context(import_from_sheet=True).write(order_line_vals)
                     else:
                         order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
-            # raise ValidationError('stop')
-            # print('delivery', order_qty_delivered, line_qty_delivered)
             for order in created_orders:
                 # order.write({'recurring_plan_id':order_recurring_plan[order.name]})
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
@@ -364,7 +355,6 @@ class ImportFileWizard(models.TransientModel):
                                 return_wizard.apply()
             # updating all line's qty_delivered
                     if line.importing_external_id in line_qty_delivered:
-                        print('delivery',order,order_qty_delivered,line_qty_delivered)
                         # line.qty_delivered = order_qty_delivered[line.order_id.name][line.importing_external_id]
                         line.write({'qty_delivered': order_qty_delivered[line.order_id.name][line.importing_external_id]})
             # Update the delivery date of Stock move and Stock move line

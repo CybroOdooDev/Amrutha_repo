@@ -5,11 +5,11 @@ from odoo import models, fields, _
 import openpyxl
 import base64
 from io import BytesIO
-from odoo.exceptions import ValidationError, UserError
+from odoo.exceptions import ValidationError
 import pytz
 from odoo.tools import date_utils
 import logging
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 class ImportLotSerialNumberWizard(models.TransientModel):
     _name = "import.lot.serial.wizard"
@@ -50,8 +50,9 @@ class ImportLotSerialNumberWizard(models.TransientModel):
             ws = wb.active
             product_obj = self.env["product.product"]
             created_serialnumber = []
+            no_product = []
             for row in ws.iter_rows(min_row=2):
-                # logger.debug(row)
+                _logger.info(row)
                 name = str(row[0].value).strip() if row[0].value else None
                 product_name = row[1].value.strip() if row[1].value else None
                 create_on = self.normalize_datetime(row[2].value) if row[2].value else None
@@ -92,7 +93,8 @@ class ImportLotSerialNumberWizard(models.TransientModel):
                         #                               'type': 'consu',
                         #                               'is_storable':True,}])
                         if not product:
-                            raise UserError(f"Product '{product_name}'  in the Lot/Serial Number {name},is not found. Please create it first.")
+                            no_product.append(product_name)
+                            continue
                     if name and product and location_id:
                         serial_exists = self.env["stock.lot"].search(
                             [('name', 'ilike', name), ('product_id', '=', product.id)])
@@ -141,6 +143,7 @@ class ImportLotSerialNumberWizard(models.TransientModel):
                                 stock_valuation_layer.stock_move_id.move_line_ids.write({'date': create_on})
 
             # raise ValidationError('success')
+            _logger.info('no_product',no_product)
             return {
                 'effect': {
                     'fadeout': 'slow',

@@ -28,6 +28,8 @@
             <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
                 <field name="is_sale" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
                        widget="toggle"/>
+                <field name="is_rental" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                       widget="toggle"/>
                 <field name="is_service_charge" column_invisible=" not parent.is_rental_order"
                        style="white-space: nowrap;"
                        widget="toggle"/>
@@ -35,7 +37,7 @@
 
             <xpath expr="//field[@name='payment_term_id']" position="after" invisible="not is_rental_order">
                 <field name="bill_terms" invisible="not is_rental_order" required="1"/>
-                <field name="recurring_plan_id" invisible="not is_rental_order" required="1"/>
+                <field name="recurring_plan_id" invisible="not is_rental_order" required="1" readonly="state == 'sale'"/>
                 <field name="show_update_button" invisible="1 or not is_rental_order"/>
             </xpath>
 
@@ -139,10 +141,10 @@
                 <div>
                     <field name="imported_order" invisible="0"/>
                 </div>
-<!--                <label for="parent_company_id" invisible="1/>-->
-<!--                <div>-->
-<!--                    <field name="parent_company_id" invisible="0"/>-->
-<!--                </div>-->
+                <label for="close_order" invisible="0"/>
+                <div>
+                    <field name="close_order" invisible="0" readonly="1"/>
+                </div>
             </xpath>
 
         </field>

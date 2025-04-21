@@ -216,6 +216,7 @@ class ProductReturnDates(models.Model):
                 self.order_id.message_post(body=body)
                 body = _("%s has been linked to this sign request.", self.order_id._get_html_link())
                 request.message_post(body=body)
+
     def action_signature_msg(self):
         """ Button action for showing validation message """
         if self.signature_status == 'pickup':

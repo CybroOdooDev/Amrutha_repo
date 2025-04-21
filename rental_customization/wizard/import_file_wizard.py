@@ -161,8 +161,9 @@ class ImportFileWizard(models.TransientModel):
                             # raise ValidationError(f"Customer Belongs to another Company {customer_name}")
                         if not customer:
                             customer = partner_obj.search(['|',('name', '=', customer_name.upper()),('name', '=', customer_name.lower())], limit=1)
-                            if not customer:
-                                no_customer.append(customer_name)
+                            if not customer :
+                                if customer_name not in no_customer:
+                                    no_customer.append(customer_name)
                                 customer = partner_obj.create([{'name': customer_name,
                                                                  'company_id': company_id.id,}])
                         # raise UserError(f"Customer '{customer_name}' in the order {order_ref},is not found. Please create it first.")
@@ -181,13 +182,15 @@ class ImportFileWizard(models.TransientModel):
                                 product = product_obj.search([('name', '=', description)], limit=1)
                                 if not product:
                                     product = product_obj.search([('description_sale', '=', description)], limit=1)
-                                    if not product:
-                                        no_product.append(product_name)
+                                    if not product :
+                                        if product_name not in no_product:
+                                            no_product.append(product_name)
                                         # cleaned_text = description.replace(product_name, "",1)  # The `1` ensures only the first occurrence is removed
                                         continue
                                         # raise UserError(f"Product '{product_name}' in the order {order_ref},is not found. Please create it first.")
                         if product and product.company_id and (product.company_id != company_id and product.company_id != company_id.parent_id):
-                            not_in_company.append(product_name)
+                            if product_name not in not_in_company:
+                                not_in_company.append(product_name)
                             continue
                             # raise UserError(f"Product '{product_name}' in the order {order_ref},belongs to another company ")
             # Get Pricelist
@@ -202,7 +205,7 @@ class ImportFileWizard(models.TransientModel):
                     else:
                         pricelist = self.env['product.pricelist'].search([('name', '=', 'Default'),('company_id','=',company_id.id)], limit=1)
             # Get  serial numbers
-                    if picked_lot:
+                    if picked_lot and product:
                         if not product.charges_ok:
                             picked_lot_str = str(picked_lot)
                             # lot_names = [lot.strip().replace(" ", "") for lot in picked_lot_str.split(",")] if "," in picked_lot_str else [picked_lot_str]
@@ -397,6 +400,7 @@ class ImportFileWizard(models.TransientModel):
                                         return_date_record.write({'pickup_driver': pickup_driver_id})
                     # if line.importing_external_id in line_qty_delivered:
                     #     line.qty_delivered = line_qty_delivered[line.importing_external_id]
+
             _logger.info('no_product',no_product)
             _logger.info('no_customer',no_customer)
             _logger.info('customer_from_another_company',customer_from_another_company)
@@ -408,6 +412,7 @@ class ImportFileWizard(models.TransientModel):
             _logger.info('serial_exists_for_another_prod',serial_exists_for_another_prod)
             _logger.info('created_orders',len(created_orders))
             _logger.info('created_orders_names',created_orders_names)
+
             # raise ValidationError('Success')
             return {
                 'effect': {

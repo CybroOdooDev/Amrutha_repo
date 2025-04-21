@@ -61,6 +61,7 @@ class SaleOrder(models.Model):
         store=True,
         related = 'company_id.parent_id'
     )
+    close_order = fields.Boolean(default=False,store=True)
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -245,6 +246,21 @@ class SaleOrder(models.Model):
             'context': context
         }
 
+    def _compute_has_action_lines(self):
+        self.has_pickable_lines = False
+        self.has_returnable_lines = False
+        for order in self:
+            if order.state == 'sale' and order.is_rental_order:
+                rental_order_lines = order.order_line.filtered(
+                    lambda line: line.is_rental and not line.is_service_charge and line.product_type != 'combo'
+                )
+                order.has_pickable_lines = any(
+                    sol.qty_delivered < sol.product_uom_qty for sol in rental_order_lines
+                )
+                order.has_returnable_lines = any(
+                    sol.qty_returned < sol.qty_delivered for sol in rental_order_lines
+                )
+
     def generate_recurring_bills(self):
         """Continuous Bill creation based on the selected Rental recurring plan"""
         service_prod = self.env['product.product'].search([('charges_ok', '=', True),('service_category', 'in', ['delivery-fuel', 'pickup-fuel','delivery','pickup','dwpp'])]).mapped('name')
@@ -263,131 +279,77 @@ class SaleOrder(models.Model):
         #     )
         if self._context.get('button_action'):
             filtered_order_lines = self.order_line.filtered(
-                lambda line: (
-                        ((line.next_bill_date) or line.is_sale)
+                lambda line: (((line.next_bill_date) or line.is_sale)
                         and line.order_id.state == "sale"
                         and line.qty_delivered != 0
-                        and not (
-                        line.order_id.imported_order
-                        and not line.need_bill_importing
-                        and line.qty_invoiced > 0
-                )
-                )
-            )
+                        and line.rental_status != 'finish'
+                        and not (line.order_id.imported_order
+                                and not line.need_bill_importing)))
+                                # and line.qty_invoiced > 0)))
         else:
             filtered_order_lines = lines_to_invoice.filtered(
-                lambda line: (
-                        ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
+                lambda line: (((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
                         and line.order_id.state == "sale"
                         and line.qty_delivered != 0
-                        and not (
-                        line.order_id.imported_order
-                        and not line.need_bill_importing
-                        and line.qty_invoiced > 0
-                )
-                )
-            )
-        # Group order lines by sale order
-        orders_grouped = {}
-        for line in filtered_order_lines:
-            if line.order_id not in orders_grouped:
-                orders_grouped[line.order_id] = []
-            orders_grouped[line.order_id].append(line)
-        # Generate invoices for each sale order
-        for sale_order, order_lines in orders_grouped.items():
-            section_prod = sale_order.get_sections_with_products()
-            invoice_vals = {
-                'ref': sale_order.client_order_ref or '',
-                'move_type': 'out_invoice',
-                'narration': sale_order.note,
-                'currency_id': sale_order.currency_id.id,
-                'campaign_id': sale_order.campaign_id.id,
-                'medium_id': sale_order.medium_id.id,
-                'source_id': sale_order.source_id.id,
-                'team_id': sale_order.team_id.id,
-                'partner_id': sale_order.partner_invoice_id.id,
-                'partner_shipping_id': sale_order.partner_shipping_id.id,
-                'fiscal_position_id': (
-                            sale_order.fiscal_position_id or sale_order.fiscal_position_id._get_fiscal_position(
-                        sale_order.partner_invoice_id)).id,
-                'invoice_origin': sale_order.name,
-                'date': today,
-                'invoice_date': today,
-                'invoice_date_due': today if not sale_order.payment_term_id else False,
-                'invoice_payment_term_id': sale_order.payment_term_id.id if sale_order.payment_term_id else False,
-                'preferred_payment_method_line_id': False,
-                'invoice_user_id': sale_order.user_id.id,
-                'payment_reference': sale_order.reference,
-                'transaction_ids': [Command.set(sale_order.transaction_ids.ids)],
-                'company_id': sale_order.company_id.id,
-                'invoice_line_ids': [],
-                'user_id': sale_order.user_id.id,
-                'name': '/'
-            }
-            # Adding all the order lines to the invoice
-            for line in order_lines:
-                for section, order_line in section_prod.items():
-                    if line in order_line and line.qty_delivered:
-                        if line.is_sale and line.product_template_id.charges_ok == False:
-                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                line._prepare_invoice_line(
-                                    name=f"Sale",
-                                    product_id=line.product_id.id,
-                                    price_unit=line.price_unit,
-                                    quantity=line.qty_delivered - line.qty_invoiced,
-                                )
-                            ))
+                        and line.rental_status != 'finish'
+                        and not (line.order_id.imported_order
+                                and not line.need_bill_importing)))
+                                # and line.qty_invoiced > 0)))
 
-                        if not line.is_sale and line.product_template_id.charges_ok == False:
-                            if sale_order.bill_terms == 'advance':
+        if not self.close_order:
+            # Group order lines by sale order
+            orders_grouped = {}
+            for line in filtered_order_lines:
+                if line.order_id not in orders_grouped:
+                    orders_grouped[line.order_id] = []
+                orders_grouped[line.order_id].append(line)
+            # Generate invoices for each sale order
+            for sale_order, order_lines in orders_grouped.items():
+                section_prod = sale_order.get_sections_with_products()
+                invoice_vals = {
+                    'ref': sale_order.client_order_ref or '',
+                    'move_type': 'out_invoice',
+                    'narration': sale_order.note,
+                    'currency_id': sale_order.currency_id.id,
+                    'campaign_id': sale_order.campaign_id.id,
+                    'medium_id': sale_order.medium_id.id,
+                    'source_id': sale_order.source_id.id,
+                    'team_id': sale_order.team_id.id,
+                    'partner_id': sale_order.partner_invoice_id.id,
+                    'partner_shipping_id': sale_order.partner_shipping_id.id,
+                    'fiscal_position_id': (
+                                sale_order.fiscal_position_id or sale_order.fiscal_position_id._get_fiscal_position(
+                            sale_order.partner_invoice_id)).id,
+                    'invoice_origin': sale_order.name,
+                    'date': today,
+                    'invoice_date': today,
+                    'invoice_date_due': today if not sale_order.payment_term_id else False,
+                    'invoice_payment_term_id': sale_order.payment_term_id.id if sale_order.payment_term_id else False,
+                    'preferred_payment_method_line_id': False,
+                    'invoice_user_id': sale_order.user_id.id,
+                    'payment_reference': sale_order.reference,
+                    'transaction_ids': [Command.set(sale_order.transaction_ids.ids)],
+                    'company_id': sale_order.company_id.id,
+                    'invoice_line_ids': [],
+                    'user_id': sale_order.user_id.id,
+                    'name': '/'
+                }
+                # Adding all the order lines to the invoice
+                for line in order_lines:
+                    for section, order_line in section_prod.items():
+                        if line in order_line and line.qty_delivered:
+                            if line.is_sale and line.product_template_id.charges_ok == False:
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
-                                        name=f"Rental",
+                                        name=f"Sale",
                                         product_id=line.product_id.id,
                                         price_unit=line.price_unit,
-                                        quantity=line.qty_delivered - line.qty_returned,
+                                        quantity=line.qty_delivered - line.qty_invoiced,
                                     )
                                 ))
-                                main_prod = line.product_id.name
-                            if sale_order.bill_terms == 'late' and not sale_order.pricelist_id.product_pricing_ids:
-                                invoice_vals['invoice_line_ids'].append(Command.create(
-                                    line._prepare_invoice_line(
-                                        name=f"Rental",
-                                        product_id=line.product_id.id,
-                                        price_unit=line.price_unit,
-                                        quantity=line.qty_delivered - line.qty_returned,
-                                    )
-                                ))
-                                main_prod = line.product_id.name
-                            if sale_order.bill_terms == 'late' and sale_order.pricelist_id.product_pricing_ids:
-                                pricelist_template_ids = sale_order.pricelist_id.product_pricing_ids.mapped(
-                                    'product_template_id')
-                                if line.product_template_id in pricelist_template_ids:
-                                    for range in sale_order.pricelist_id.product_pricing_ids:
-                                        if range.product_template_id == line.product_template_id:
-                                            # Check the rental period in the pricelist and recurring plan in the order
-                                            pricelist_period_duration = range.recurrence_id.duration
-                                            pricelist_period_unit = range.recurrence_id.unit
-                                            if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
-                                                if line['pickedup_lot_ids']:
-                                                    for lot in line['pickedup_lot_ids']:
-                                                        date_lines = self.env['product.return.dates'].search([
-                                                            ('order_id', '=', sale_order.id),
-                                                            ('serial_number', '=', lot.id),
-                                                        ])
-                                                        if date_lines and date_lines.return_date:
-                                                            date_lines.invoice_count += 1
-                                                        if date_lines.invoice_count <= 1:
-                                                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                                                line._prepare_invoice_line(
-                                                                    name=f"Rental with Per Day Charge - {lot.name}",
-                                                                    product_id=date_lines.product_id.id,
-                                                                    price_unit=date_lines.total_price,
-                                                                    quantity=1,
-                                                                )
-                                                            ))
-                                                main_prod = line.product_id.name
-                                else:
+
+                            if not line.is_sale and line.product_template_id.charges_ok == False:
+                                if sale_order.bill_terms == 'advance':
                                     invoice_vals['invoice_line_ids'].append(Command.create(
                                         line._prepare_invoice_line(
                                             name=f"Rental",
@@ -397,42 +359,86 @@ class SaleOrder(models.Model):
                                         )
                                     ))
                                     main_prod = line.product_id.name
+                                if sale_order.bill_terms == 'late' and not sale_order.pricelist_id.product_pricing_ids:
+                                    invoice_vals['invoice_line_ids'].append(Command.create(
+                                        line._prepare_invoice_line(
+                                            name=f"Rental",
+                                            product_id=line.product_id.id,
+                                            price_unit=line.price_unit,
+                                            quantity=line.qty_delivered - line.qty_returned,
+                                        )
+                                    ))
+                                    main_prod = line.product_id.name
+                                if sale_order.bill_terms == 'late' and sale_order.pricelist_id.product_pricing_ids:
+                                    pricelist_template_ids = sale_order.pricelist_id.product_pricing_ids.mapped(
+                                        'product_template_id')
+                                    if line.product_template_id in pricelist_template_ids:
+                                        for range in sale_order.pricelist_id.product_pricing_ids:
+                                            if range.product_template_id == line.product_template_id:
+                                                # Check the rental period in the pricelist and recurring plan in the order
+                                                pricelist_period_duration = range.recurrence_id.duration
+                                                pricelist_period_unit = range.recurrence_id.unit
+                                                if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
+                                                    if line['pickedup_lot_ids']:
+                                                        for lot in line['pickedup_lot_ids']:
+                                                            date_lines = self.env['product.return.dates'].search([
+                                                                ('order_id', '=', sale_order.id),
+                                                                ('serial_number', '=', lot.id),
+                                                            ])
+                                                            if date_lines and date_lines.return_date:
+                                                                date_lines.invoice_count += 1
+                                                            if date_lines.invoice_count <= 1:
+                                                                invoice_vals['invoice_line_ids'].append(Command.create(
+                                                                    line._prepare_invoice_line(
+                                                                        name=f"Rental with Per Day Charge - {lot.name}",
+                                                                        product_id=date_lines.product_id.id,
+                                                                        price_unit=date_lines.total_price,
+                                                                        quantity=1,
+                                                                    )
+                                                                ))
+                                                    main_prod = line.product_id.name
+                                    else:
+                                        invoice_vals['invoice_line_ids'].append(Command.create(
+                                            line._prepare_invoice_line(
+                                                name=f"Rental",
+                                                product_id=line.product_id.id,
+                                                price_unit=line.price_unit,
+                                                quantity=line.qty_delivered - line.qty_returned,
+                                            )
+                                        ))
+                                        main_prod = line.product_id.name
 
-                        if not line.is_sale and line.product_template_id.charges_ok == True:
-                            invoice_vals['invoice_line_ids'].append(Command.create(
-                                line._prepare_invoice_line(
-                                    name=f"Rental Service Charges for {main_prod}",
-                                    product_id=line.product_id.id,
-                                    price_unit=line.price_unit,
-                                    quantity=line.qty_delivered - line.qty_returned,
-                                )
-                            ))
-                        # if (
-                        #         line.product_template_id.name == "Rental Delivery" or line.product_template_id.name == "Rental Pick-Up"
-                        #         or line.product_template_id.name == "Delivery Fuel Surcharge" or line.product_template_id.name == "Pick Up Fuel Surcharge"):
-                        #     line.qty_delivered = 0
-                        # if line.is_service_charge and line.product_template_id.name not in service_prod:
-                        #     line.qty_delivered = 0
+                            if not line.is_sale and line.product_template_id.charges_ok == True:
+                                invoice_vals['invoice_line_ids'].append(Command.create(
+                                    line._prepare_invoice_line(
+                                        name=f"Rental Service Charges for {main_prod}",
+                                        product_id=line.product_id.id,
+                                        price_unit=line.price_unit,
+                                        quantity=line.qty_delivered - line.qty_returned,
+                                    )
+                                ))
 
-            # Removing lines with zero qty and zero price from the invoice
-            invoice_vals['invoice_line_ids'] = [
-                vals for vals in invoice_vals['invoice_line_ids']
-                if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
-            ]
+                # Removing lines with zero qty and zero price from the invoice
+                invoice_vals['invoice_line_ids'] = [
+                    vals for vals in invoice_vals['invoice_line_ids']
+                    if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
+                ]
+
             # Check if any product in invoice lines has charges_ok = False
-            has_non_charge_product = any(
-                self.env['product.product'].browse(vals[2].get('product_id')).charges_ok == False
-                for vals in invoice_vals['invoice_line_ids']
-            )
-            # Create invoice only if there is at least one non-chargeable product
-            if has_non_charge_product:
+                # has_non_charge_product = any(
+                #     self.env['product.product'].browse(vals[2].get('product_id')).charges_ok == False
+                #     for vals in invoice_vals['invoice_line_ids']
+                # )
+            # # Create invoice only if there is at least one non-chargeable product
+                # if has_non_charge_product:
                 invoice = self.env['account.move'].create(invoice_vals)
+                if invoice and not self.has_returnable_lines:
+                    self.close_order = True
 
-            # Updating the Next bill date
+                # Updating the Next bill date
                 if invoice:
-                    if invoice.invoice_payment_term_id:
-                        invoice._onchange_invoice_payment_term_id()
-
+            #         if invoice.invoice_payment_term_id:
+            #             invoice._onchange_invoice_payment_term_id()
                     sale_order = invoice.line_ids.sale_line_ids.order_id
                     for lines in invoice.line_ids.sale_line_ids:
                         if lines.order_id.imported_order and not lines.need_bill_importing:

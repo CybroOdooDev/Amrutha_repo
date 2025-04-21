@@ -206,22 +206,36 @@ class SaleOrderLine(models.Model):
     @api.depends('qty_delivered', 'qty_invoiced', 'qty_returned', 'state','is_sale')
     def _compute_rental_status(self):
         """To compute the Rental Status in the line level"""
-        for order in self:
-            if order.is_sale:
-                order.rental_status = "sale"
+        for line in self:
+            if line.is_sale:
+                line.rental_status = "sale"
             else:
-                if not order.is_rental:
-                    order.rental_status = False
-                if order.state != 'sale':
-                    order.rental_status = order.state
-                elif order.state == 'sale' and order.qty_delivered == 0 and order.qty_invoiced ==0:
-                    order.rental_status = 'confirmed'
-                elif order.state == 'sale' and order.qty_delivered > 0:
-                    order.rental_status = 'rent'
-                elif order.state == 'sale' and order.qty_delivered == 0 and order.qty_invoiced >0:
-                    order.rental_status = 'finish'
-                else:
-                    order.rental_status = 'cancel'
+                if not line.is_rental:
+                    line.rental_status = False
+                if line.state != 'sale':
+                    line.rental_status = line.state
+                elif line.state == 'sale' and line.qty_delivered == 0 and line.qty_invoiced ==0:
+                    line.rental_status = 'confirmed'
+                elif line.state == 'sale' and line.qty_delivered > 0:
+                    line.rental_status = 'rent'
+                if line.state == 'sale' and (
+                        (line.qty_delivered == 0 and line.qty_invoiced > 0) or
+                        (line.qty_delivered > 0 and line.qty_delivered == line.qty_returned)):
+                        line.rental_status = 'finish'
+                if self.order_id.close_order :
+                    line.rental_status = 'finish'
+                # else:
+                #     line.rental_status = 'cancel'
+        section_prod = self.order_id.get_sections_with_products()
+        for section, order_lines in section_prod.items():
+            # Check if any line in the section is not charges_ok and has rental_status as 'finish'
+            if any(
+                    not line.product_template_id.charges_ok and line.rental_status == 'finish'
+                    for line in order_lines
+            ):
+                for line in order_lines:
+                    if line.qty_invoiced > 0:
+                        line.write({'rental_status': 'finish'})
 
     @api.constrains('rental_start_date', 'rental_end_date')
     def check_rental_date(self):
@@ -241,6 +255,9 @@ class SaleOrderLine(models.Model):
     @api.constrains('qty_delivered', 'qty_returned','next_bill_date','rental_start_date','rental_end_date' )
     def check_service_products_qty(self):
         """ To update delivery charge's qty_delivered and dates"""
+        # if self._context.get('import_from_sheet'):
+        #     print("_context.get('import_from_sheet')")
+        #     return
         # if not self.order_id.imported_order:
         section_prod = self.order_id.get_sections_with_products()
         for line in self:
@@ -257,7 +274,8 @@ class SaleOrderLine(models.Model):
                                     # Update the qty_delivered for "rental delivery" product
                                     sale_order_line = self.env['sale.order.line'].browse(rental_delivery_line._origin.id)
                                     sale_order_line.write({
-                                        'qty_delivered': line.qty_delivered -rental_delivery_line.qty_invoiced,
+                                        # 'qty_delivered': line.qty_delivered -rental_delivery_line.qty_invoiced,
+                                        'qty_delivered': line.qty_delivered - line.qty_returned,
                                         'next_bill_date': line.next_bill_date,
                                         'rental_start_date':line.rental_start_date,
                                         'rental_end_date':line.rental_end_date,
@@ -350,26 +368,29 @@ class SaleOrderLine(models.Model):
                                                                              ('service_category', '=',None)]).mapped('name')
                             no_service_charge_prod_lines = (line for line in order_line if line.product_template_id.name in no_service_charge_prod)
                             if no_service_charge_prod_lines:
-                                for no_service_charge_prod_line in no_service_charge_prod_lines:
-                                    # Update the qty_delivered for "rental delivery" product
-                                    sale_order_line = self.env['sale.order.line'].browse(
-                                        no_service_charge_prod_line._origin.id)
-                                    if sale_order_line and not sale_order_line.need_bill_importing:
-                                        qty = line.qty_delivered - line.qty_invoiced
-                                        sale_order_line.write({
-                                            'qty_delivered': qty if qty >0 else 0,
-                                            'next_bill_date': line.next_bill_date,
-                                            'rental_start_date': line.rental_start_date,
-                                            'rental_end_date': line.rental_end_date,
-                                        })
-                                    if sale_order_line and  sale_order_line.need_bill_importing:
-                                        qty = line.qty_delivered - line.qty_returned
-                                        sale_order_line.write({
-                                            'qty_delivered': qty if qty > 0 else 0,
-                                            'next_bill_date': line.next_bill_date,
-                                            'rental_start_date': line.rental_start_date,
-                                            'rental_end_date': line.rental_end_date,
-                                        })
+                                    for no_service_charge_prod_line in no_service_charge_prod_lines:
+                                        # Update the qty_delivered for "rental delivery" product
+                                        sale_order_line = self.env['sale.order.line'].browse(
+                                            no_service_charge_prod_line._origin.id)
+                                        if sale_order_line and not sale_order_line.need_bill_importing:
+                                            qty = line.qty_delivered - line.qty_invoiced
+                                            sale_order_line.write({
+                                                'qty_delivered': qty if qty >0 else 0,
+                                                'next_bill_date': line.next_bill_date,
+                                                'rental_start_date': line.rental_start_date,
+                                                'rental_end_date': line.rental_end_date,
+                                            })
+                                        if sale_order_line and  sale_order_line.need_bill_importing:
+                                            qty = line.qty_delivered - line.qty_returned
+                                            sale_order_line.write({
+                                                'qty_delivered': qty if qty > 0 else 0,
+                                                'next_bill_date': line.next_bill_date,
+                                                'rental_start_date': line.rental_start_date,
+                                                'rental_end_date': line.rental_end_date,
+                                            })
+                    if line.qty_delivered >=  line.qty_returned :
+                        line.invoice_status = 'to invoice'
+
 
     @api.onchange('is_sale')
     def _onchange_is_sale(self):
@@ -427,19 +448,20 @@ class SaleOrderLine(models.Model):
     def _onchange_product_uom_qty(self):
         """ Change the product_uom_qty of service products while the main product's product_uom_qty changes """
         if self.product_template_id and self.product_template_id.charges_ok== False:
-            product_template_id = self.product_template_id
-            product_charges = self.env['product.template'].search([('id', '=', product_template_id.id)]).charges_ids
-            if product_charges:
-                # Search for existing lines with the name matching the pattern
-                new_seq = self.sequence + 1
-                matching_lines = self._fetch_order_lines(new_seq)
-                for lines in matching_lines:
-                    price = lines.price_unit
-                    if self.is_sale:
-                        lines.write({'product_uom_qty': 0})
-                    else:
-                        lines.write({'product_uom_qty': self.product_uom_qty})
-                        lines.price_unit = price
+            section_prod = self.order_id.get_sections_with_products()
+            for section, order_lines in section_prod.items():
+                # Check if any line in the section matches the current product_template_id
+                if any(line.product_template_id == self.product_template_id for line in order_lines):
+                    for lines in order_lines:
+                        order_line = self.env["sale.order.line"].browse(lines._origin.id)
+                        price = lines.price_unit
+                        if self.is_sale:
+                            order_line.write({'product_uom_qty': 0})
+                        else:
+                            order_line.write({
+                                'product_uom_qty': self.product_uom_qty,
+                                'price_unit': price,
+                            })
 
     @api.onchange('product_template_id', 'product_id')
     def _onchange_products(self):

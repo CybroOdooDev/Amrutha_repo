@@ -44,7 +44,7 @@
                 <field name="co_agent_id"
                        invisible="not is_calculate_commission"/>
                 <field name="inside_sale_person_id"
-                       invisible="not is_calculate_commission"/>
+                       invisible="1"/>
                 <field name="required_approvers" widget="many2many_tags"
                        invisible="not is_calculate_commission"/>
                 <field name="required_approvers" widget="many2many_tags"

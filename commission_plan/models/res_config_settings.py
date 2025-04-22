@@ -34,7 +34,7 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
     )
     inside_sale_fee = fields.Float(
-        string="Inside Sales Fee",
+        string="Signage Fee",
         default=250,
         help="Amount paid to the inside salesperson that brought in the lead.",
         related='company_id.inside_sale_fee',

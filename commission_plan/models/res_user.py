@@ -7,3 +7,4 @@ class ResUsers(models.Model):
         string="Minimum Commission Percentage",
         help="The minimum commission percentage applicable to this salesperson."
     )
+    has_minimum_commission = fields.Boolean(string="2,000/4,000 minimums")

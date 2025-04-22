@@ -25,7 +25,9 @@ class Lead(models.Model):
     total_amount = fields.Float(string="Total Commission Received by LRE",
                                 help="This field represents the overall amount from which the commission is calculated.")
     total_commission = fields.Float(string="Total Commission Earned by Agent",
-                                    help="This field represents the calculated commission based on the total amount and applicable percentage.")
+                                    help="This field represents the "
+                                         "calculated commission based on the total amount and applicable percentage.",
+                                    readonly=True)
     tier = fields.Float(string="Tier")
     commission_to_be_paid = fields.Float(string="Commission Paid",
                                          help="Commission to be paid")
@@ -35,7 +37,7 @@ class Lead(models.Model):
         string="Apply Transaction Coordinator Fee",
         help="For residential deals, $200 is either subtracted from the agent’s commission if the deal amount is under $125,000, or it’s paid by the brokerage if the deal is $125,000 or above.")
     transaction_coordinator_fee = fields.Float(string="Transaction Coordinator Fee")
-    inside_sale_fee = fields.Float(string="Inside sales fee")
+    inside_sale_fee = fields.Float(string="Signage Fee")
     referral_fee = fields.Float(string="Referral Fee")
     co_agent_fee = fields.Float(string="Co-agent Fee")
     flat_fee = fields.Float(string="Flat Fee",
@@ -140,14 +142,25 @@ class Lead(models.Model):
                 lead.commission_to_be_converted_by_agent = (
                         lead.minimum_commission_due - lead.total_amount)
 
-    @api.depends('total_sales_price')
+    @api.depends('total_sales_price', 'x_studio_opportunity_type_1')
     def _compute_minimum_commission_due(self):
-        print("_compute_minimum_commission_due")
         for lead in self:
             lead.minimum_commission_due = 0.0
             if lead.total_sales_price:
-                lead.minimum_commission_due = lead.total_sales_price * (
-                            3 / 100)
+                if lead.user_id.has_minimum_commission:
+                    opportunity_type = lead.x_studio_opportunity_type_1.x_name if lead.x_studio_opportunity_type_1 else False
+                    if opportunity_type == 'Buy' and lead.total_sales_price <= 67000:
+                        lead.minimum_commission_due = 2000.0
+                    elif opportunity_type == 'Sell' and lead.total_sales_price <= 134000:
+                        lead.minimum_commission_due = 4000.0
+                    else:
+                        # Fall back to 3% calculation if conditions aren't met
+                        lead.minimum_commission_due = lead.total_sales_price * (
+                                    3 / 100)
+                else:
+                    # Original 3% calculation if the user doesn't have the minimum commission option
+                    lead.minimum_commission_due = lead.total_sales_price * (
+                                3 / 100)
 
     def _default_commercial_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company

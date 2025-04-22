@@ -8,6 +8,7 @@
             <xpath expr="//field[@name='login']" position="after">
                 <group>
                     <field name="min_commission_percentage"/>
+                    <field name="has_minimum_commission"/>
                 </group>
             </xpath>
         </field>

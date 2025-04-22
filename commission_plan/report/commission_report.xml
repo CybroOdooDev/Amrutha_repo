@@ -93,45 +93,50 @@
                         <t t-if="o.company_id.is_calculate_commission">
                             <!-- Residential Commission Section -->
                             <h3>Commission to Lange Real Estate</h3>
-                            <div style="width:80%">
-                                <div style="display: grid; grid-template-columns: auto auto; gap: 5px; align-items: baseline;">
-                                    <div style="text-align: left;">
-                                        <strong>Amount:</strong>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span t-field="o.total_amount"
-                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                    </div>
-
-                                    <div style="text-align: left;">
-                                        <strong>Due From Agent to meet
-                                            <br/>
-                                            minimum
-                                            commission requirement:
-                                        </strong>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span t-field="o.commission_to_be_converted_by_agent"
-                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                    </div>
-
-                                    <div style="text-align: left;">
-                                        <strong>External Referral Fee:</strong>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <span t-field="o.external_referral_fee"
-                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                    </div>
-
-                                    <div style="text-align: left; margin-top: 8px;">
-                                        <strong>Total:</strong>
-                                    </div>
-                                    <div style="text-align: right; margin-top: 8px;">
-                                        <span t-esc="o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee"
-                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                    </div>
-                                </div>
+                            <div style="width: 80%; border: none;">
+                                <table style="width: 100%; border: none; border-collapse: collapse; border-spacing: 0;">
+                                    <tr>
+                                        <td style="text-align: left; padding: 2px 0; border: none;">
+                                            <strong>Amount:</strong>
+                                        </td>
+                                        <td style="text-align: right; padding: 2px 0; border: none;">
+                                            <span t-field="o.total_amount"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; padding: 2px 0; border: none;">
+                                            <strong>Due From Agent to meet
+                                                minimum commission requirement:
+                                            </strong>
+                                        </td>
+                                        <td style="text-align: right; padding: 2px 0; border: none;">
+                                            <span t-field="o.commission_to_be_converted_by_agent"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; padding: 2px 0; border: none;">
+                                            <strong>External Referral Fee:
+                                            </strong>
+                                        </td>
+                                        <td style="text-align: right; padding: 2px 0; border: none;">
+                                            <span t-field="o.external_referral_fee"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; padding: 8px 0 2px 0; border: none;">
+                                            <strong>Total:</strong>
+                                        </td>
+                                        <td style="text-align: right; padding: 8px 0 2px 0; border: none;">
+                                            <span t-esc="o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
+
 
                             <h3>Distributions to Agents</h3>
                             <table class="table table-sm">
@@ -188,11 +193,24 @@
                                 </tr>
                                 <tr>
                                     <td>
+                                        <strong>Signage Fee:
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <t t-if="o.inside_sale_fee">
+                                            <span
+                                                    t-field="o.inside_sale_fee"
+                                                    t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
                                         <strong>Payable to Agent:</strong>
                                     </td>
                                     <td>
                                         <span
-                                                t-field="o.commission_to_be_paid"
+                                                t-esc="o.total_commission - o.commission_to_be_converted_by_agent"
                                                 t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                     </td>
                                 </tr>

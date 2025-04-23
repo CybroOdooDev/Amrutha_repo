@@ -331,6 +331,7 @@ class ImportFileWizard(models.TransientModel):
                     else:
                         order_line = self.env['sale.order.line'].with_context(import_from_sheet=True).create(order_line_vals)
             for order in created_orders:
+                _logger.info(order)
                 # order.write({'recurring_plan_id':order_recurring_plan[order.name]})
                 order.with_context(import_from_sheet=True)._prepare_confirmation_values()
                 order.with_context(import_from_sheet=True).with_context(import_from_sheet=True).action_confirm()

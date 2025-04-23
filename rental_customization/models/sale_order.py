@@ -61,7 +61,7 @@ class SaleOrder(models.Model):
         store=True,
         related = 'company_id.parent_id'
     )
-    close_order = fields.Boolean(default=False,store=True)
+    close_order = fields.Boolean(default=False,store=True,string="Closed Order")
 
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
@@ -458,7 +458,8 @@ class SaleOrder(models.Model):
                             else:
                                 raise ValueError(f"Unsupported billing_period_unit: {billing_period_unit}")
 
-    @api.depends('partner_id', 'partner_id.city', 'warehouse_id', 'warehouse_id.partner_id.city', 'mileage_enabled')
+    @api.depends('partner_id', 'partner_id.city', 'partner_shipping_id', 'warehouse_id', 'warehouse_id.partner_id.city',
+                 'mileage_enabled')
     def _compute_mileage(self):
         """ To compute the Mileage if only the boolean field inside the setting is enabled """
         try:
@@ -466,58 +467,44 @@ class SaleOrder(models.Model):
                 api_key = "AIzaSyDOX3JC_DL4alKis0q-Xtb5qSeKiNZAEUI"
                 if self:
                     for order in self:
+                        order.mileage = 0
+                        order.mileage_unit = 'ft'
                         origin = order.warehouse_id.partner_id.city
                         if order.partner_shipping_id and (order.partner_shipping_id != order.partner_id):
-                            if order.partner_shipping_id.street:
-                                destination = order.partner_shipping_id.street
-                            elif order.partner_shipping_id.street2:
-                                destination = order.partner_shipping_id.street2
-                            elif order.partner_shipping_id.city:
-                                destination = order.partner_shipping_id.city
-                            elif order.partner_shipping_id.state_id:
-                                destination = order.partner_shipping_id.name
-                            elif order.partner_shipping_id.country_id:
-                                destination = order.partner_shipping_id.name
-                            if origin and destination:
-                                url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-                                params = {
-                                    "origins": origin,
-                                    "destinations": destination,
-                                    "units": "imperial",
-                                    "key": api_key,
-                                }
-                                response = requests.get(url, params=params)
-                                if response.status_code == 200:
-                                    data = response.json()
-                                    if data["destination_addresses"] != data["origin_addresses"]:
-                                        if data["rows"][0]["elements"][0]["status"] != 'ZERO_RESULTS' and \
-                                                data["rows"][0]["elements"][0]["status"] != 'NOT_FOUND':
-                                            # by road transportations only
-                                            distance_text = data["rows"][0]["elements"][0]["distance"]["text"]
-                                            distance_parts = distance_text.split()
-                                            if distance_parts:
-                                                order.mileage = float(distance_parts[0].replace(',', ''))
-                                                order.mileage_unit = distance_parts[1]
-                                                return data
-                                            else:
-                                                order.mileage = 0
-                                                order.mileage_unit = 'mi'
-                                                return {"error": f"HTTP {response.status_code}: {response.text}"}
+                            fallback_destinations = [
+                                order.partner_shipping_id.street2,
+                                order.partner_shipping_id.street,
+                                order.partner_shipping_id.city,
+                                order.partner_shipping_id.state_id and order.partner_shipping_id.state_id.name,
+                                order.partner_shipping_id.country_id and order.partner_shipping_id.country_id.name,
+                            ]
+
+                            for destination in fallback_destinations:
+                                if origin and destination:
+                                    url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+                                    params = {
+                                        "origins": origin,
+                                        "destinations": destination,
+                                        "units": "imperial",
+                                        "key": api_key,
+                                    }
+                                    response = requests.get(url, params=params)
+                                    if response.status_code == 200:
+                                        data = response.json()
+                                        if data["destination_addresses"] != data["origin_addresses"]:
+                                            element = data["rows"][0]["elements"][0]
+                                            if element["status"] not in ['ZERO_RESULTS', 'NOT_FOUND']:
+                                                distance_text = element["distance"]["text"]
+                                                distance_parts = distance_text.split()
+                                                if distance_parts:
+                                                    order.mileage = float(distance_parts[0].replace(',', ''))
+                                                    order.mileage_unit = distance_parts[1]
+                                                    break  # stop loop after getting valid distance
                                         else:
                                             order.mileage = 0
                                             order.mileage_unit = 'ft'
-                                    else:
-                                        order.mileage = 0
-                                        order.mileage_unit = 'ft'
-                                else:
-                                    order.mileage = 0
-                                    order.mileage_unit = 'ft'
-                            else:
-                                order.mileage = 0
-                                order.mileage_unit = 'ft'
-                        else:
-                            order.mileage = 0
-                            order.mileage_unit = 'ft'
+                                            break
+
             else:
                 self.mileage = None
                 self.mileage_unit = None

@@ -37,7 +37,7 @@
 
             <xpath expr="//field[@name='payment_term_id']" position="after" invisible="not is_rental_order">
                 <field name="bill_terms" invisible="not is_rental_order" required="1"/>
-                <field name="recurring_plan_id" invisible="not is_rental_order" required="1" readonly="state == 'sale'"/>
+                <field name="recurring_plan_id" invisible="not is_rental_order" required="1" readonly="state == 'sale'" options="{'no_open': True}"/>
                 <field name="show_update_button" invisible="1 or not is_rental_order"/>
             </xpath>
 
@@ -139,7 +139,7 @@
             <xpath expr="//field[@name='partner_shipping_id']" position="after">
                 <label for="imported_order" invisible="0"/>
                 <div>
-                    <field name="imported_order" invisible="0"/>
+                    <field name="imported_order" invisible="0" readonly="1"/>
                 </div>
                 <label for="close_order" invisible="0"/>
                 <div>

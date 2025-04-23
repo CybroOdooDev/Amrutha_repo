@@ -142,6 +142,8 @@ class SaleOrderLine(models.Model):
                                         elif (((range.recurrence_id.duration == 28) and (line.order_id.recurring_plan_id.billing_period_value == 1 )) and
                                             ((range.recurrence_id.unit == 'day') and (line.order_id.recurring_plan_id.billing_period_unit == 'month'))):
                                             line.price_unit = range.price
+                                        elif range.recurrence_id.duration == 30 and range.recurrence_id.unit == 'day':
+                                            line.price_unit = range.price
                                         elif range.recurrence_id.duration == 1 and range.recurrence_id.unit == 'day':
                                             line.price_unit = range.price
                             else:

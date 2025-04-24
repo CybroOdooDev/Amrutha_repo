@@ -11,6 +11,7 @@ from odoo import models, fields
 
 class ProductReturnDates(models.Model):
     _name = 'product.return.dates'
+    _description = "Product Return Dates"
 
     order_id = fields.Many2one(
         comodel_name='sale.order',

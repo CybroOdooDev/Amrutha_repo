@@ -16,8 +16,8 @@ from odoo.fields import Command
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    rental_start_date = fields.Date(string="Rental Start Date", tracking=True)
-    rental_end_date = fields.Date(string="Rental End Date", tracking=True)
+    rental_start_date = fields.Date(string="Rental Line Start Date", tracking=True)
+    rental_end_date = fields.Date(string="Rental Line End Date", tracking=True)
     next_bill_date = fields.Date(compute="_compute_next_bill_date", string="Next Bill Date", store=True,readonly=False)
     rental_status = fields.Selection(selection=[('draft', "Quotation"),
                                                 ('sent', "Quotation Sent"),

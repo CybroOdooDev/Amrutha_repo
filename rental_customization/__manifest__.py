@@ -2,6 +2,7 @@
 {
     'name': 'Rental Customization',
     'version': '18.0.1.0.0',
+    "license": "LGPL-3",
     'description': """ Customisation for Rental module """,
     'depends': ['base','base_setup','contacts', 'product', 'sale_management', 'sale_project', 'sale_renting', 'account', 'sale_stock', 'stock'],
     'installable': True,
@@ -31,5 +32,4 @@
         'views/stock_location.xml',
         'views/transfer_lot_serials.xml',
     ],
-    "license": "LGPL-3",
 }

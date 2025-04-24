@@ -5,6 +5,7 @@ from odoo import api,models, fields, Command
 class DistanceRange(models.Model):
     """To add new fields in the Price List"""
     _name = "distance.range.line"
+    _description = "Distance Range Line"
 
     pricelist_id = fields.Many2one(
         comodel_name='product.pricelist',

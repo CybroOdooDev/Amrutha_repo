@@ -1,6 +1,7 @@
 {
     'name': 'Agent Dashboard',
     'version': '1.0',
+    "license": "LGPL-3",
     'summary': 'CRM Dashboard for Agent',
     'description': 'A comprehensive dashboard for CRM operations.',
     'author': 'Renu M',

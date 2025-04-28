@@ -11,6 +11,7 @@
         "views/crm_lead_views.xml",
         "views/eo_insurance_tier_views.xml",
         "views/res_config_settings_views.xml",
+        "views/res_partner_views.xml",
         "views/res_user_views.xml",
         "report/commission_report.xml",
         "report/ir_actions_report.xml",

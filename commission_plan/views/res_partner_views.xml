@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_partner_form_social" model="ir.ui.view">
+        <field name="name">res.partner.form.social</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <field name="mobile" position="after">
+                <field name="work_phone"/>
+            </field>
+            <field name="email" position="after">
+                <field name="work_email"/>
+            </field>
+            <xpath expr="//page[@name='internal_notes']" position="after">
+                <page name="additional_client_info"
+                      string="Additional Client Info">
+                    <group>
+                        <field name="about"/>
+                        <field name="birthday"/>
+                        <field name="home_anniversary"/>
+                        <field name="favorite_drink"/>
+                        <field name="favorite_restaurant"/>
+                        <field name="hobbies"/>
+                    </group>
+                </page>
+                <page name='social_media' string="Social Media">
+                    <group>
+                        <field name="facebook_url"
+                               placeholder="https://facebook.com/username"/>
+                        <field name="instagram_url"
+                               placeholder="https://instagram.com/username"/>
+                        <field name="linkedin_url"
+                               placeholder="https://linkedin.com/in/username"/>
+                        <field name="twitter_url"
+                               placeholder="https://twitter.com/username"/>
+                        <field name="pinterest_url"
+                               placeholder="https://pinterest.com/username"/>
+                        <field name="houzz_url"
+                               placeholder="https://houzz.com/user/username"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -51,7 +51,7 @@ export class BusinessSummaryDashboard extends Component {
             this.state.isLoading = true;
             const data = await this.orm.call(
                 "crm.lead",
-                "get_dashboard_data",
+                "get_dashboard_year_data",
                 [this.state.years]
             );
 

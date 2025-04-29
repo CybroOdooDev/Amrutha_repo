@@ -77,6 +77,8 @@ class Lead(models.Model):
     )
     total_sales_price = fields.Float(string="Total Sales Price",
                                      help="Total Sales price")
+    total_list_price = fields.Float(string="List Price",
+                                     help="Total List price")
     minimum_commission_due = fields.Float(string="Minimum Commission Due",
                                           compute="_compute_minimum_commission_due",
                                           store=True)

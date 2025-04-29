@@ -76,6 +76,10 @@
                                    invisible="1"/>
                         </group>
                         <group>
+                            <field name="total_list_price"
+                                   invisible="not is_calculate_commission"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
                             <field name="total_sales_price"
                                    invisible="not is_calculate_commission"
                                    widget="monetary"

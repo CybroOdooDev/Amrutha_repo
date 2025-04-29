@@ -3,7 +3,8 @@
     "depends": ["base", 'crm', 'sign', 'commission_plan', 'account', 'product',
                 'stock', 'sale_management', 'purchase'],
     "category": "Sales/CRM",
-    "version": "1.0",
+    "version": '18.0.1.0.0',
+    'author': 'The Lange Companies',
     "data": [
         'security/ir.model.access.csv',
         'data/approval_sign_data.xml',

@@ -1,10 +1,10 @@
 /** @odoo-module **/
 import { registry } from "@web/core/registry";
 import { session } from "@web/session";
+import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { Component } from "@odoo/owl";
 import { onWillStart, useState } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
 import { PieChart } from "./PieChart"; // Import the PieChart component
 import { GoalVsActualChart } from "./GoalVsActualChart";
@@ -22,6 +22,8 @@ export class CRMDashboard extends Component {
             closingThisWeek: null, // Number of deals closing this week
             expiringThisMonth: null, // Amount expiring this month
             closingThisMonth: null, // Number of deals closing this month
+            totalAskingPrice: 0, //
+            totalProperties: 0, //
             isLoading: true, // Loading state
             error: null, // Error state
             tasks: { // Tasks organized by day
@@ -44,6 +46,12 @@ export class CRMDashboard extends Component {
             activityList: [], // To store the list of activities
             isLoadingActivities: true,
             errorActivities: null,
+            avgDaysToClose: 0,
+            avgClosePrice: '0',
+            salesVolume: '0',
+            closedTransactions: 0,
+            leadToClientCount: 0,
+            priceChangePercentage: 0,
 
         });
         // Bind `this` to the method
@@ -223,6 +231,51 @@ async fetchActivityData() {
         }).format(value);
     }
     /**
+     * Open the Payout Summary list view
+     */
+    async openPayoutSummary() {
+        try {
+            // Search for the commission product
+            const product = await this.orm.searchRead(
+                'product.product',
+                [
+                    ['name', '=', 'Commission'],
+                    ['default_code', '=', 'COMMISSION']
+                ],
+                ['id'],
+                { limit: 1 }
+            );
+
+            if (product.length > 0) {
+                const productId = product[0].id;
+
+                // Open the list view of account.move filtered by:
+                // - Current user's moves
+                // - With the commission product
+                this.env.services['action'].doAction({
+                    type: 'ir.actions.act_window',
+                    name: _t('Payout Summary'),
+                    res_model: 'account.move',
+                    views: [[false, 'list'], [false, 'form']],
+                    domain: [
+//                        ['invoice_user_id', '=', this.user.userId],
+//                        ['invoice_line_ids.product_id', '=', productId],
+                        ['move_type', 'in', ['in_invoice']]
+                    ],
+                    context: {
+                        search_default_filter_posted: 1,
+                        create: false
+                    }
+                });
+            } else {
+                this.state.error = _t("Commission product not found.");
+            }
+        } catch (error) {
+            console.error("Error opening payout summary:", error);
+            this.state.error = _t("Failed to open payout summary. Please try again later.");
+        }
+    }
+    /**
      * Fetch dashboard data from the backend.
      */
     async fetchDashboardData() {
@@ -241,7 +294,16 @@ async fetchActivityData() {
             this.state.closingThisWeek = data.closingThisWeek;
             this.state.expiringThisMonth = data.expiringThisMonth;
             this.state.closingThisMonth = data.closingThisMonth;
-
+            this.state.totalAskingPrice = data.totalAskingPrice;
+            this.state.totalProperties = data.totalProperties;
+            this.state.avgDaysToClose = data.avgDaysToClose;
+            this.state.avgClosePrice = this.formatCurrency(data.avgClosePrice);
+            this.state.salesVolume = this.formatCurrency(data.salesVolume);
+            this.state.closedTransactions = data.closedTransactions;
+            this.state.leadToClientCount = data.leadToClientCount;
+            console.log(data ,"data")
+            console.log(data.totalAskingPrice ,"totalAskingPrice")
+            console.log(this.state.totalProperties,"totalProperties")
             // Fetch property details from crm.lead
             const leads = await this.orm.searchRead(
                 'crm.lead', // Model name
@@ -301,6 +363,14 @@ async fetchActivityData() {
             this.state.isLoading = false; // Stop loading
             console.error("Error fetching dashboard data:", error);
         }
+    }
+    formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
     }
 
     /**

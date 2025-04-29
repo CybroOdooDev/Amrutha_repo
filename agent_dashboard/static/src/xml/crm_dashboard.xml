@@ -20,7 +20,10 @@
                     <p style="margin: 5px 0; font-size: 14px;">LTM Commissions: <strong><t t-esc="state.ltmCommissions"/></strong></p>
                     <p style="margin: 5px 0; font-size: 14px;">Expiring this Month: <strong><t t-esc="state.expiringThisMonth"/></strong></p>
                     <button class="btn btn-primary"
-                            style="background-color: #2980b9; border: none; color: #ffffff; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Payout Summary</button>
+                            t-on-click="openPayoutSummary"
+                            style="background-color: #2980b9; border: none; color: #ffffff; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        Payout Summary
+                    </button>
                 </div>
             </div>
 
@@ -30,9 +33,9 @@
                 <div class="deals-overview"
                      style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="margin: 0; font-size: 14px; color: #34495e;">Total Asking Price: <strong
-                            style="color: #27ae60;">$134,464.00</strong></p>
+                            style="color: #27ae60;"><t t-esc="state.totalAskingPrice"/></strong></p>
                     <p style="margin: 0; font-size: 14px; color: #34495e;">Total Properties: <strong
-                            style="color: #27ae60;">2</strong></p>
+                            style="color: #27ae60;"><t t-esc="state.totalProperties"/></strong></p>
                 </div>
                 <!-- Chart Section -->
                 <div class="chart-section"
@@ -79,17 +82,46 @@
                      style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
                     <h3 style="color: #2c3e50; font-size: 18px;">Goal vs. Actual</h3>
                     <GoalVsActualChart goalData="state.goalData"
-                                       actualData="state.actualData"/>                </div>
-                <p style="margin: 5px 0; font-size: 14px; color: #34495e;">Average Days to Close: <strong
-                        style="color: #27ae60;">36</strong></p>
-                <p style="margin: 5px 0; font-size: 14px; color: #34495e;">Average Close Price: <strong
-                        style="color: #27ae60;">$415,000.00</strong></p>
-                <p style="margin: 5px 0; font-size: 14px; color: #34495e;">Sales Volume: <strong
-                        style="color: #27ae60;">$3,447,000.00</strong></p>
-                <p style="margin: 5px 0; font-size: 14px; color: #34495e;">Closed Transactions: <strong
-                        style="color: #27ae60;">3</strong></p>
-                <p style="margin: 5px 0; font-size: 14px; color: #34495e;">Lead-to-Client Count: <strong
-                        style="color: #27ae60;">4</strong></p>
+                                       actualData="state.actualData"/>
+                </div>
+                <div class="real-estate-ratios" style="margin-top: 15px;">
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Average Days to Close:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.avgDaysToClose"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Average Close Price:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.avgClosePrice"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Sales Volume:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.salesVolume"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Closed Transactions:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.closedTransactions"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Lead-to-Client Count:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.leadToClientCount"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        % Change from List Price:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.priceChangePercentage"/>%
+                        </strong>
+                    </p>
+                </div>
             </div>
 
             <div class="historical-sales"

@@ -6,7 +6,7 @@
     'description': """ Customisation for Rental module """,
     'depends': ['base','base_setup','contacts', 'product', 'sale_management', 'sale_project', 'sale_renting', 'account', 'sale_stock', 'stock'],
     'installable': True,
-
+    'author': 'The Lange Companies',
     'data': [
         'data/default_products.xml',
         'data/default_rental_recurring_plan.xml',

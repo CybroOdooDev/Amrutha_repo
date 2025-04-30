@@ -4,6 +4,7 @@
                 'stock', 'sale_management', 'purchase','mail', 'attachment_indexation', 'portal', 'sms'],
     "category": "Sales/CRM",
     "version": "1.0",
+    'author': 'The Lange Companies',
     "data": [
         'security/ir.model.access.csv',
         'views/crm_lead_views.xml',

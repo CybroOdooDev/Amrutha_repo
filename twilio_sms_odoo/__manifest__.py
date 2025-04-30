@@ -9,7 +9,7 @@
     "website": "https://www.cirantait.com/",
     "company": "Ciranta IT Services Pvt Ltd",
     "support": "odooapps@deskcirantait.odoo.com",
-    "author": "Ciranta IT Services",
+    "author": "Ciranta IT Services, The Lange Companies",
     "license": "OPL-1",
     "depends": ['crm','phone_validation','mass_mailing_sms','sms'],
     "price": "15.00",

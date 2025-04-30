@@ -7,7 +7,7 @@
     "summary": "Add an option to change the chatter position",
     "version": "18.0.1.0.1",
     "author": "Hynsys Technologies, Camptocamp, Alitec Pte Ltd, "
-    "Odoo Community Association (OCA)",
+    "Odoo Community Association (OCA), The Lange Companies",
     "maintainers": ["trisdoan"],
     "website": "https://github.com/OCA/web",
     "license": "LGPL-3",

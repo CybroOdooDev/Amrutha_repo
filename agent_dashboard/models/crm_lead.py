@@ -53,7 +53,7 @@ class CRMDashboard(models.Model):
             'closingThisMonth': self.calculate_deals_closing_this_month(),
             'totalAskingPrice': totalAskingPrice,
             'totalProperties': totalProperties,
-            'avgDaysToClose': 5,
+            'avgDaysToClose': self.calculate_avg_days_to_close(),
             'avgClosePrice': self.calculate_avg_close_price(won_leads),
             'salesVolume': self.calculate_sales_volume(won_leads),
             'closedTransactions': len(won_leads),
@@ -63,36 +63,29 @@ class CRMDashboard(models.Model):
 
         }
 
-    def calculate_avg_days_to_close(self, won_leads):
+    def calculate_avg_days_to_close(self):
         """
-        Calculate average days between entering Qualified stage and being Won
+        Calculate average days between creation date and being Won
+        Returns 0 if no won leads found
         """
+        won_leads = self.env['crm.lead'].search([
+            ('stage_id.is_won', '=', True),
+            ('create_date', '!=', False),
+            ('date_last_stage_update', '!=', False)
+        ])
+
         if not won_leads:
             return 0
 
-        qualified_stage = self.env['crm.stage'].search(
-            [('name', '=', 'Qualified')], limit=1)
-        if not qualified_stage:
-            return 0
-
         total_days = 0
-        valid_count = 0
+        valid_leads = 0
 
         for lead in won_leads:
-            # Find when lead entered Qualified stage
-            qualified_date = self.env['mail.tracking.value'].search([
-                ('field', '=', 'stage_id'),
-                ('new_value_integer', '=', qualified_stage.id),
-                ('mail_message_id.model', '=', 'crm.lead'),
-                ('mail_message_id.res_id', '=', lead.id)
-            ], order='create_date asc', limit=1).create_date
-
-            if qualified_date and lead.date_closed:
-                days = (lead.date_closed - qualified_date).days
-                total_days += days
-                valid_count += 1
-
-        return round(total_days / valid_count, 1) if valid_count > 0 else 0
+            delta = lead.date_last_stage_update.date() - lead.create_date.date()
+            total_days += delta.days
+            valid_leads += 1
+        print(total_days,"total_days")
+        return round(total_days / valid_leads) if valid_leads > 0 else 0
 
     def calculate_avg_close_price(self, won_leads):
         """

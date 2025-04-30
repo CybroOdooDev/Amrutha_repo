@@ -440,18 +440,30 @@ async fetchActivityData() {
      */
     async toggleTaskCompletion(taskId) {
         try {
-            const task = this.state.tasks[this.state.selectedDay].find(task => task.id === taskId);
-            if (task) {
-                // Update the task in the backend
-                await this.orm.write('crm.weekly.task', [taskId], {
-                    completed: !task.completed,
-                });
+            // Find which day the task belongs to
+            const day = Object.keys(this.state.tasks).find(day =>
+                this.state.tasks[day].some(task => task.id === taskId)
+            );
 
-                // Update the task in the frontend state
-                task.completed = !task.completed;
+            if (day) {
+                const taskIndex = this.state.tasks[day].findIndex(task => task.id === taskId);
+                if (taskIndex !== -1) {
+                    const task = this.state.tasks[day][taskIndex];
+                    const newCompletedStatus = !task.completed;
 
-                // Force a re-render by updating the state
-                this.state.tasks = { ...this.state.tasks }; // Create a new object to trigger reactivity
+                    console.log("Current status:", task.completed, "New status:", newCompletedStatus);
+
+                    // Update the task in the backend
+                    await this.orm.write('crm.weekly.task', [taskId], {
+                        completed: newCompletedStatus,
+                    });
+
+                    // Update the task in the frontend state
+                    this.state.tasks[day][taskIndex].completed = newCompletedStatus;
+
+                    // Force a re-render by creating a new object
+                    this.state.tasks = { ...this.state.tasks };
+                }
             }
         } catch (error) {
             console.error("Error toggling task completion:", error);

@@ -198,7 +198,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -222,7 +222,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -246,7 +246,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -270,7 +270,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -294,7 +294,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -318,7 +318,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"
@@ -342,7 +342,7 @@
                                 style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                                 <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
                                     <input type="checkbox"
-                                           t-model="task.completed"
+                                           checked="task.completed"
                                            t-on-click="() => toggleTaskCompletion(task.id)"
                                            style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
                                     <span t-att-class="task.completed ? 'completed-task' : ''"

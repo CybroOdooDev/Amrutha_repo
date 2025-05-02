@@ -193,6 +193,19 @@
                                 </tr>
                                 <tr>
                                     <td>
+                                        <strong>Mentor Fee:
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <t t-if="o.mentor_fee">
+                                            <span
+                                                    t-field="o.mentor_fee"
+                                                    t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
                                         <strong>Signage Fee:
                                         </strong>
                                     </td>

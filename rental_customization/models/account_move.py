@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields,api
+from odoo.tools import SQL
+
+
 
 class AccountMove(models.Model):
     _inherit = "account.move"
@@ -24,5 +27,4 @@ class AccountMove(models.Model):
                                     # Decrement the invoice count
                                     date_lines.invoice_count -= 1
         return super(AccountMove, self).unlink()
-
 

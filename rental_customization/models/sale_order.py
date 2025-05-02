@@ -12,6 +12,8 @@ import base64
 import requests
 import re
 from odoo.tools import float_compare
+import logging
+_logger = logging.getLogger(__name__)
 
 
 RENTAL_STATUS = [
@@ -262,39 +264,20 @@ class SaleOrder(models.Model):
                 )
 
     def generate_recurring_bills(self):
-        """Continuous Bill creation based on the selected Rental recurring plan"""
+        """ through Button action - Bill creation based on the selected Rental recurring plan"""
         service_prod = self.env['product.product'].search([('charges_ok', '=', True),('service_category', 'in', ['delivery-fuel', 'pickup-fuel','delivery','pickup','dwpp'])]).mapped('name')
         today = fields.Date.today()
         main_prod = None
         lines_to_invoice = self.env['sale.order.line'].search([])
 
-        # if self._context.get('button_action'):
-        #     filtered_order_lines = self.order_line.filtered(
-        #         lambda line: ((line.next_bill_date) or line.is_sale)
-        #                      and line.order_id.state == "sale" and line.qty_delivered != 0
-        #     )
-        # else:
-        #     filtered_order_lines = lines_to_invoice.filtered(
-        #         lambda line: ((line.next_bill_date and line.next_bill_date <= today) or line.is_sale) and line.order_id.state == "sale" and line.qty_delivered != 0
-        #     )
         if self._context.get('button_action'):
             filtered_order_lines = self.order_line.filtered(
-                lambda line: (((line.next_bill_date) or line.is_sale)
-                        and line.order_id.state == "sale"
-                        and line.qty_delivered != 0
-                        and line.rental_status != 'finish'
-                        and not (line.order_id.imported_order
-                                and not line.need_bill_importing)))
-                                # and line.qty_invoiced > 0)))
-        else:
-            filtered_order_lines = lines_to_invoice.filtered(
                 lambda line: (((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
+                        and line.rental_start_date and line.rental_start_date <= today
                         and line.order_id.state == "sale"
-                        and line.qty_delivered != 0
+                        and line.qty_delivered != 0 and line.product_uom_qty == line.qty_delivered
                         and line.rental_status != 'finish'
-                        and not (line.order_id.imported_order
-                                and not line.need_bill_importing)))
-                                # and line.qty_invoiced > 0)))
+                        and not (line.order_id.imported_order and not line.need_bill_importing and line.qty_invoiced > 0 )))
 
         if not self.close_order:
             # Group order lines by sale order
@@ -305,6 +288,7 @@ class SaleOrder(models.Model):
                 orders_grouped[line.order_id].append(line)
             # Generate invoices for each sale order
             for sale_order, order_lines in orders_grouped.items():
+                # print('order',sale_order.name)
                 section_prod = sale_order.get_sections_with_products()
                 invoice_vals = {
                     'ref': sale_order.client_order_ref or '',
@@ -336,8 +320,20 @@ class SaleOrder(models.Model):
                 }
                 # Adding all the order lines to the invoice
                 for line in order_lines:
+                    rental_start = line.rental_start_date
+                    # Get all lines of the same rental_start_date in the same order
+                    same_date_lines = sale_order.order_line.filtered(lambda l: l.rental_start_date == rental_start)
+                    # Check if any main product line is not fully delivered
+                    incomplete_main_product = any(
+                        not l.product_id.charges_ok and l.product_uom_qty != l.qty_delivered for l in same_date_lines
+                    )
+
                     for section, order_line in section_prod.items():
                         if line in order_line and line.qty_delivered:
+                            if incomplete_main_product:
+                                continue
+                            if line.order_id.id == 4310:
+                                raise ValidationError('4310')
                             if line.is_sale and line.product_template_id.charges_ok == False:
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
@@ -397,6 +393,16 @@ class SaleOrder(models.Model):
                                                                     )
                                                                 ))
                                                     main_prod = line.product_id.name
+                                                else:
+                                                    invoice_vals['invoice_line_ids'].append(Command.create(
+                                                        line._prepare_invoice_line(
+                                                            name=f"Rental",
+                                                            product_id=line.product_id.id,
+                                                            price_unit=line.price_unit,
+                                                            quantity=line.qty_delivered - line.qty_returned,
+                                                        )
+                                                    ))
+                                                    main_prod = line.product_id.name
                                     else:
                                         invoice_vals['invoice_line_ids'].append(Command.create(
                                             line._prepare_invoice_line(
@@ -415,8 +421,7 @@ class SaleOrder(models.Model):
                                         product_id=line.product_id.id,
                                         price_unit=line.price_unit,
                                         quantity=line.qty_delivered - line.qty_returned,
-                                    )
-                                ))
+                                    )))
 
                 # Removing lines with zero qty and zero price from the invoice
                 invoice_vals['invoice_line_ids'] = [
@@ -424,13 +429,6 @@ class SaleOrder(models.Model):
                     if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
                 ]
 
-            # Check if any product in invoice lines has charges_ok = False
-                # has_non_charge_product = any(
-                #     self.env['product.product'].browse(vals[2].get('product_id')).charges_ok == False
-                #     for vals in invoice_vals['invoice_line_ids']
-                # )
-            # # Create invoice only if there is at least one non-chargeable product
-                # if has_non_charge_product:
                 invoice = self.env['account.move'].create(invoice_vals)
                 if invoice and not self.has_returnable_lines:
                     self.close_order = True
@@ -441,9 +439,11 @@ class SaleOrder(models.Model):
             #             invoice._onchange_invoice_payment_term_id()
                     sale_order = invoice.line_ids.sale_line_ids.order_id
                     for lines in invoice.line_ids.sale_line_ids:
-                        if lines.order_id.imported_order and not lines.need_bill_importing:
-                            lines.qty_delivered = 0
-                        if not lines.product_template_id.charges_ok:
+                        # if lines.order_id.imported_order and not lines.need_bill_importing:
+                        #     lines.qty_delivered = 0
+                        if  not lines.product_template_id.charges_ok:
+                            if lines.qty_delivered >= line.qty_returned:
+                                lines.invoice_status = 'to invoice'
                             start_date = lines.next_bill_date
 
                             billing_period_unit = sale_order.recurring_plan_id.billing_period_unit
@@ -583,3 +583,29 @@ class SaleOrder(models.Model):
         Params = self.env['ir.config_parameter'].sudo()
         fuel_surcharge_setting = Params.get_param('rental_customization.fuel_surcharge_percentage')
         self.fuel_surcharge_percentage = fuel_surcharge_setting if fuel_surcharge_setting else 15
+
+    def generate_batches_for_invoice(self,batch_size=5000):
+        """Continuous Bill creation based on the selected Rental recurring plan"""
+        today = fields.Date.today()
+        lines_to_invoice = self.env['sale.order.line'].search([])
+        filtered_order_lines = lines_to_invoice.filtered(
+            lambda line: (((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
+                  and line.rental_start_date and line.rental_start_date <= today
+                  and line.order_id.state == "sale"
+                  and line.qty_delivered != 0 and line.product_uom_qty == line.qty_delivered
+                  and line.rental_status != 'finish'
+                  and not (line.order_id.imported_order and not line.need_bill_importing and line.qty_invoiced > 0)))
+        if filtered_order_lines:
+            total_lines = len(filtered_order_lines)
+            _logger.info('total_lines',total_lines)
+            for i in range(0, total_lines, batch_size):
+                batch_invoices = filtered_order_lines[i:i + batch_size]
+                lines_to_invoice = []
+                for lines in batch_invoices:
+                    lines_to_invoice.append(lines.id)
+                queue = self.env['invoice.queue'].create({
+                    'name': f"Processing batch {i + 1} to {i + len(batch_invoices)}",
+                    'action': 'Fetch Invoice Lines',
+                    'data': lines_to_invoice,
+                    'state': 'draft',
+                })

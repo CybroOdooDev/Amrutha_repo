@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!--own documents only for a company-->
-    <record id="rental_recurring_plan_company_rule" model="ir.rule">
-        <field name="name">Rental Recurring Plan Company Rule</field>
-        <field name="model_id" ref="model_rental_recurring_plan"/>
-        <field name="domain_force">[('company_id', '=', company_id)]</field>
-    </record>
+<!--    <record id="rental_recurring_plan_company_rule" model="ir.rule">-->
+<!--        <field name="name">Rental Recurring Plan Company Rule</field>-->
+<!--        <field name="model_id" ref="model_rental_recurring_plan"/>-->
+<!--        <field name="domain_force">[('company_id', '=', company_id)]</field>-->
+<!--    </record>-->
 </odoo>

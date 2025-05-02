@@ -22,7 +22,14 @@
                        widget="label" width="120px" column_invisible=" not parent.is_rental_order"/>
                 <field name="parent_line" column_invisible="True"/>
                 <field name="importing_external_id" column_invisible="True"/>
-                <field name="need_bill_importing" column_invisible="False"/>
+                <field name="need_bill_importing" column_invisible="not parent.is_rental_order or not parent.imported_order"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
+                <!--                <field name="line_signature_status" />-->
+                <button name="action_send_delivery_signature" string="Delivery Signature" type="object"
+                                    class="btn-primary"
+                                    invisible="not parent.is_rental_order or parent.state != 'sale' or is_service_charge"/>
             </xpath>
 
             <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
@@ -73,11 +80,12 @@
                     <field name="date_records_line">
                         <!--<list create="false" edit="false" editable="bottom">-->
                         <list editable="bottom">
+                            <field name="order_line_id"  width="150px" readonly="1"/>
                             <field name="product_id" string="Product" width="150px" readonly="1"/>
                             <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
                             <field name="per_day_charges" string="Per day charge" width="100px"
                                    column_invisible="parent.bill_terms == 'advance'"/>
-                            <field name="delivery_date" string="Delivery Date" width="120px" readonly="1"/>
+                            <field name="delivery_date" string="Delivery Date" width="120px"/>
                             <field name="return_date" string="Return Date" width="120px" readonly="1"/>
                             <field name="delivery_driver" width="120px"/>
                             <field name="pickup_driver" width="120px"/>
@@ -85,9 +93,10 @@
                                    column_invisible="parent.bill_terms == 'advance'"/>
                             <field name="total_price" string="Total Price"
                                    column_invisible="parent.bill_terms == 'advance'"/>
-                            <button name="action_send_delivery_signature" string="Delivery Signature" type="object"
-                                    class="btn-primary"
-                                    invisible="signature_status != 'initial' or not parent.is_rental_order"/>
+                            <field name="signature_status" />
+<!--                            <button name="action_send_delivery_signature" string="Delivery Signature" type="object"-->
+<!--                                    class="btn-primary"-->
+<!--                                    invisible="signature_status != 'initial' or not parent.is_rental_order"/>-->
                             <button name="action_send_pickup_signature" string="Pick-Up Signature" type="object"
                                     class="btn-primary"
                                     invisible="signature_status != 'delivery' or not parent.is_rental_order"/>

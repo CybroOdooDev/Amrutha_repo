@@ -37,14 +37,17 @@
                                 </td>
                                 <td style="width:30%; border: 1px solid #000; padding: 10px;">
                                     <strong>Date:</strong>
-                                    <t t-if="docs.delivery_date">
-                                        <p t-if="docs.delivery_date" t-esc="docs.delivery_date"/>
+                                    <t t-if="doc.delivery_date">
+                                        <p t-if="doc.delivery_date" t-esc="doc.delivery_date"/>
+                                    </t>
+                                    <t t-if="not doc.delivery_date">
+                                        <p/>
                                     </t>
                                 </td>
                                 <td style="width:30%; border: 1px solid #000; padding: 10px;">
                                     <strong>Driver:</strong>
-                                    <t t-if="docs.delivery_driver">
-                                        <p t-esc="docs.delivery_driver.name"/>
+                                    <t t-if="doc.delivery_driver">
+                                        <p t-esc="doc.delivery_driver.name"/>
                                     </t>
                                 </td>
                             </tr>
@@ -95,13 +98,13 @@
                                         COUNTRY :<t t-esc="location.partner_id.country_id.name"/>
                                     </td>
                                     <td style="width:50%; border: 1px solid #000; padding: 10px;">
-                                        <b><t t-esc="docs.order_id.partner_id.name"/><br/></b>
-                                        STREET :<t t-esc="docs.order_id.partner_shipping_id.street"/><br/>
-                                        STREET2 :<t t-esc="docs.order_id.partner_shipping_id.street2"/><br/>
-                                        CITY :<t t-esc="docs.order_id.partner_shipping_id.city"/><br/>
-                                        STATE :<t t-esc="docs.order_id.partner_shipping_id.state_id.name"/><br/>
-                                        ZIP :<t t-esc="docs.order_id.partner_shipping_id.zip"/><br/>
-                                        COUNTRY :<t t-esc="docs.order_id.partner_shipping_id.country_id.name"/>
+                                        <b><t t-esc="doc.order_id.partner_id.name"/><br/></b>
+                                        STREET :<t t-esc="doc.order_id.partner_shipping_id.street"/><br/>
+                                        STREET2 :<t t-esc="doc.order_id.partner_shipping_id.street2"/><br/>
+                                        CITY :<t t-esc="doc.order_id.partner_shipping_id.city"/><br/>
+                                        STATE :<t t-esc="doc.order_id.partner_shipping_id.state_id.name"/><br/>
+                                        ZIP :<t t-esc="doc.order_id.partner_shipping_id.zip"/><br/>
+                                        COUNTRY :<t t-esc="doc.order_id.partner_shipping_id.country_id.name"/>
                                     </td>
                                 </tr>
                                 <tr>
@@ -140,10 +143,10 @@
                             <tbody>
                                 <tr>
                                     <td style="border: 1px solid #000; padding: 10px;">
-                                        <t t-esc="docs.serial_number.name"/>
+                                        <t t-esc="doc.serial_number.name"/>
                                     </td>
                                     <td style="border: 1px solid #000; padding: 10px;">
-                                        <t t-esc="docs.product_id.name"/>
+                                        <t t-esc="doc.product_id.name"/>
                                     </td>
                                     <td style="border: 1px solid #000; padding: 5px;">
                                         <t t-esc="1"/>

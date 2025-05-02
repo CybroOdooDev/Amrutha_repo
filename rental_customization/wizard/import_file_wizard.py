@@ -314,7 +314,7 @@ class ImportFileWizard(models.TransientModel):
                             'display_type': False,
                             'sequence': row[35].value,
                             'is_sale': is_sale,
-                            'is_rental': True,
+                            'is_rental': True if is_service_charge !=1 else False,
                             'is_service_charge': is_service_charge,
                             'product_uom_qty': product_qty or 1,
                             'price_unit': float(unit_price),

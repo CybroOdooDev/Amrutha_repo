@@ -46,14 +46,14 @@ class ImportInvoicesWizard(models.TransientModel):
                 sale_order_line_id = self.env["sale.order.line"].search([('importing_external_id', '=', sale_line_external_id)], limit=1)
         # Skip empty rows
             if not ([invoice_ref and invoice_date and customer_name and product_name]):
-                continue
+                break
             if (invoice_ref and invoice_date and customer_name and product_name):
         # Get or create Customer
                 customer = partner_obj.search([('name', '=', customer_name)], limit=1)
                 if not customer:
                     raise UserError(f"Customer '{customer_name}' in the invoice {invoice_ref},is not found. Please create it first.")
         # Get or create Product
-                product = product_obj.search([('name', '=', product_name)], limit=1)
+                product = product_obj.search([('display_name', '=', product_name)], limit=1)
                 if not product:
                     raise UserError(f"Product '{product_name}' in the invoice {invoice_ref},is not found. Please create it first.")
         # Check if Order Already Exists
@@ -64,7 +64,7 @@ class ImportInvoicesWizard(models.TransientModel):
                         'name': invoice_ref,
                         'invoice_date': invoice_date,
                         'invoice_date_due': invoice_date_due,
-                        'journal_id': self.env['account.journal'].search([('name', '=', journal_name)], limit=1).id,
+                        # 'journal_id': self.env['account.journal'].search([('name', '=', journal_name),('company_id','=',company_id)], limit=1).id,
                         'partner_id': customer.id,
                         'invoice_origin': invoice_origin,
                         'company_id': company_id,
@@ -81,7 +81,9 @@ class ImportInvoicesWizard(models.TransientModel):
                         'name': line_label,
                         'quantity': product_qty,
                         'price_unit': unit_price,
-                    # connecting the invoice line to the corresponding sale order line
+                        'company_id': company_id,
+                        # 'account_id': 6583,
+                        # connecting the invoice line to the corresponding sale order line
                         'sale_line_ids':sale_order_line_id if sale_order_line_id else None,
                     }
                 invoice_line = self.env['account.move.line'].create(invoice_line_vals)

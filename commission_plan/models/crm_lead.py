@@ -40,7 +40,7 @@ class Lead(models.Model):
     inside_sale_fee = fields.Float(string="Signage Fee")
     referral_fee = fields.Float(string="Referral Fee")
     co_agent_fee = fields.Float(string="Co-agent Fee")
-    flat_fee = fields.Float(string="Flat Fee",
+    flat_fee = fields.Float(string="Other Fees",
                             help="Custom flat fee adjustment to the commission.")
     referer_id = fields.Many2one('res.partner', string="External Referral "
                                                        "Agent")

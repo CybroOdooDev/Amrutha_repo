@@ -465,7 +465,11 @@ class Lead(models.Model):
 
             # Calculate the commission rate based on the total
             commission_rate = self.get_commission_rate(total_amount_past_year)
-            self.total_commission = self.total_amount * commission_rate
+            #“Total Commission Earned by Agent”: “Total
+            # Commission Earned by LRE” plus “Commission to be covered by Agent”
+            # multiplied by tier %
+            self.total_commission = ((self.total_amount + self.commission_to_be_converted_by_agent) *
+                                     commission_rate)
 
             # E&O Insurance calculation (skip if manually set)
             if not self.is_manual_omissions_insurance:

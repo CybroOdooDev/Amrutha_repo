@@ -26,7 +26,7 @@
                         <field name="tc_fee" widget="monetary"
                                company_dependent="1"/>
                     </setting>
-                    <setting help="Inside Sales Fee">
+                    <setting>
                         <field name="inside_sale_fee" widget="monetary"
                                company_dependent="1"/>
                     </setting>

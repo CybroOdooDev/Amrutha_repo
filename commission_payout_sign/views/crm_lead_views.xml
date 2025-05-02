@@ -44,9 +44,9 @@ class="btn-primary"-->
             <xpath expr="//field[@name='total_amount']" position="attributes">
                 <attribute name="readonly">is_signed</attribute>
             </xpath>
-            <xpath expr="//field[@name='total_commission']" position="attributes">
-                <attribute name="readonly">is_signed</attribute>
-            </xpath>
+<!--            <xpath expr="//field[@name='total_commission']" position="attributes">-->
+<!--                <attribute name="readonly">is_signed</attribute>-->
+<!--            </xpath>-->
 <!--            <xpath expr="//field[@name='omissions_insurance']" position="attributes">-->
 <!--                <attribute name="readonly">is_signed</attribute>-->
 <!--            </xpath>-->

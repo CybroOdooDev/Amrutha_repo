@@ -87,6 +87,7 @@ class Lead(models.Model):
                                                               "Agent",
                                                        compute="_compute_commission_to_be_converted_by_agent",
                                                        store=True)
+    mentor_fee = fields.Float(string="Mentor Fee")
 
     def _default_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company

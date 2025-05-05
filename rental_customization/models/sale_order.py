@@ -12,6 +12,7 @@ import base64
 import requests
 import re
 from odoo.tools import float_compare
+from collections import defaultdict
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -288,7 +289,6 @@ class SaleOrder(models.Model):
                 orders_grouped[line.order_id].append(line)
             # Generate invoices for each sale order
             for sale_order, order_lines in orders_grouped.items():
-                # print('order',sale_order.name)
                 section_prod = sale_order.get_sections_with_products()
                 invoice_vals = {
                     'ref': sale_order.client_order_ref or '',
@@ -584,28 +584,79 @@ class SaleOrder(models.Model):
         fuel_surcharge_setting = Params.get_param('rental_customization.fuel_surcharge_percentage')
         self.fuel_surcharge_percentage = fuel_surcharge_setting if fuel_surcharge_setting else 15
 
-    def generate_batches_for_invoice(self,batch_size=5000):
-        """Continuous Bill creation based on the selected Rental recurring plan"""
+    def generate_batches_for_invoice(self, batch_size=5000):
+        """Generate invoice batches ensuring lines from same sale order are grouped together"""
         today = fields.Date.today()
         lines_to_invoice = self.env['sale.order.line'].search([])
+
         filtered_order_lines = lines_to_invoice.filtered(
             lambda line: (((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
-                  and line.rental_start_date and line.rental_start_date <= today
-                  and line.order_id.state == "sale"
-                  and line.qty_delivered != 0 and line.product_uom_qty == line.qty_delivered
-                  and line.rental_status != 'finish'
-                  and not (line.order_id.imported_order and not line.need_bill_importing and line.qty_invoiced > 0)))
-        if filtered_order_lines:
-            total_lines = len(filtered_order_lines)
-            _logger.info('total_lines',total_lines)
-            for i in range(0, total_lines, batch_size):
-                batch_invoices = filtered_order_lines[i:i + batch_size]
-                lines_to_invoice = []
-                for lines in batch_invoices:
-                    lines_to_invoice.append(lines.id)
-                queue = self.env['invoice.queue'].create({
-                    'name': f"Processing batch {i + 1} to {i + len(batch_invoices)}",
-                    'action': 'Fetch Invoice Lines',
-                    'data': lines_to_invoice,
+                          and line.rental_start_date and line.rental_start_date <= today
+                          and line.order_id.state == "sale"
+                          and line.qty_delivered != 0 and line.product_uom_qty == line.qty_delivered
+                          and line.rental_status != 'finish'
+                          and not (
+                                line.order_id.imported_order and not line.need_bill_importing and line.qty_invoiced > 0))
+        )
+
+        if not filtered_order_lines:
+            return
+
+        _logger.info(f'Total lines to invoice: {len(filtered_order_lines)}')
+
+        # Step 1: Group lines by order
+        order_lines_map = defaultdict(list)
+        for line in filtered_order_lines:
+            order_lines_map[line.order_id.id].append(line)
+
+        # Step 2: Build batches without splitting orders
+        processed_orders = set()
+        current_batch = []
+        current_batch_order_ids = set()
+        batch_index = 1
+
+        for order_id, lines in order_lines_map.items():
+            if order_id in processed_orders:
+                continue  # Already processed
+
+            # Check if adding this order's lines will overflow batch
+            if len(current_batch) + len(lines) > batch_size and current_batch:
+                # Create queue for current batch
+                self.env['invoice.queue'].create({
+                    'name': f"Processing batch {batch_index}",
+                    'action': 'Fetch Lines to Invoice',
+                    'data': [l.id for l in current_batch],
                     'state': 'draft',
                 })
+                batch_index += 1
+                current_batch = []
+                current_batch_order_ids = set()
+
+            # Add lines of this order
+            current_batch.extend(lines)
+            current_batch_order_ids.add(order_id)
+            processed_orders.add(order_id)
+
+        # Final batch creation
+        if current_batch:
+            current_ids = sorted([l.id for l in current_batch])
+            batch_exists = False
+
+            existing_batches = self.env['invoice.queue'].search([
+                ('action', '=', 'Fetch Lines to Invoice'),
+                ('state', '=', 'draft'),
+            ])
+
+            for batch in existing_batches:
+                if sorted(batch.data or []) == current_ids:
+                    batch_exists = True
+                    break
+
+            if not batch_exists:
+                self.env['invoice.queue'].create({
+                    'name': f"Processing batch {batch_index}",
+                    'action': 'Fetch Lines to Invoice',
+                    'data': current_ids,
+                    'state': 'draft',
+                })
+

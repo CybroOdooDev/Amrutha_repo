@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+from email.policy import default
+
 from odoo import api,models, fields, Command
 from odoo.exceptions import ValidationError
 from odoo.tools import date_utils
+import json
 import logging
+import traceback
 _logger = logging.getLogger(__name__)
 
 
@@ -13,12 +17,23 @@ class InvoiceQueue(models.Model):
     name = fields.Char('Name', help='Name of Queue')
     action = fields.Char('Action', help='Action need to perform')
     data = fields.Json('Data', help='Content of Data')
+    data_string = fields.Text('Lines in Batch', compute='_compute_data_string', readonly=True)
     state = fields.Selection([
         ('draft', 'Draft'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
     ], string='Status', default='draft', help="state of Queue"
     )
+    errors = fields.Char(string="Caused Error")
+    detailed_error = fields.Char(string="Detailed Error")
+
+    @api.depends('data')
+    def _compute_data_string(self):
+        for rec in self:
+            try:
+                rec.data_string = json.dumps(rec.data, indent=2)
+            except Exception:
+                rec.data_string = str(rec.data)
 
     def action_generate_recurring_bills(self):
         """ Taking the field 'data' which carries batches of 2000 rental order lines that to be invoiced and processing the functions """
@@ -175,7 +190,6 @@ class InvoiceQueue(models.Model):
                         vals for vals in invoice_vals['invoice_line_ids']
                         if vals[2].get('quantity', 0.0) != 0.0 and vals[2].get('price_unit', 0.0) != 0.0
                     ]
-
                     invoice = self.env['account.move'].create(invoice_vals)
                     if invoice and not sale_order.has_returnable_lines:
                         sale_order.close_order = True
@@ -204,8 +218,10 @@ class InvoiceQueue(models.Model):
                 job.write({'state': 'completed'})
 
             except Exception as e:
+                tb = traceback.format_exc()
+                _logger.error(f"Error while generating recurring bills: {tb}")
                 job.write({
-                    'state': 'failed'
+                    'state': 'failed',
+                    'errors': e,
+                    'detailed_error': f"{tb} \nRental Order: {str(sale_order)} \nOrder Lines: {line}",
                 })
-                raise ValidationError(
-                    'Some error has been occurred in the processing')

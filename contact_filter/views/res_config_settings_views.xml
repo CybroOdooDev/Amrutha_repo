@@ -1,0 +1,29 @@
+<!-- In views/res_config_settings_views.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_contacts" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.contacts</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Try a different XPath that might better match your Odoo version -->
+            <xpath expr="//div[hasclass('app_settings_block') and @data-key='contacts']" position="inside">
+                <h2>Default Values</h2>
+                <div class="row mt16 o_settings_container">
+                    <div class="col-12 col-lg-6 o_setting_box">
+                        <div class="o_setting_left_pane"/>
+                        <div class="o_setting_right_pane">
+                            <span class="o_form_label">Default Salesperson</span>
+                            <div class="text-muted">
+                                Set the default salesperson for new contacts
+                            </div>
+                            <div class="mt8">
+                                <field name="default_contact_salesperson_id" options="{'no_create': True}"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

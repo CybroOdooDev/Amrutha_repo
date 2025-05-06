@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Odoo 18",
+        "type": "python",
+        "request": "launch",
+        "program": "C:\\Program Files\\Odoo 18.0e.20241226\\server\\odoo-bin",
+        "console": "integratedTerminal",
+        "args": [
+          "--config=C:\\Program Files\\Odoo 18.0e.20241226\\server\\odoo.conf",
+        //   "--addons-path=C:\\Program Files\\Odoo 18.0e.20241226\\server\\odoo\\custom_addons"
+        ],
+        "env": {
+          "PYTHONUNBUFFERED": "1"
+        },
+        "cwd": "C:\\Program Files\\Odoo 18.0e.20241226\\server\\"
+      }
+    ]
+  }

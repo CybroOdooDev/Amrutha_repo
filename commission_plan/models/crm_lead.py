@@ -97,11 +97,15 @@ class Lead(models.Model):
                                                      compute="_compute_residential_external_referral_fee",
                                                      store=True)
 
-    @api.depends('total_sales_price')
+    @api.depends('commission_to_be_converted_by_agent','referral_fee_rate')
     def _compute_residential_external_referral_fee(self):
         for lead in self:
-            lead.residential_external_referral_fee= (lead.minimum_commission_due *
-                                            lead.referral_fee_rate)
+            print(lead.commission_to_be_converted_by_agent,"lead.commission_to_be_converted_by_agent")
+            print(lead.referral_fee_rate,"lead.referral_fee_rate")
+            lead.residential_external_referral_fee= (lead.commission_to_be_converted_by_agent *
+                                                     (
+                                                             lead.referral_fee_rate/100))
+
 
     def _default_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company

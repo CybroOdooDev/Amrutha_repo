@@ -6,18 +6,23 @@
         <field name="model">invoice.queue</field>
         <field name="priority" eval="20"/>
         <field name="arch" type="xml">
-            <form>
+            <form  create="0">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
                 <sheet name="Invoice Queue">
+                    <widget name="web_ribbon" title="Email Sent" bg_color="text-bg-success" invisible="state != 'partial' or email_sent == False"/>
                     <group>
                         <group>
                             <field name="name"/>
                             <field name="action"/>
-                            <field name="errors"/>
-                            <field name="detailed_error"/>
+                            <field name="errors" invisible="state not in ('failed', 'partial')"/>
+                            <field name="detailed_error" invisible="state not in ('failed', 'partial')"/>
                             <field name="data_string" widget="text" invisible="1"/>
                         </group>
                     </group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -28,11 +33,13 @@
         <field name="model">invoice.queue</field>
         <field name="priority" eval="20"/>
         <field name="arch" type="xml">
-            <list>
+            <list create="0">
                 <field name="name"/>
                 <field name="action"/>
                 <field name="data"/>
-                <field name="state"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'"
+                       decoration-warning="state == 'partial'" decoration-success="state == 'completed'"
+                       decoration-danger="state == 'failed'"/>
             </list>
         </field>
     </record>

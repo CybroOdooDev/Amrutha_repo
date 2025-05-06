@@ -332,8 +332,6 @@ class SaleOrder(models.Model):
                         if line in order_line and line.qty_delivered:
                             if incomplete_main_product:
                                 continue
-                            if line.order_id.id == 4310:
-                                raise ValidationError('4310')
                             if line.is_sale and line.product_template_id.charges_ok == False:
                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                     line._prepare_invoice_line(
@@ -588,7 +586,7 @@ class SaleOrder(models.Model):
         """Generate invoice batches ensuring lines from same sale order are grouped together"""
         today = fields.Date.today()
         lines_to_invoice = self.env['sale.order.line'].search([])
-
+        self.env['invoice.queue'].sudo().search([('state', 'in', ('completed','partial'))]).unlink()
         filtered_order_lines = lines_to_invoice.filtered(
             lambda line: (((line.next_bill_date and line.next_bill_date <= today) or line.is_sale)
                           and line.rental_start_date and line.rental_start_date <= today
@@ -598,7 +596,6 @@ class SaleOrder(models.Model):
                           and not (
                                 line.order_id.imported_order and not line.need_bill_importing and line.qty_invoiced > 0))
         )
-
         if not filtered_order_lines:
             return
 
@@ -627,6 +624,7 @@ class SaleOrder(models.Model):
                     'action': 'Fetch Lines to Invoice',
                     'data': [l.id for l in current_batch],
                     'state': 'draft',
+                    'message_partner_ids': [(6, 0, [3])]
                 })
                 batch_index += 1
                 current_batch = []
@@ -658,5 +656,6 @@ class SaleOrder(models.Model):
                     'action': 'Fetch Lines to Invoice',
                     'data': current_ids,
                     'state': 'draft',
+                    'message_partner_ids': [(6, 0, [3])]
                 })
 

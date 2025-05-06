@@ -148,7 +148,7 @@
                                     </strong>
                                 </td>
                                 <td>
-                                    <span t-esc="(o.total_amount + o.commission_to_be_converted_by_agent - o.residential_external_referral_fee) + o.agent_pass_thru_income + o.residential_external_referral_fee"
+                                    <span t-field="o.total_received_by_lre"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -171,7 +171,7 @@
                                     <strong>Commission Earned:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="(o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee) * (o.tier / 100)"
+                                    <span t-field="o.residential_commission_earned"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -189,7 +189,7 @@
                                     <strong>Co-Agent Commission:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="(o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee) * (o.co_agent_percentage / 100)"
+                                    <span t-field="o.co_agent_commission"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -253,7 +253,7 @@
                                     <strong>Payable to Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="((o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee) * (o.tier / 100)) + o.agent_pass_thru_income - o.commission_to_be_converted_by_agent - o.transaction_coordinator_fee - o.referral_fee - o.inside_sale_fee - o.mentor_fee - o.flat_fee"
+                                    <span t-field="o.payable_to_agent"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -267,7 +267,7 @@
                                     <strong>Commission:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="(o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee) * (o.co_agent_percentage / 100)"
+                                    <span t-field="o.co_agent_commission"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -294,7 +294,7 @@
                                     <strong>Payable to Co-Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="((o.total_amount + o.commission_to_be_converted_by_agent - o.external_referral_fee) * (o.co_agent_percentage / 100)) + o.referral_fee + o.mentor_fee"
+                                    <span t-field="o.payable_to_co_agent"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>

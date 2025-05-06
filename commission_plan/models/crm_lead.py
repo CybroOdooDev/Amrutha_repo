@@ -28,7 +28,8 @@ class Lead(models.Model):
                                     help="This field represents the "
                                          "calculated commission based on the total amount and applicable percentage.",
                                     readonly=True)
-    tier = fields.Float(string="Tier")
+    tier = fields.Float(string="Tier", compute="_compute_tier",
+                        store=True)
     commission_to_be_paid = fields.Float(string="Commission Paid",
                                          help="Commission to be paid")
     omissions_insurance = fields.Float(string="Omissions Insurance",
@@ -96,16 +97,89 @@ class Lead(models.Model):
                                                             "Referral Fee",
                                                      compute="_compute_residential_external_referral_fee",
                                                      store=True)
+    total_received_by_lre = fields.Float(
+        string="Total Received by Lange Real Estate",
+        compute="_compute_total_received_by_lre",
+        store=True)
+    residential_commission_earned = fields.Float(string="Commission Earned",
+                                                 compute="_compute_residential_commission_earned",
+                                                 store=True)
+    co_agent_commission = fields.Float(string="Co-Agent Commission",
+                                       compute="_compute_co_agent_commission",
+                                       store=True)
+    payable_to_agent = fields.Float(string="Payable to Agent",
+                                    compute="_compute_payable_to_agent",
+                                    store=True)
+    payable_to_co_agent = fields.Float(string="Payable to Co-Agent",
+                                       compute="_compute_payable_to_co_agent",
+                                       store=True)
 
-    @api.depends('commission_to_be_converted_by_agent','referral_fee_rate')
+    @api.depends('commission_to_be_converted_by_agent', 'referral_fee_rate')
     def _compute_residential_external_referral_fee(self):
         for lead in self:
-            print(lead.commission_to_be_converted_by_agent,"lead.commission_to_be_converted_by_agent")
-            print(lead.referral_fee_rate,"lead.referral_fee_rate")
-            lead.residential_external_referral_fee= (lead.commission_to_be_converted_by_agent *
-                                                     (
-                                                             lead.referral_fee_rate/100))
+            print(lead.commission_to_be_converted_by_agent,
+                  "lead.commission_to_be_converted_by_agent")
+            print(lead.referral_fee_rate, "lead.referral_fee_rate")
+            lead.residential_external_referral_fee = (
+                    lead.commission_to_be_converted_by_agent *
+                    (
+                            lead.referral_fee_rate / 100))
 
+    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+                 'residential_external_referral_fee',
+                 'residential_external_referral_fee', 'agent_pass_thru_income')
+    def _compute_total_received_by_lre(self):
+        for lead in self:
+            total = (lead.total_amount +
+                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
+            lead.total_received_by_lre = (
+                                             lead.residential_external_referral_fee) + total + lead.agent_pass_thru_income
+
+    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+                 'residential_external_referral_fee')
+    def _compute_residential_commission_earned(self):
+        for lead in self:
+            total = (lead.total_amount +
+                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
+            print(total)
+            print(lead.tier)
+            lead.residential_commission_earned = total * (lead.tier/100)
+
+    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+                 'residential_external_referral_fee', 'co_agent_percentage')
+    def _compute_co_agent_commission(self):
+        for lead in self:
+            total = (lead.total_amount +
+                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
+            lead.co_agent_commission = total * (lead.co_agent_percentage / 100)
+
+    @api.depends('residential_commission_earned', 'agent_pass_thru_income',
+                 'commission_to_be_converted_by_agent',
+                 'transaction_coordinator_fee', 'referral_fee',
+                 'inside_sale_fee', 'mentor_fee', 'flat_fee')
+    def _compute_payable_to_agent(self):
+        for lead in self:
+            lead.payable_to_agent = ((lead.residential_commission_earned +
+                                      lead.agent_pass_thru_income) -
+                                     lead.commission_to_be_converted_by_agent) - lead.transaction_coordinator_fee - lead.referral_fee - lead.inside_sale_fee - lead.mentor_fee - lead.flat_fee
+
+    @api.depends('co_agent_commission','referral_fee','mentor_fee')
+    def _compute_payable_to_co_agent(self):
+        for lead in self:
+            lead.payable_to_co_agent = (lead.co_agent_commission +
+                                        lead.referral_fee + lead.mentor_fee)
+
+    def action_commission(self):
+        """ Action to calculate commission manually """
+        self._compute_residential_external_referral_fee()
+        self._compute_total_received_by_lre()
+        self._compute_residential_commission_earned()
+        self._compute_co_agent_commission()
+        self._compute_payable_to_agent()
+        self._compute_payable_to_co_agent()
+        # self.compute_commission()
+        # pdf attachment creation
+        self.generate_pdf_attachment()
 
     def _default_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company
@@ -162,6 +236,8 @@ class Lead(models.Model):
             if lead.total_amount < lead.minimum_commission_due:
                 lead.commission_to_be_converted_by_agent = (
                         lead.minimum_commission_due - lead.total_amount)
+                print(lead.commission_to_be_converted_by_agent,
+                      "lead.commission_to_be_converted_by_agent")
 
     @api.depends('total_sales_price', 'x_studio_opportunity_type_1')
     def _compute_minimum_commission_due(self):
@@ -177,11 +253,34 @@ class Lead(models.Model):
                     else:
                         # Fall back to 3% calculation if conditions aren't met
                         lead.minimum_commission_due = lead.total_sales_price * (
-                                    3 / 100)
+                                3 / 100)
                 else:
                     # Original 3% calculation if the user doesn't have the minimum commission option
                     lead.minimum_commission_due = lead.total_sales_price * (
-                                3 / 100)
+                            3 / 100)
+
+    @api.depends('total_amount')
+    def _compute_tier(self):
+        """Fetch the correct commission rate based on total amount from tier.tier,
+        and enforce minimum commission percentage for the salesperson."""
+
+        tiers = self.env['tier.tier'].search(
+            [('company_id', '=', self.company_id.id)], order='amount asc')
+
+        # Default commission rate from tiers
+        commission_rate = 0.0
+        for tier in tiers:
+            if self.total_amount >= tier.amount:
+                commission_rate = tier.commission_percentage / 100.0
+                self.tier = tier.commission_percentage
+
+        # Enforce minimum commission rate for the salesperson
+        min_commission_percentage = self.user_id.min_commission_percentage or 0.0  # Assume 0.0 if not set
+        min_commission_rate = min_commission_percentage / 100.0
+
+        if commission_rate < min_commission_rate:
+            commission_rate = min_commission_rate
+            self.tier = min_commission_percentage  # Update tier to reflect the enforced minimum
 
     def _default_commercial_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company
@@ -483,10 +582,11 @@ class Lead(models.Model):
 
             # Calculate the commission rate based on the total
             commission_rate = self.get_commission_rate(total_amount_past_year)
-            #“Total Commission Earned by Agent”: “Total
+            # “Total Commission Earned by Agent”: “Total
             # Commission Earned by LRE” plus “Commission to be covered by Agent”
             # multiplied by tier %
-            self.total_commission = ((self.total_amount + self.commission_to_be_converted_by_agent) *
+            self.total_commission = ((
+                                             self.total_amount + self.commission_to_be_converted_by_agent) *
                                      commission_rate)
 
             # E&O Insurance calculation (skip if manually set)
@@ -568,12 +668,6 @@ class Lead(models.Model):
         self.commission_attachment_id = attachment.id
         self.pdf_report = self.commission_attachment_id.datas
 
-    def action_commission(self):
-        """ Action to calculate commission manually """
-
-        self.compute_commission()
-        # pdf attachment creation
-        self.generate_pdf_attachment()
 
     def get_commission_rate(self, total_amount):
         """Fetch the correct commission rate based on total amount from tier.tier,

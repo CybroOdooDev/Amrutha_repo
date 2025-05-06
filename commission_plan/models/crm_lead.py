@@ -79,7 +79,7 @@ class Lead(models.Model):
     total_sales_price = fields.Float(string="Total Sales Price",
                                      help="Total Sales price")
     total_list_price = fields.Float(string="List Price",
-                                     help="Total List price")
+                                    help="Total List price")
     minimum_commission_due = fields.Float(string="Minimum Commission Due",
                                           compute="_compute_minimum_commission_due",
                                           store=True)
@@ -89,6 +89,19 @@ class Lead(models.Model):
                                                        compute="_compute_commission_to_be_converted_by_agent",
                                                        store=True)
     mentor_fee = fields.Float(string="Mentor Fee")
+    agent_pass_thru_income = fields.Float(string="Agent Pass Thru Income")
+    co_agent_percentage = fields.Float(string="Co-Agent Percentage",
+                                       default=30.0)
+    residential_external_referral_fee = fields.Float(string="External "
+                                                            "Referral Fee",
+                                                     compute="_compute_residential_external_referral_fee",
+                                                     store=True)
+
+    @api.depends('total_sales_price')
+    def _compute_residential_external_referral_fee(self):
+        for lead in self:
+            lead.residential_external_referral_fee= (lead.minimum_commission_due *
+                                            lead.referral_fee_rate)
 
     def _default_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company

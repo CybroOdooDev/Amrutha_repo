@@ -1,15 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Residential Commission Report -->
     <record id="action_report_crm_lead" model="ir.actions.report">
-        <field name="name">Commission Report</field>
+        <field name="name">Residential Commission Report</field>
         <field name="model">crm.lead</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">commission_plan.report_commission</field>
         <field name="report_file">commission_plan.report_commission</field>
-        <field name="print_report_name">'Commission Report - %s' % (object
-            .name)
+        <field name="print_report_name">'Residential Commission Report - %s' % (object.name)
         </field>
         <field name="binding_model_id" ref="crm.model_crm_lead"/>
         <field name="binding_type">report</field>
+        <field name="domain"
+               eval="[('company_id.is_calculate_commission', '=', True)]"/>
+
+    </record>
+
+    <!-- Commercial Commission Report -->
+    <record id="action_report_crm_lead_commercial" model="ir.actions.report">
+        <field name="name">Commercial Commission Report</field>
+        <field name="model">crm.lead</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">
+            commission_plan.report_commercial_commission
+        </field>
+        <field name="report_file">
+            commission_plan.report_commercial_commission
+        </field>
+        <field name="print_report_name">'Commercial Commission Report - %s' % (object.name)
+        </field>
+        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_type">report</field>
+        <field name="domain"
+               eval="[('company_id.is_calculate_commercial_commission', '=', True)]"/>
     </record>
 </odoo>

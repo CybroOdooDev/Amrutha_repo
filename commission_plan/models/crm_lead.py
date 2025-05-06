@@ -36,7 +36,8 @@ class Lead(models.Model):
     is_apply_transaction_coordinator_fee = fields.Boolean(
         string="Apply Transaction Coordinator Fee",
         help="For residential deals, $200 is either subtracted from the agent’s commission if the deal amount is under $125,000, or it’s paid by the brokerage if the deal is $125,000 or above.")
-    transaction_coordinator_fee = fields.Float(string="Transaction Coordinator Fee")
+    transaction_coordinator_fee = fields.Float(
+        string="Transaction Coordinator Fee")
     inside_sale_fee = fields.Float(string="Signage Fee")
     referral_fee = fields.Float(string="Referral Fee")
     co_agent_fee = fields.Float(string="Co-agent Fee")

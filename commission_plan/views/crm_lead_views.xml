@@ -93,6 +93,10 @@
                             <field name="mentor_fee"
                                    widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
+                            <field name="agent_pass_thru_income"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="co_agent_percentage"/>
 
                         </group>
                     </group>

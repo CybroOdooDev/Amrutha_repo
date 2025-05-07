@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from email.policy import default
-
 from odoo import api,models, fields, Command
 from odoo.exceptions import ValidationError
 from odoo.tools import date_utils
 import json
 import logging
 import traceback
+import ast
 from markupsafe import Markup
 _logger = logging.getLogger(__name__)
 
@@ -29,6 +29,8 @@ class InvoiceQueue(models.Model):
     errors = fields.Char(string="Caused Error")
     detailed_error = fields.Char(string="Detailed Error")
     email_sent = fields.Boolean(string="Email Sent",default=False)
+
+
 
     @api.depends('data')
     def _compute_data_string(self):
@@ -183,7 +185,7 @@ class InvoiceQueue(models.Model):
                                                 invoice_vals['invoice_line_ids'].append(Command.create(
                                                     line._prepare_invoice_line(
                                                         name=f"Rental",
-                                                        product_id=line.product_id.order_id,
+                                                        product_id=line.product_id.id,
                                                         price_unit=line.price_unit,
                                                         quantity=line.qty_delivered - line.qty_returned,
                                                     )
@@ -266,3 +268,15 @@ class InvoiceQueue(models.Model):
                     'errors': e,
                     'detailed_error': f"Rental Order: {str(sale_order.name)}, \nOrder Lines: {line}, \n {tb}",
                 })
+                if not job.email_sent:
+                    job.message_post(
+                        body=Markup(
+                            f"Recurring Billing Job <strong>{job.name}</strong> "
+                            f"moved to <strong>Partially Completed</strong> state due errors in orders "
+                            f"<strong>{', '.join(failed_orders)}</strong>"
+                        ),
+                        subject="Recurring Billing Errors",
+                        message_type='notification',
+                        subtype_xmlid='mail.mt_comment'
+                    )
+                    job.email_sent = True

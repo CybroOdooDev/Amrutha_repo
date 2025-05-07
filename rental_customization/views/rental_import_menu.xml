@@ -18,6 +18,7 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
+
     <menuitem id="import_menu" name="Import"
               parent="sale_renting.rental_menu_root" sequence="6"/>
     <menuitem id="import_lot_serial_menu" name="Import Lot/Serial Number" action="rental_customization.lot_serial_import_action"

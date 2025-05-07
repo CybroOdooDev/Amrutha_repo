@@ -13,6 +13,7 @@ import requests
 import re
 from odoo.tools import float_compare
 from collections import defaultdict
+import ast
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -585,6 +586,11 @@ class SaleOrder(models.Model):
     def generate_batches_for_invoice(self, batch_size=5000):
         """Generate invoice batches ensuring lines from same sale order are grouped together"""
         today = fields.Date.today()
+        user_ids_str = self.env['ir.config_parameter'].sudo().get_param('rental_customization.invoice_queue_follower')
+    # Safely convert string "[2, 7]" into list [2, 7]
+        user_ids = ast.literal_eval(user_ids_str) if user_ids_str else []
+    #Search users and get their partner_ids
+        partner_ids = self.env['res.users'].browse(user_ids).mapped('partner_id.id')
         lines_to_invoice = self.env['sale.order.line'].search([])
         self.env['invoice.queue'].sudo().search([('state', 'in', ('completed','partial'))]).unlink()
         filtered_order_lines = lines_to_invoice.filtered(
@@ -619,12 +625,12 @@ class SaleOrder(models.Model):
             # Check if adding this order's lines will overflow batch
             if len(current_batch) + len(lines) > batch_size and current_batch:
                 # Create queue for current batch
-                self.env['invoice.queue'].create({
+                res = self.env['invoice.queue'].create({
                     'name': f"Processing batch {batch_index}",
                     'action': 'Fetch Lines to Invoice',
                     'data': [l.id for l in current_batch],
                     'state': 'draft',
-                    'message_partner_ids': [(6, 0, [3])]
+                    'message_partner_ids': [(6, 0, partner_ids)]
                 })
                 batch_index += 1
                 current_batch = []
@@ -651,11 +657,11 @@ class SaleOrder(models.Model):
                     break
 
             if not batch_exists:
-                self.env['invoice.queue'].create({
+                res = self.env['invoice.queue'].create({
                     'name': f"Processing batch {batch_index}",
                     'action': 'Fetch Lines to Invoice',
                     'data': current_ids,
                     'state': 'draft',
-                    'message_partner_ids': [(6, 0, [3])]
+                    'message_partner_ids': [(6, 0, partner_ids)]
                 })
-
+                # res.message_subscribe(partner_ids=eval(Params.get_param('rental_customization.invoice_queue_follower')))

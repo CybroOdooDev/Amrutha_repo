@@ -15,6 +15,9 @@
                         <field name="fuel_surcharge_unit"/>
                     </div>
                 </setting>
+                <setting string="Invoice Queue Followers" help="Choose users who will be notified when a batch of invoices fails or is partially completed">
+                    <field name="invoice_queue_follower_ids" widget="many2many_tags"/>
+                </setting>
             </setting>
         </field>
     </record>

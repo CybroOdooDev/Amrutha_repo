@@ -29,11 +29,11 @@ class CRMDashboard(models.Model):
         won_leads = self.env['crm.lead'].search([
             ('stage_id.is_won', '=', True)
         ])
-        # Calculate total asking price (sum of commission_to_be_paid)
+        # Calculate total asking price (sum of payable_to_agent)
         totalAskingPrice = sum(
-            lead.commission_to_be_paid
+            lead.payable_to_agent
             for lead in won_leads
-            if lead.commission_to_be_paid
+            if lead.payable_to_agent
         )
         # Calculate total properties (count of unique property addresses)
         property_addresses = {
@@ -457,7 +457,7 @@ class CRMDashboard(models.Model):
                 # Determine commission amount based on company name
                 if lead.company_id and 'Residential' in (
                         lead.company_id.name or ''):
-                    commission_amount = lead.commission_to_be_paid or 0
+                    commission_amount = lead.payable_to_agent or 0
                 else:
                     commission_amount = lead.total_commercial_commission_earned or 0
 

@@ -379,9 +379,9 @@ async fetchActivityData() {
     async fetchWeeklyTasks() {
         try {
             const tasks = await this.orm.searchRead(
-                'crm.weekly.task', // Model name
-                [['user_id', '=', this.user.userId]], // Domain to filter tasks for the current user
-                ['name', 'day', 'completed'] // Fields to fetch
+                'crm.weekly.task',
+                [['user_id', '=', this.user.userId]],
+                ['name', 'day', 'completed'] // Make sure 'completed' is included
             );
 
             // Organize tasks by day
@@ -394,6 +394,9 @@ async fetchActivityData() {
                 saturday: tasks.filter(task => task.day === 'saturday'),
                 sunday: tasks.filter(task => task.day === 'sunday'),
             };
+
+            // Force reactivity
+            this.state.tasks = { ...this.state.tasks };
         } catch (error) {
             console.error("Error fetching weekly tasks:", error);
             this.state.error = _t("Failed to load weekly tasks. Please try again later.");
@@ -451,17 +454,15 @@ async fetchActivityData() {
                     const task = this.state.tasks[day][taskIndex];
                     const newCompletedStatus = !task.completed;
 
-                    console.log("Current status:", task.completed, "New status:", newCompletedStatus);
-
-                    // Update the task in the backend
+                    // Update the task in the backend first
                     await this.orm.write('crm.weekly.task', [taskId], {
                         completed: newCompletedStatus,
                     });
 
-                    // Update the task in the frontend state
+                    // Then update the frontend state
                     this.state.tasks[day][taskIndex].completed = newCompletedStatus;
 
-                    // Force a re-render by creating a new object
+                    // Force a re-render by creating a new tasks object
                     this.state.tasks = { ...this.state.tasks };
                 }
             }

@@ -114,54 +114,49 @@ class Lead(models.Model):
                                        compute="_compute_payable_to_co_agent",
                                        store=True)
 
-    @api.depends('commission_to_be_converted_by_agent', 'referral_fee_rate')
+    @api.depends('minimum_commission_due', 'referral_fee_rate')
     def _compute_residential_external_referral_fee(self):
         for lead in self:
-            print(lead.commission_to_be_converted_by_agent,
-                  "lead.commission_to_be_converted_by_agent")
-            print(lead.referral_fee_rate, "lead.referral_fee_rate")
             lead.residential_external_referral_fee = (
-                    lead.commission_to_be_converted_by_agent *
+                    lead.minimum_commission_due *
                     (
                             lead.referral_fee_rate / 100))
 
-    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+    @api.depends('total_amount', 'minimum_commission_due',
                  'residential_external_referral_fee',
                  'residential_external_referral_fee', 'agent_pass_thru_income')
     def _compute_total_received_by_lre(self):
         for lead in self:
             total = (lead.total_amount +
-                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
+                     lead.minimum_commission_due) - lead.residential_external_referral_fee
             lead.total_received_by_lre = (
                                              lead.residential_external_referral_fee) + total + lead.agent_pass_thru_income
 
-    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+    @api.depends('total_amount', 'minimum_commission_due',
                  'residential_external_referral_fee')
     def _compute_residential_commission_earned(self):
         for lead in self:
             total = (lead.total_amount +
-                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
-            print(total)
-            print(lead.tier)
+                     lead.minimum_commission_due) - lead.residential_external_referral_fee
             lead.residential_commission_earned = total * (lead.tier/100)
 
-    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
+    @api.depends('total_amount', 'minimum_commission_due',
                  'residential_external_referral_fee', 'co_agent_percentage')
     def _compute_co_agent_commission(self):
         for lead in self:
             total = (lead.total_amount +
-                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
+                     lead.minimum_commission_due) - lead.residential_external_referral_fee
             lead.co_agent_commission = total * (lead.co_agent_percentage / 100)
 
     @api.depends('residential_commission_earned', 'agent_pass_thru_income',
-                 'commission_to_be_converted_by_agent',
+                 'minimum_commission_due',
                  'transaction_coordinator_fee', 'referral_fee',
                  'inside_sale_fee', 'mentor_fee', 'flat_fee')
     def _compute_payable_to_agent(self):
         for lead in self:
             lead.payable_to_agent = ((lead.residential_commission_earned +
                                       lead.agent_pass_thru_income) -
-                                     lead.commission_to_be_converted_by_agent) - lead.transaction_coordinator_fee - lead.referral_fee - lead.inside_sale_fee - lead.mentor_fee - lead.flat_fee
+                                     lead.minimum_commission_due) - lead.transaction_coordinator_fee - lead.referral_fee - lead.inside_sale_fee - lead.mentor_fee - lead.flat_fee
 
     @api.depends('co_agent_commission','referral_fee','mentor_fee')
     def _compute_payable_to_co_agent(self):
@@ -492,158 +487,158 @@ class Lead(models.Model):
                 })]
             }])
 
-    @api.onchange('omissions_insurance')
-    def _onchange_omissions_insurance(self):
-        self.is_manual_omissions_insurance = True
-        self.compute_commission()
-
-    @api.onchange('is_apply_transaction_coordinator_fee')
-    def _onchange_is_apply_transaction_coordinator_fee(self):
-        self.is_manual_tc_fee = True
-        self.compute_commission()
-
-    @api.onchange('inside_sale_fee')
-    def _onchange_inside_sale_fee(self):
-        self.is_manual_inside_sale_fee = True
-        self.compute_commission()
-
-    @api.onchange('referral_fee')
-    def _onchange_referral_fee(self):
-        self.is_manual_referral_fee = True
-        self.compute_commission()
-
-    @api.onchange('co_agent_fee')
-    def _onchange_co_agent_fee(self):
-        self.is_manual_co_agent_fee = True
-        self.compute_commission()
-
-    @api.onchange('flat_fee')
-    def _onchange_flat_fee(self):
-        self.is_manual_flat_fee = True
-        self.compute_commission()
-
-    # Modify the commission calculation method
-    def compute_commission(self):
-        if self.stage_id.is_won:
-            last_year_date = datetime.now() - timedelta(days=365)
-
-            # Get the partner associated with the user
-            if self.user_id.secondary_related_partner_id:
-                partner = self.user_id.secondary_related_partner_id
-            else:
-                partner = self.user_id.partner_id
-
-            # Check if the user belongs to a sales team
-            sales_team = self.env['crm.team'].search([
-                ('crm_team_member_ids', 'in', self.user_id.id)
-            ], limit=1)
-
-            if sales_team:
-                # Get all members of the sales team
-                team_members = sales_team.crm_team_member_ids
-                total_amount_past_year = 0.0
-
-                for member in team_members:
-                    partner = member.partner_id or member.secondary_related_partner_id
-                    if not partner:
-                        continue
-
-                    # Search for account.move.line related to the team member
-                    product = self.env['product.product'].search(
-                        [('name', '=', 'Commission'),
-                         ('default_code', '=', 'COMMISSION')], limit=1)
-
-                    if product:
-                        payments = self.env['account.move.line'].search([
-                            ('product_id', '=', product.id),
-                            ('move_id.move_type', '=', 'in_invoice'),
-                            ('move_id.partner_id', '=', partner.id),
-                            ('create_date', '>=', last_year_date),
-                            ('move_id.state', '=', 'posted')
-                        ])
-                        total_amount_past_year += sum(
-                            payment.price_total for payment in payments)
-            else:
-                # Individual calculation if the user does not belong to a sales team
-                product = self.env['product.product'].search(
-                    [('name', '=', 'Commission'),
-                     ('default_code', '=', 'COMMISSION')], limit=1)
-
-                if product:
-                    payments = self.env['account.move.line'].search([
-                        ('product_id', '=', product.id),
-                        ('move_id.move_type', '=', 'in_invoice'),
-                        ('move_id.partner_id', '=', partner.id),
-                        ('create_date', '>=', last_year_date),
-                        ('move_id.state', '=', 'posted')
-                    ])
-                    total_amount_past_year = sum(
-                        payment.price_total for payment in payments)
-
-            # Calculate the commission rate based on the total
-            commission_rate = self.get_commission_rate(total_amount_past_year)
-            # “Total Commission Earned by Agent”: “Total
-            # Commission Earned by LRE” plus “Commission to be covered by Agent”
-            # multiplied by tier %
-            self.total_commission = ((
-                                             self.total_amount + self.commission_to_be_converted_by_agent) *
-                                     commission_rate)
-
-            # E&O Insurance calculation (skip if manually set)
-            if not self.is_manual_omissions_insurance:
-                eo_insurance = self.env['eo.insurance'].search([
-                    ('from_amount', '<=', self.total_commission),
-                    ('to_amount', '>=', self.total_commission),
-                    ('company_id', '=', self.company_id.id)
-                ], limit=1)
-                self.omissions_insurance = eo_insurance.eo_to_charge if eo_insurance else 0
-
-            self.commission_to_be_paid = self.total_commission - self.omissions_insurance
-
-            # Transaction Coordinator Fee (skip if manually set)
-            if not self.is_manual_tc_fee:
-                if self.company_id.is_tc_enabled and self.total_amount < self.company_id.tc_threshold:
-                    self.is_apply_transaction_coordinator_fee = True
-                    self.commission_to_be_paid -= self.transaction_coordinator_fee
-
-            else:
-                if self.is_apply_transaction_coordinator_fee:
-                    self.commission_to_be_paid += self.transaction_coordinator_fee
-                    self.is_apply_transaction_coordinator_fee = False
-                else:
-                    self.commission_to_be_paid -= self.transaction_coordinator_fee
-                    self.is_apply_transaction_coordinator_fee = False
-
-            # Inside Sales Fee (skip if manually set)
-            if not self.is_manual_inside_sale_fee and self.company_id.inside_sale_fee and self.inside_sale_person_id:
-                self.inside_sale_fee = self.company_id.inside_sale_fee
-
-            # Referral Fee (skip if manually set)
-            if not self.is_manual_referral_fee and self.referral_fee_rate and self.referer_id:
-                self.referral_fee = self.total_commission * (
-                        self.referral_fee_rate / 100)
-
-            # Coagent Fee (skip if manually set)
-            if not self.is_manual_referral_fee and self.company_id.co_agent_fee_rate and self.co_agent_id:
-                self.co_agent_fee = self.total_commission * (
-                        self.company_id.co_agent_fee_rate / 100)
-
-            if self.inside_sale_fee:
-                self.commission_to_be_paid -= self.inside_sale_fee
-
-            if self.referral_fee:
-                self.commission_to_be_paid -= self.referral_fee
-
-            if self.co_agent_fee:
-                self.commission_to_be_paid -= self.co_agent_fee
-
-            # Flat Fee (skip if manually set)
-            if self.flat_fee:
-                self.commission_to_be_paid -= self.flat_fee
-
-            # pdf attachment creation
-            self.generate_pdf_attachment()
-            # self._create_approvals()
+    # @api.onchange('omissions_insurance')
+    # def _onchange_omissions_insurance(self):
+    #     self.is_manual_omissions_insurance = True
+    #     self.compute_commission()
+    #
+    # @api.onchange('is_apply_transaction_coordinator_fee')
+    # def _onchange_is_apply_transaction_coordinator_fee(self):
+    #     self.is_manual_tc_fee = True
+    #     self.compute_commission()
+    #
+    # @api.onchange('inside_sale_fee')
+    # def _onchange_inside_sale_fee(self):
+    #     self.is_manual_inside_sale_fee = True
+    #     self.compute_commission()
+    #
+    # @api.onchange('referral_fee')
+    # def _onchange_referral_fee(self):
+    #     self.is_manual_referral_fee = True
+    #     self.compute_commission()
+    #
+    # @api.onchange('co_agent_fee')
+    # def _onchange_co_agent_fee(self):
+    #     self.is_manual_co_agent_fee = True
+    #     self.compute_commission()
+    #
+    # @api.onchange('flat_fee')
+    # def _onchange_flat_fee(self):
+    #     self.is_manual_flat_fee = True
+    #     self.compute_commission()
+    #
+    # # Modify the commission calculation method
+    # def compute_commission(self):
+    #     if self.stage_id.is_won:
+    #         last_year_date = datetime.now() - timedelta(days=365)
+    #
+    #         # Get the partner associated with the user
+    #         if self.user_id.secondary_related_partner_id:
+    #             partner = self.user_id.secondary_related_partner_id
+    #         else:
+    #             partner = self.user_id.partner_id
+    #
+    #         # Check if the user belongs to a sales team
+    #         sales_team = self.env['crm.team'].search([
+    #             ('crm_team_member_ids', 'in', self.user_id.id)
+    #         ], limit=1)
+    #
+    #         if sales_team:
+    #             # Get all members of the sales team
+    #             team_members = sales_team.crm_team_member_ids
+    #             total_amount_past_year = 0.0
+    #
+    #             for member in team_members:
+    #                 partner = member.partner_id or member.secondary_related_partner_id
+    #                 if not partner:
+    #                     continue
+    #
+    #                 # Search for account.move.line related to the team member
+    #                 product = self.env['product.product'].search(
+    #                     [('name', '=', 'Commission'),
+    #                      ('default_code', '=', 'COMMISSION')], limit=1)
+    #
+    #                 if product:
+    #                     payments = self.env['account.move.line'].search([
+    #                         ('product_id', '=', product.id),
+    #                         ('move_id.move_type', '=', 'in_invoice'),
+    #                         ('move_id.partner_id', '=', partner.id),
+    #                         ('create_date', '>=', last_year_date),
+    #                         ('move_id.state', '=', 'posted')
+    #                     ])
+    #                     total_amount_past_year += sum(
+    #                         payment.price_total for payment in payments)
+    #         else:
+    #             # Individual calculation if the user does not belong to a sales team
+    #             product = self.env['product.product'].search(
+    #                 [('name', '=', 'Commission'),
+    #                  ('default_code', '=', 'COMMISSION')], limit=1)
+    #
+    #             if product:
+    #                 payments = self.env['account.move.line'].search([
+    #                     ('product_id', '=', product.id),
+    #                     ('move_id.move_type', '=', 'in_invoice'),
+    #                     ('move_id.partner_id', '=', partner.id),
+    #                     ('create_date', '>=', last_year_date),
+    #                     ('move_id.state', '=', 'posted')
+    #                 ])
+    #                 total_amount_past_year = sum(
+    #                     payment.price_total for payment in payments)
+    #
+    #         # Calculate the commission rate based on the total
+    #         commission_rate = self.get_commission_rate(total_amount_past_year)
+    #         # “Total Commission Earned by Agent”: “Total
+    #         # Commission Earned by LRE” plus “Commission to be covered by Agent”
+    #         # multiplied by tier %
+    #         self.total_commission = ((
+    #                                          self.total_amount + self.commission_to_be_converted_by_agent) *
+    #                                  commission_rate)
+    #
+    #         # E&O Insurance calculation (skip if manually set)
+    #         if not self.is_manual_omissions_insurance:
+    #             eo_insurance = self.env['eo.insurance'].search([
+    #                 ('from_amount', '<=', self.total_commission),
+    #                 ('to_amount', '>=', self.total_commission),
+    #                 ('company_id', '=', self.company_id.id)
+    #             ], limit=1)
+    #             self.omissions_insurance = eo_insurance.eo_to_charge if eo_insurance else 0
+    #
+    #         self.commission_to_be_paid = self.total_commission - self.omissions_insurance
+    #
+    #         # Transaction Coordinator Fee (skip if manually set)
+    #         if not self.is_manual_tc_fee:
+    #             if self.company_id.is_tc_enabled and self.total_amount < self.company_id.tc_threshold:
+    #                 self.is_apply_transaction_coordinator_fee = True
+    #                 self.commission_to_be_paid -= self.transaction_coordinator_fee
+    #
+    #         else:
+    #             if self.is_apply_transaction_coordinator_fee:
+    #                 self.commission_to_be_paid += self.transaction_coordinator_fee
+    #                 self.is_apply_transaction_coordinator_fee = False
+    #             else:
+    #                 self.commission_to_be_paid -= self.transaction_coordinator_fee
+    #                 self.is_apply_transaction_coordinator_fee = False
+    #
+    #         # Inside Sales Fee (skip if manually set)
+    #         if not self.is_manual_inside_sale_fee and self.company_id.inside_sale_fee and self.inside_sale_person_id:
+    #             self.inside_sale_fee = self.company_id.inside_sale_fee
+    #
+    #         # Referral Fee (skip if manually set)
+    #         if not self.is_manual_referral_fee and self.referral_fee_rate and self.referer_id:
+    #             self.referral_fee = self.total_commission * (
+    #                     self.referral_fee_rate / 100)
+    #
+    #         # Coagent Fee (skip if manually set)
+    #         if not self.is_manual_referral_fee and self.company_id.co_agent_fee_rate and self.co_agent_id:
+    #             self.co_agent_fee = self.total_commission * (
+    #                     self.company_id.co_agent_fee_rate / 100)
+    #
+    #         if self.inside_sale_fee:
+    #             self.commission_to_be_paid -= self.inside_sale_fee
+    #
+    #         if self.referral_fee:
+    #             self.commission_to_be_paid -= self.referral_fee
+    #
+    #         if self.co_agent_fee:
+    #             self.commission_to_be_paid -= self.co_agent_fee
+    #
+    #         # Flat Fee (skip if manually set)
+    #         if self.flat_fee:
+    #             self.commission_to_be_paid -= self.flat_fee
+    #
+    #         # pdf attachment creation
+    #         self.generate_pdf_attachment()
+    #         # self._create_approvals()
 
     def generate_pdf_attachment(self):
         # Use the report rendering method to generate the PDF

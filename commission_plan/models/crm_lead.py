@@ -122,13 +122,13 @@ class Lead(models.Model):
                     (
                             lead.referral_fee_rate / 100))
 
-    @api.depends('total_amount', 'minimum_commission_due',
+    @api.depends('total_amount', 'commission_to_be_converted_by_agent',
                  'residential_external_referral_fee',
                  'residential_external_referral_fee', 'agent_pass_thru_income')
     def _compute_total_received_by_lre(self):
         for lead in self:
             total = (lead.total_amount +
-                     lead.minimum_commission_due) - lead.residential_external_referral_fee
+                     lead.commission_to_be_converted_by_agent) - lead.residential_external_referral_fee
             lead.total_received_by_lre = (
                                              lead.residential_external_referral_fee) + total + lead.agent_pass_thru_income
 

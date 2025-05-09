@@ -198,7 +198,7 @@
                                     <strong>Minimum Commission Due:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.commission_to_be_converted_by_agent"
+                                    <span t-field="o.minimum_commission_due"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>

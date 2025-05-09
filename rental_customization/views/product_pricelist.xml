@@ -5,9 +5,9 @@
         <field name="model">product.pricelist</field>
         <field name="inherit_id" ref="sale_renting.product_pricelist_view"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='company_id']" position='attributes'>
-                <attribute name="invisible">1</attribute>
-            </xpath>
+<!--            <xpath expr="//field[@name='company_id']" position='attributes'>-->
+<!--                <attribute name="invisible">1</attribute>-->
+<!--            </xpath>-->
             <xpath expr="//field[@name='company_id']" position="after">
                 <field name="company_ids" widget="many2many_tags"/>
             </xpath>

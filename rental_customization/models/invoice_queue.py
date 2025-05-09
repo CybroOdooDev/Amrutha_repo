@@ -31,7 +31,6 @@ class InvoiceQueue(models.Model):
     email_sent = fields.Boolean(string="Email Sent",default=False)
 
 
-
     @api.depends('data')
     def _compute_data_string(self):
         for rec in self:
@@ -45,7 +44,7 @@ class InvoiceQueue(models.Model):
         job = self.env['invoice.queue'].sudo().search([('state', 'in', ('draft','partial'))],
                                                    order='id asc', limit=1)
         if job:
-            _logger.info('Generating Recurring bills')
+            # _logger.info('Generating Recurring bills')
             try:
                 main_prod = None
                 today = fields.Date.today()
@@ -191,7 +190,6 @@ class InvoiceQueue(models.Model):
                                                     )
                                                 ))
                                                 main_prod = line.product_id.name
-
                                     if not line.is_sale and line.product_template_id.charges_ok == True:
                                         invoice_vals['invoice_line_ids'].append(Command.create(
                                             line._prepare_invoice_line(

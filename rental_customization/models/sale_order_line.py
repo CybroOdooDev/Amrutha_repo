@@ -13,6 +13,8 @@ from odoo.fields import Command
 import base64
 from bs4 import BeautifulSoup
 
+from odoo.tools.view_validation import READONLY
+
 
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
@@ -27,8 +29,7 @@ class SaleOrderLine(models.Model):
                                                 ('confirmed', "Confirmed"),
                                                 ('finish', "Finished"),
                                                 ('cancel', "Cancelled"),
-                                                ], string="Rental Status", compute='_compute_rental_status',
-                                     store=False)
+                                                ], string="Rental Status", compute='_compute_rental_status',store=False)
     active = fields.Boolean(default=True)
     is_sale = fields.Boolean()
     parent_line = fields.Integer()
@@ -42,9 +43,11 @@ class SaleOrderLine(models.Model):
     line_signature_status = fields.Selection(selection=[('initial', "Initial"),
                                                         ('delivery', "Delivery Sent"),
                                                         ('complete', "Completed"),
-                                                        ],
-                                              string="Signature Status",
-                                             default="initial", store=True)
+                                                        ],string="Signature Status",default="initial", store=True)
+    daily_rate = fields.Float('Daily Rate')
+    extended_amount  = fields.Float('Extended Amount',compute='_compute_rental_days_amount')
+    rental_days = fields.Integer('Rental Days',store=True,readonly=False, compute='_compute_rental_days_amount')
+
 
     _sql_constraints = [
         ('rental_stock_coherence',
@@ -200,16 +203,32 @@ class SaleOrderLine(models.Model):
                     line.rental_start_date = line.order_id.header_start_date
                     line.rental_end_date = line.order_id.header_return_date
                 if line.is_rental:
+        # Calculate unit price based on daily price
+                    if line.daily_rate>0 and line.order_id.recurring_plan_id:
+                        billing_period_unit = line.order_id.recurring_plan_id.billing_period_unit
+                        billing_period_value = line.order_id.recurring_plan_id.billing_period_value
+                        if billing_period_unit == 'day':
+                            line.price_unit = line.daily_rate * billing_period_value
                     qty = int(line.product_uom_qty)
                     for i in range(qty):
-                        self.env['product.return.dates'].create([{
-                            'order_id': line.order_id.id,
-                            'product_id': line.product_id.id,
-                            'serial_number': False,
-                            'quantity': 1,
-                            'per_day_charges': line.price_unit,
-                            'order_line_id': line.id,
-                        }])
+                        date_record_line = self.env['product.return.dates'].search([
+                            ('order_id','=', line.order_id.id),
+                            ('product_id','=', line.product_id.id),
+                            ('serial_number','=', False),
+                            ('quantity','=',1),
+                            ('per_day_charges','=', line.price_unit),
+                            ('order_line_id','=', line.id)
+                        ])
+                        if not date_record_line:
+                            self.env['product.return.dates'].create([{
+                                'order_id': line.order_id.id,
+                                'product_id': line.product_id.id,
+                                'serial_number': False,
+                                'quantity': 1,
+                                'per_day_charges': line.price_unit,
+                                'order_line_id': line.id,
+                            }])
+
         return res
 
     @api.depends('rental_start_date', 'rental_end_date', 'order_id.recurring_plan_id', 'order_id.bill_terms')
@@ -539,7 +558,7 @@ class SaleOrderLine(models.Model):
                         excess = len(self.env['product.return.dates'].search([
                             ('order_line_id', '=', self._origin.id)
                         ])) - int(self.product_uom_qty)
-                        # Remove only the extra number of records without serial numbers
+                        c# Remove only the extra number of records without serial numbers
                         return_dates[:excess].unlink()
 
     @api.onchange('product_template_id', 'product_id')
@@ -753,11 +772,42 @@ class SaleOrderLine(models.Model):
                     if line in order_lines:
                         # Update all lines in the same section with the new next_bill_date
                         for sec_line in order_lines:
-                            if sec_line != line and sec_line.next_bill_date != line.next_bill_date:
-                                # sec_line.next_bill_date = line.next_bill_date
+                            if sec_line != line and sec_line.next_bill_date != line.next_bill_date or sec_line.rental_end_date != line.rental_end_date:
                                 sec_line.write({
                                     'next_bill_date': line.next_bill_date,
                                     'rental_start_date': line.rental_start_date,
                                     'rental_end_date': line.rental_end_date,
                                 })
                         break
+
+    @api.onchange('daily_rate')
+    def _onchange_daily_rate(self):
+        """ Calculate Price Unit based on daily_rate """
+        self.price_unit = self.product_id.list_price
+        if self.daily_rate > 0 and self.order_id.recurring_plan_id :
+            billing_period_unit = self.order_id.recurring_plan_id.billing_period_unit
+            billing_period_value = self.order_id.recurring_plan_id.billing_period_value
+            if billing_period_unit== 'day':
+                self.price_unit = self.daily_rate * billing_period_value
+        else:
+            self.price_unit = self.product_id.list_price
+            self.daily_rate = 0
+
+    @api.depends('rental_start_date', 'rental_end_date','rental_days', 'daily_rate')
+    def _compute_rental_days_amount(self):
+        """ To compute total days of rental and the Extended amount """
+        for record in self:
+            record.extended_amount = 0
+            if record.rental_start_date and record.rental_end_date:
+                start_date = fields.Date.from_string(record.rental_start_date)
+                end_date = fields.Date.from_string(record.rental_end_date)
+                record.rental_days = (end_date - start_date).days
+            if record.daily_rate:
+                record.extended_amount = record.rental_days * record.daily_rate
+
+    @api.onchange('rental_start_date','rental_days')
+    def _onchange_rental_days(self):
+        """ Calculate Rental End date based on rental_start_date and total_days """
+        for record in self:
+            if record.rental_start_date and record.rental_days >= 0:
+                record.rental_end_date = date_utils.add(record.rental_start_date, days=record.rental_days)

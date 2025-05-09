@@ -54,17 +54,10 @@ class SaleOrder(models.Model):
     mileage_enabled = fields.Boolean(string="Mileage Calculation Enabled", compute='_compute_mileage_enabled')
     fuel_surcharge_percentage = fields.Integer(compute='_compute_fuel_surcharge')
     fuel_surcharge_unit = fields.Char(default='%', readonly=True)
-    rental_status = fields.Selection(
-        selection=RENTAL_STATUS,
-        string="Rental Status",
-        compute='_compute_rental_status',
-        store=True)
+    rental_status = fields.Selection(selection=RENTAL_STATUS,string="Rental Status",compute='_compute_rental_status',
+                                     store=True)
     imported_order = fields.Boolean(default=False,store=True)
-    parent_company_id = fields.Many2one(
-        'res.company',
-        store=True,
-        related = 'company_id.parent_id'
-    )
+    parent_company_id = fields.Many2one('res.company', store=True,related = 'company_id.parent_id')
     close_order = fields.Boolean(default=False,store=True,string="Closed Order")
 
     @api.depends('company_id')
@@ -373,8 +366,17 @@ class SaleOrder(models.Model):
                                                 # Check the rental period in the pricelist and recurring plan in the order
                                                 pricelist_period_duration = range.recurrence_id.duration
                                                 pricelist_period_unit = range.recurrence_id.unit
-                                                if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
-                                                    if line['pickedup_lot_ids']:
+                                                if (pricelist_period_duration == 1 and pricelist_period_unit == 'day'):
+                                                    if line.daily_rate and line.daily_rate >0:
+                                                        invoice_vals['invoice_line_ids'].append(Command.create(
+                                                            line._prepare_invoice_line(
+                                                                name=f"Rental",
+                                                                product_id=line.product_id.id,
+                                                                price_unit=line.price_unit,
+                                                                quantity=line.qty_delivered - line.qty_returned,
+                                                            )
+                                                        ))
+                                                    elif line['pickedup_lot_ids']:
                                                         for lot in line['pickedup_lot_ids']:
                                                             date_lines = self.env['product.return.dates'].search([
                                                                 ('order_id', '=', sale_order.id),

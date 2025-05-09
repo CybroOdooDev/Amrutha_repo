@@ -13,16 +13,14 @@ class ProductReturnDates(models.Model):
     _name = 'product.return.dates'
     _description = "Product Return Dates"
 
-    order_id = fields.Many2one(
-        comodel_name='sale.order',
-        string="Order Reference",
+    order_id = fields.Many2one(comodel_name='sale.order',string="Order Reference",
         required=True, ondelete='cascade', index=True, copy=False)
-    order_line_id = fields.Many2one('sale.order.line', 'Sale Order Line')
+    order_line_id = fields.Many2one('sale.order.line', 'Sale Order Line',ondelete='cascade')
     product_id = fields.Many2one('product.product')
     serial_number = fields.Many2one('stock.lot', domain="[('product_id', '=', product_id)]")
     warehouse_id = fields.Many2one('stock.warehouse')
     quantity = fields.Integer(default=1)
-    per_day_charges = fields.Float('Per Day Charge')
+    per_day_charges = fields.Float('Unit Price',related='order_line_id.price_unit',)
     total_days = fields.Integer('Total Days', compute='_compute_total_days_price', )
     total_price = fields.Float('Total Price', compute='_compute_total_days_price', )
     delivery_date = fields.Date('Delivery Date')

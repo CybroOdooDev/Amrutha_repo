@@ -12,8 +12,9 @@
                        column_invisible=" not parent.is_rental_order"
                        options="{'no_create':1, 'no_edit':1}" width="120px"/>
                 <!--                       options="{'no_create':1, 'no_edit':1}" width="120px" readonly="rental_status  in ['rent','sale','finish','cancel']"/>-->
-                <field name="rental_start_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="rental_start_date" column_invisible="not parent.is_rental_order" width="120px"/>
                 <field name="rental_end_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="rental_days" column_invisible=" not parent.is_rental_order or parent.company_id !=7 " width="100px"/>
                 <field name="next_bill_date" column_invisible=" not parent.is_rental_order" width="120px"/>
                 <field name="warehouse_id" column_invisible="not parent.is_rental_order"
                        readonly="parent.state == 'sale'"
@@ -83,10 +84,10 @@
                             <field name="order_line_id"  width="150px" readonly="1"/>
                             <field name="product_id" string="Product" width="150px" readonly="1"/>
                             <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
-                            <field name="per_day_charges" string="Per day charge" width="100px"
+                            <field name="per_day_charges" width="100px"
                                    column_invisible="parent.bill_terms == 'advance'"/>
                             <field name="delivery_date" string="Delivery Date" width="120px"/>
-                            <field name="return_date" string="Return Date" width="120px" readonly="1"/>
+                            <field name="return_date" string="Return Date" width="120px"/>
                             <field name="delivery_driver" width="120px"/>
                             <field name="pickup_driver" width="120px"/>
                             <field name="total_days" string="Total Days"
@@ -156,6 +157,10 @@
                 </div>
             </xpath>
 
+            <xpath expr="//field[@name='order_line']//list//field[@name='price_unit']" position="before">
+                <field name="daily_rate" column_invisible="not parent.is_rental_order or parent.company_id !=7 "/>
+                <field name="extended_amount" column_invisible="not parent.is_rental_order or parent.company_id !=7" width="120px"/>
+            </xpath>
         </field>
     </record>
 
@@ -179,7 +184,15 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='pricelist_id']" position='attributes'>
-                <attribute name="domain">['|', ('company_id', '=', company_id), ('company_ids','=', company_id)]</attribute>
+                <attribute name="domain">
+                    ['|', '|',
+                    ('company_id', '=', company_id),
+                    ('company_ids', '=', company_id),
+                    '&amp;',
+                    ('company_id', '=', False),
+                    ('company_ids', '=', False)
+                    ]
+                </attribute>
             </xpath>
         </field>
     </record>

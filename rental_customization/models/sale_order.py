@@ -59,7 +59,7 @@ class SaleOrder(models.Model):
     imported_order = fields.Boolean(default=False,store=True)
     parent_company_id = fields.Many2one('res.company', store=True,related = 'company_id.parent_id')
     close_order = fields.Boolean(default=False,store=True,string="Closed Order")
-
+    location_id = fields.Many2one('stock.location',string="Location",domain="[('company_id', '=', company_id)]")
     @api.depends('company_id')
     def _compute_mileage_enabled(self):
         """Check if the mileage calculation is enabled in setting"""
@@ -470,7 +470,10 @@ class SaleOrder(models.Model):
                     for order in self:
                         order.mileage = 0
                         order.mileage_unit = 'ft'
-                        origin = order.warehouse_id.partner_id.city
+                        if order.location_id:
+                            origin = order.location_id.partner_id.city
+                        else:
+                            origin = order.warehouse_id.partner_id.city
                         if order.partner_shipping_id and (order.partner_shipping_id != order.partner_id):
                             fallback_destinations = [
                                 order.partner_shipping_id.street2,
@@ -479,7 +482,6 @@ class SaleOrder(models.Model):
                                 order.partner_shipping_id.state_id and order.partner_shipping_id.state_id.name,
                                 order.partner_shipping_id.country_id and order.partner_shipping_id.country_id.name,
                             ]
-
                             for destination in fallback_destinations:
                                 if origin and destination:
                                     url = "https://maps.googleapis.com/maps/api/distancematrix/json"

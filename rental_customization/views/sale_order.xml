@@ -54,6 +54,10 @@
                 <div>
                     <field name="warehouse_id" invisible="not is_rental_order" readonly="state == 'sale'"/>
                 </div>
+                <label for="location_id" invisible="not is_rental_order or company_id !=8"/>
+                <div>
+                    <field name="location_id" invisible="not is_rental_order or company_id !=8" />
+                </div>
             </xpath>
 
             <xpath expr="//field[@name='validity_date']" position="attributes">

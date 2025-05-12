@@ -572,15 +572,28 @@ class SaleOrderLine(models.Model):
             if self.product_template_id.description_sale:
                 self.name += " [ " + self.product_template_id.description_sale + " ]"
 
-    @api.depends('product_id', 'product_template_id')
+    @api.depends('product_id', 'product_template_id','order_id.location_id')
     def _compute_pickeable_lot_ids(self):
         """ For computing the available lot numbers of the product """
         for line in self:
             if not line.product_id.charges_ok or line.display_type != 'line_section':
+                location = line.order_id.location_id
                 pickeable_lot_ids = self.env['stock.lot']._get_available_lots(line.product_id,
                                                                               line.order_id.warehouse_id.lot_stock_id)
+                if location:
+                    # Find lots in the selected location with positive quantity and not reserved
+                    valid_quants = self.env['stock.quant'].search([
+                        ('product_id', '=', line.product_id.id),
+                        ('location_id', '=', location.id),
+                        ('quantity', '>', 0),
+                        ('reserved_quantity', '=', 0),
+                        ('lot_id', 'in', pickeable_lot_ids.ids),
+                    ])
+                    valid_lot_ids = valid_quants.mapped('lot_id').ids
+                    pickeable_lot_ids = pickeable_lot_ids.filtered(lambda lot: lot.id in valid_lot_ids)
+
                 pickeable_lot_ids = pickeable_lot_ids.filtered(
-                    lambda lot: not lot.company_id or lot.company_id == self.order_id.company_id and not lot.reserved
+                    lambda lot: (not lot.company_id or lot.company_id == line.order_id.company_id) and not lot.reserved
                 )
                 if pickeable_lot_ids:
                     line.rental_available_lot_ids = pickeable_lot_ids

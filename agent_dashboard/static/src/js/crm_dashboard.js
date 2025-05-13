@@ -311,10 +311,9 @@ async fetchActivityData() {
                 [
                     'partner_id', // Client Name
                     'x_studio_property_address', // Property
-                    'planned_revenue', // Price (for commercial commission)
-                    'total_commercial_commission_earned', // Estimated Commission (for commercial commission)
-                    'total_amount', // Price (for non-commercial commission)
-                    'commission_to_be_paid', // Estimated Commission (for non-commercial commission)
+                    'total_sales_price', // Total Sales Price (primary price field)
+                    'total_list_price', // List Price (fallback price field)
+                    'minimum_commission_due', // Minimum Commission Due
                     'date_deadline', // Estimated Closing Date
                     'company_id', // Company ID to check the condition
                 ],
@@ -337,7 +336,7 @@ async fetchActivityData() {
             // Map the fetched leads to the required format
             this.state.propertyDetails = leads.map(lead => {
                 // Determine price - use total_sales_price if available, otherwise use list_price
-                const price = lead.total_sales_price || lead.list_price || 0;
+                const price = lead.total_sales_price || lead.total_list_price || 0;
                 // Use minimum_commission_due for estimated commission
                 const estimatedCommission = lead.minimum_commission_due || 0;
 

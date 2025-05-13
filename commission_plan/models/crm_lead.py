@@ -223,6 +223,92 @@ class Lead(models.Model):
              "lead.",
         default=lambda self: self._default_commercial_referral_fee_rate()
     )
+    # Add these new fields to the Lead class in crm_lead.py
+    marketing_fee = fields.Float(string="Marketing Fee")
+    co_agent_percentage = fields.Float(string="Co-Agent Percentage",
+                                       default=30.0)  # This already exists, just noting it's used
+    is_manual_marketing_fee = fields.Boolean(string="Manual Marketing Fee")
+    # New fields for commercial commission calculations
+    balance_for_distribution = fields.Float(
+        string="Balance for Distribution",
+        compute="_compute_balance_for_distribution",
+        store=True)
+    commercial_co_agent_commission = fields.Float(
+        string="Commercial Co-Agent Commission",
+        compute="_compute_commercial_co_agent_commission",
+        store=True)
+    commercial_payable_to_agent = fields.Float(
+        string="Commercial Payable to Agent",
+        compute="_compute_commercial_payable_to_agent",
+        store=True)
+    commercial_payable_to_co_agent = fields.Float(
+        string="Commercial Payable to Co-Agent",
+        compute="_compute_commercial_payable_to_co_agent",
+        store=True)
+    eo_insurance_agent_portion = fields.Float(
+        string="E&O Insurance (Agent Portion)",
+        compute="_compute_eo_insurance_portions",
+        store=True)
+    eo_insurance_co_agent_portion = fields.Float(
+        string="E&O Insurance (Co-Agent Portion)",
+        compute="_compute_eo_insurance_portions",
+        store=True)
+
+    # --------------------------
+    # Computation Methods
+    # --------------------------
+
+    @api.depends('total_commercial_commission', 'marketing_fee',
+                 'external_referral_fee')
+    def _compute_balance_for_distribution(self):
+        for lead in self:
+            lead.balance_for_distribution = (
+                    lead.total_commercial_commission
+                    - lead.marketing_fee
+                    - lead.external_referral_fee
+            )
+
+    @api.depends('balance_for_distribution', 'co_agent_percentage')
+    def _compute_commercial_co_agent_commission(self):
+        for lead in self:
+            lead.commercial_co_agent_commission = (
+                    lead.balance_for_distribution * (
+                        lead.co_agent_percentage / 100)
+            )
+
+    @api.depends('errors_omission_fee', 'co_agent_percentage')
+    def _compute_eo_insurance_portions(self):
+        for lead in self:
+            total_eo = lead.errors_omission_fee
+            co_agent_percent = lead.co_agent_percentage / 100
+            lead.eo_insurance_co_agent_portion = total_eo * co_agent_percent
+            lead.eo_insurance_agent_portion = total_eo * (1 - co_agent_percent)
+
+    @api.depends('balance_for_distribution', 'agent_payout_tier',
+                 'eo_insurance_agent_portion',
+                 'commercial_co_agent_commission',
+                 'transaction_coordinator_fee', 'flat_fee')
+    def _compute_commercial_payable_to_agent(self):
+        for lead in self:
+            commission_earned = lead.balance_for_distribution * lead.agent_payout_tier
+            lead.commercial_payable_to_agent = (
+                    commission_earned
+                    - lead.eo_insurance_agent_portion
+                    - lead.commercial_co_agent_commission
+                    - lead.transaction_coordinator_fee
+                    - lead.flat_fee
+            )
+
+    @api.depends('commercial_co_agent_commission',
+                 'eo_insurance_co_agent_portion',
+                 'referral_fee')
+    def _compute_commercial_payable_to_co_agent(self):
+        for lead in self:
+            lead.commercial_payable_to_co_agent = (
+                    lead.commercial_co_agent_commission
+                    + lead.eo_insurance_co_agent_portion
+                    + lead.referral_fee
+            )
 
     @api.depends('total_sales_price')
     def _compute_commission_to_be_converted_by_agent(self):
@@ -397,9 +483,9 @@ class Lead(models.Model):
                 base_rent = lead.base_rent
                 lease_duration = lead.lease_duration
                 landlord_percentage = lead.landlord_percentage
-                if not base_rent or not lease_duration or not landlord_percentage:
-                    raise UserError(
-                        _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
+                # if not base_rent or not lease_duration or not landlord_percentage:
+                #     raise UserError(
+                #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
                 lead.total_commercial_commission = base_rent * (
                         landlord_percentage / 100)
 
@@ -426,58 +512,51 @@ class Lead(models.Model):
                 self.is_sale_lead = True
                 self.handle_sale_commission(lead)
             elif transaction_type == 'Lease':
-                self.is_sale_lead = False
-                # Logic for 'lease'
+                lead.is_sale_lead = False
                 self.handle_lease_commission(lead)
             else:
                 raise ValueError(
                     "Unknown transaction type: %s" % transaction_type)
+
+            # Compute all commercial related fields
+            lead._compute_balance_for_distribution()
+            lead._compute_commercial_co_agent_commission()
+            lead._compute_eo_insurance_portions()
+            lead._compute_commercial_payable_to_agent()
+            lead._compute_commercial_payable_to_co_agent()
+
             self.generate_pdf_attachment()
 
     def handle_sale_commission(self, lead):
-        print("sale")
-        self.external_referral_fee = 0
-        if lead.referer_id:  # Check for external referral fee
-            external_referral_fee = (
-                    lead.total_commercial_commission * (
-                    self.commercial_referral_fee_rate or 0.0)
+        lead.external_referral_fee = 0
+        if lead.referer_id:
+            lead.external_referral_fee = (
+                    lead.total_commercial_commission *
+                    (lead.commercial_referral_fee_rate / 100)
             )
-            self.external_referral_fee = external_referral_fee
-        total_commercial_commission_earned = (
-                lead.total_commercial_commission - lead.errors_omission_fee)
-        self.total_commercial_commission_earned = total_commercial_commission_earned
-        self.generate_pdf_attachment()
+        lead.total_commercial_commission_earned = (
+                lead.total_commercial_commission - lead.errors_omission_fee
+        )
 
     def handle_lease_commission(self, lead):
-        print("Lease")
-        tax = self.env['account.tax'].search(
-            [('company_id', '=', self.env.company.id),
-             ('amount', '=', float(0.00)),
-             ('amount_type', '=', 'percent'),
-             ('type_tax_use', '=', 'sale'),
-             ], limit=1)
-        self.external_referral_fee = 0
+        # if not lead.base_rent or not lead.lease_duration or not lead.landlord_percentage:
+        #     raise UserError(
+        #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
 
-        base_rent = lead.base_rent
-        lease_duration = lead.lease_duration
-        landlord_percentage = lead.landlord_percentage
-        if not base_rent or not lease_duration or not landlord_percentage:
-            raise UserError(
-                _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
-        lead.total_commercial_commission = base_rent * (
-                landlord_percentage / 100)
-        print(lead.total_commercial_commission, "total_commercial_commission")
-        if lead.referer_id:  # Check for external referral fee
-            external_referral_fee = (
-                    lead.total_commercial_commission * (
-                    self.commercial_referral_fee_rate or 0.0)
+        lead.total_commercial_commission = lead.base_rent * (
+                    lead.landlord_percentage / 100)
+        lead.external_referral_fee = 0
+
+        if lead.referer_id:
+            lead.external_referral_fee = (
+                    lead.total_commercial_commission *
+                    (lead.commercial_referral_fee_rate / 100)
             )
-            self.external_referral_fee = external_referral_fee
-        total_commercial_commission_earned = (
+
+        lead.total_commercial_commission_earned = (
                 (lead.total_commercial_commission * lead.agent_payout_tier) -
-                lead.errors_omission_fee)
-        self.total_commercial_commission_earned = total_commercial_commission_earned
-        self.generate_pdf_attachment()
+                lead.errors_omission_fee
+        )
 
     def create_commercial_invoice(self):
         print("invoice")

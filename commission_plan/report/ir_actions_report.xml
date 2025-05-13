@@ -21,12 +21,8 @@
         <field name="name">Commercial Commission Report</field>
         <field name="model">crm.lead</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">
-            commission_plan.report_commercial_commission
-        </field>
-        <field name="report_file">
-            commission_plan.report_commercial_commission
-        </field>
+        <field name="report_name">commission_plan.commercial_commission_report</field>
+        <field name="report_file">commission_plan.commercial_commission_report</field>
         <field name="print_report_name">'Commercial Commission Report - %s' % (object.name)
         </field>
         <field name="binding_model_id" ref="crm.model_crm_lead"/>

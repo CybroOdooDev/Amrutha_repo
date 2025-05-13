@@ -23,32 +23,33 @@
                 />
             </xpath>
 
-<!--            <xpath expr="//field[@name='phone']" position="after">-->
-<!--                <div class="o_row o_row_readonly">-->
-<!--                    <label for="total_sales_price" string="Total Sales Price"/>-->
+            <!--            <xpath expr="//field[@name='phone']" position="after">-->
+            <!--                <div class="o_row o_row_readonly">-->
+            <!--                    <label for="total_sales_price" string="Total Sales Price"/>-->
 
-<!--                    <field name="total_sales_price"-->
-<!--                           invisible="not is_calculate_commission"-->
-<!--                           widget="monetary"-->
-<!--                           options="{'currency_field': 'currency_id'}"/>-->
-<!--                </div>-->
+            <!--                    <field name="total_sales_price"-->
+            <!--                           invisible="not is_calculate_commission"-->
+            <!--                           widget="monetary"-->
+            <!--                           options="{'currency_field': 'currency_id'}"/>-->
+            <!--                </div>-->
 
-<!--            </xpath>-->
+            <!--            </xpath>-->
 
             <!-- Add Commission Information on Lead Form -->
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="referer_id"
-                       invisible="not is_calculate_commission"/>
+                       invisible="not is_calculate_commission or not is_calculate_commercial_commission"/>
                 <field name="referral_fee_rate"
                        invisible="not is_calculate_commission"/>
-                <field name="co_agent_id"
-                       invisible="not is_calculate_commission"/>
-                <field name="inside_sale_person_id"
-                       invisible="1"/>
-                <field name="required_approvers" widget="many2many_tags"
-                       invisible="not is_calculate_commission"/>
-                <field name="required_approvers" widget="many2many_tags"
+                <field name="commercial_referral_fee_rate"
                        invisible="not is_calculate_commercial_commission"/>
+                <field name="co_agent_id"
+                       invisible="not is_calculate_commission or not is_calculate_commercial_commission"/>
+                <field name="co_agent_percentage"
+                       invisible="not is_calculate_commission or not is_calculate_commercial_commission"/>
+                <field name="inside_sale_person_id" invisible="1"/>
+                <field name="required_approvers" widget="many2many_tags"
+                       invisible="not is_calculate_commission and not is_calculate_commercial_commission"/>
             </xpath>
 
             <xpath expr="//notebook/page[@name='extra']" position="after">
@@ -66,25 +67,32 @@
                                    options="{'currency_field': 'currency_id'}"/>
                             <field name="total_list_price" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="minimum_commission_due" widget="monetary"
+                            <field name="minimum_commission_due"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="commission_to_be_converted_by_agent" widget="monetary"
+                            <field name="commission_to_be_converted_by_agent"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="residential_external_referral_fee" widget="monetary"
+                            <field name="residential_external_referral_fee"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="agent_pass_thru_income" widget="monetary"
+                            <field name="agent_pass_thru_income"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="total_received_by_lre" widget="monetary"
+                            <field name="total_received_by_lre"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
                         </group>
                         <group>
                             <field name="tier"/>
-                            <field name="residential_commission_earned" widget="monetary"
+                            <field name="residential_commission_earned"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
                             <field name="co_agent_percentage"/>
                             <field name="co_agent_commission" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="transaction_coordinator_fee" widget="monetary"
+                            <field name="transaction_coordinator_fee"
+                                   widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
                             <field name="referral_fee" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
@@ -100,68 +108,111 @@
                                    options="{'currency_field': 'currency_id'}"/>
                         </group>
 
-<!--                        <group>-->
-<!--                            <field name="total_amount" widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="total_commission" widget="monetary"/>-->
-<!--                            &lt;!&ndash;                            <field name="omissions_insurance"&ndash;&gt;-->
-<!--                            &lt;!&ndash;                                   widget="monetary"/>&ndash;&gt;-->
-<!--                            <field name="transaction_coordinator_fee"-->
-<!--                                   widget="monetary"/>-->
-<!--                            <field name="inside_sale_fee" widget="monetary"/>-->
-<!--                            <field name="referral_fee" widget="monetary"/>-->
-<!--                            <field name="flat_fee" widget="monetary"/>-->
-<!--                            <field name="commission_to_be_paid"-->
-<!--                                   widget="monetary"/>-->
-<!--                            <field name="commission_attachment_id"-->
-<!--                                   invisible="1"/>-->
-<!--                        </group>-->
-<!--                        <group>-->
-<!--                            <field name="total_list_price"-->
-<!--                                   invisible="not is_calculate_commission"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="total_sales_price"-->
-<!--                                   invisible="not is_calculate_commission"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="minimum_commission_due"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="commission_to_be_converted_by_agent"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="mentor_fee"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="agent_pass_thru_income"-->
-<!--                                   widget="monetary"-->
-<!--                                   options="{'currency_field': 'currency_id'}"/>-->
-<!--                            <field name="co_agent_percentage"/>-->
+                        <!--                        <group>-->
+                        <!--                            <field name="total_amount" widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="total_commission" widget="monetary"/>-->
+                        <!--                            &lt;!&ndash;                            <field name="omissions_insurance"&ndash;&gt;-->
+                        <!--                            &lt;!&ndash;                                   widget="monetary"/>&ndash;&gt;-->
+                        <!--                            <field name="transaction_coordinator_fee"-->
+                        <!--                                   widget="monetary"/>-->
+                        <!--                            <field name="inside_sale_fee" widget="monetary"/>-->
+                        <!--                            <field name="referral_fee" widget="monetary"/>-->
+                        <!--                            <field name="flat_fee" widget="monetary"/>-->
+                        <!--                            <field name="commission_to_be_paid"-->
+                        <!--                                   widget="monetary"/>-->
+                        <!--                            <field name="commission_attachment_id"-->
+                        <!--                                   invisible="1"/>-->
+                        <!--                        </group>-->
+                        <!--                        <group>-->
+                        <!--                            <field name="total_list_price"-->
+                        <!--                                   invisible="not is_calculate_commission"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="total_sales_price"-->
+                        <!--                                   invisible="not is_calculate_commission"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="minimum_commission_due"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="commission_to_be_converted_by_agent"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="mentor_fee"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="agent_pass_thru_income"-->
+                        <!--                                   widget="monetary"-->
+                        <!--                                   options="{'currency_field': 'currency_id'}"/>-->
+                        <!--                            <field name="co_agent_percentage"/>-->
 
-<!--                        </group>-->
+                        <!--                        </group>-->
                     </group>
                 </page>
+                <!-- Commercial Commission Page -->
                 <page string="Commercial Commission"
                       invisible="not is_calculate_commercial_commission">
-                    <group string="Commission Information">
-                        <field name="planned_revenue"
-                               invisible="not is_sale_lead"/>
-                        <field name="base_rent" invisible="is_sale_lead"/>
-                        <field name="lease_duration" invisible="is_sale_lead"/>
-                        <field name="landlord_percentage"
-                               invisible="is_sale_lead"/>
-                        <field name="referer_id"
-                               invisible="is_calculate_commercial_commission"/>
-                        <field name="commercial_referral_fee_rate"
-                               invisible="is_calculate_commercial_commission"/>
-                        <field name="agent_payout_tier" readonly="1"/>
-                        <field name="total_commercial_commission"
-                               readonly="1"/>
-                        <field name="errors_omission_fee" readonly="1"/>
-                        <field name="external_referral_fee" readonly="1"/>
-                        <field name="total_commercial_commission_earned"
-                               readonly="1"/>
+                    <group>
+                        <group string="Transaction Details">
+                            <field name="planned_revenue" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   invisible="not is_sale_lead"/>
+                            <field name="base_rent" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   invisible="is_sale_lead"/>
+                            <field name="lease_duration"
+                                   invisible="is_sale_lead"/>
+                            <field name="landlord_percentage"
+                                   invisible="is_sale_lead"/>
+                            <field name="marketing_fee" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="is_manual_marketing_fee"/>
+                        </group>
+                        <group string="Commission Calculation">
+                            <field name="agent_payout_tier" readonly="1"/>
+                            <field name="total_commercial_commission"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="balance_for_distribution"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="external_referral_fee"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="errors_omission_fee" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="total_commercial_commission_earned"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                        </group>
+                        <group string="Distribution">
+                            <field name="commercial_co_agent_commission"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="eo_insurance_agent_portion"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="eo_insurance_co_agent_portion"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="commercial_payable_to_agent"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                            <field name="commercial_payable_to_co_agent"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="1"/>
+                        </group>
                     </group>
                 </page>
                 <page string="Commission Report"

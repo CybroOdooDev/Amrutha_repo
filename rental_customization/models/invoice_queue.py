@@ -40,7 +40,7 @@ class InvoiceQueue(models.Model):
                 rec.data_string = str(rec.data)
 
     def action_generate_recurring_bills(self):
-        """ Taking the field 'data' which carries batches of 5000 rental order lines that to be invoiced and processing the functions """
+        """Taking the field 'data' which carries batches of 5000 rental order lines that to be invoiced and processing the functions """
         job = self.env['invoice.queue'].sudo().search([('state', 'in', ('draft','partial'))],
                                                    order='id asc', limit=1)
         if job:
@@ -152,7 +152,16 @@ class InvoiceQueue(models.Model):
                                                         pricelist_period_duration = range.recurrence_id.duration
                                                         pricelist_period_unit = range.recurrence_id.unit
                                                         if (pricelist_period_duration == 1) and (pricelist_period_unit == 'day'):
-                                                            if line['pickedup_lot_ids']:
+                                                            if line.daily_rate and line.daily_rate > 0:
+                                                                invoice_vals['invoice_line_ids'].append(Command.create(
+                                                                    line._prepare_invoice_line(
+                                                                        name=f"Rental",
+                                                                        product_id=line.product_id.id,
+                                                                        price_unit=line.price_unit,
+                                                                        quantity=line.qty_delivered - line.qty_returned,
+                                                                    )
+                                                                ))
+                                                            elif line['pickedup_lot_ids']:
                                                                 for lot in line['pickedup_lot_ids']:
                                                                     date_lines = self.env['product.return.dates'].search([
                                                                         ('order_id', '=', sale_order.id),

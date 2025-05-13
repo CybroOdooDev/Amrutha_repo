@@ -336,26 +336,21 @@ async fetchActivityData() {
 
             // Map the fetched leads to the required format
             this.state.propertyDetails = leads.map(lead => {
-                const company = companyMap[lead.company_id[0]]; // Get the company details
-
-                // Determine which fields to use based on the company's setting
-                const price = company && company.is_calculate_commercial_commission
-                    ? lead.planned_revenue || 0
-                    : lead.total_amount || 0;
-
-                const estimatedCommission = company && company.is_calculate_commercial_commission
-                    ? lead.total_commercial_commission_earned || 0
-                    : lead.commission_to_be_paid || 0;
+                // Determine price - use total_sales_price if available, otherwise use list_price
+                const price = lead.total_sales_price || lead.list_price || 0;
+                // Use minimum_commission_due for estimated commission
+                const estimatedCommission = lead.minimum_commission_due || 0;
 
                 return {
-                    clientName: lead.partner_id ? lead.partner_id[1] : 'N/A', // Partner name
-                    property: lead.x_studio_property_address || 'N/A', // Property address
-                    city: lead.partner_id && lead.partner_id[2] ? lead.partner_id[2] : 'N/A', // Partner city
-                    price: this.formatCurrency(price), // Price (formatted as currency)
-                    estimatedCommission: this.formatCurrency(estimatedCommission), // Estimated Commission (formatted as currency)
-                    estimatedClosingDate: lead.date_deadline || 'N/A', // Estimated Closing Date
+                    clientName: lead.partner_id ? lead.partner_id[1] : 'N/A',
+                    property: lead.x_studio_property_address || 'N/A',
+                    city: lead.partner_id && lead.partner_id[2] ? lead.partner_id[2] : 'N/A',
+                    price: this.formatCurrency(price),
+                    estimatedCommission: this.formatCurrency(estimatedCommission),
+                    estimatedClosingDate: lead.date_deadline || 'N/A',
                 };
             });
+
 
             this.state.isLoading = false; // Data has been loaded
         } catch (error) {

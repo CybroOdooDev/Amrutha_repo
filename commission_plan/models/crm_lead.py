@@ -439,6 +439,12 @@ class Lead(models.Model):
             ], order='amount desc', limit=1)
             print(tier, "tier")
             print(total_previous_year_sales, "total_previous_year_sales")
+            if not tier:
+                # If no tier found (sales < all tier amounts), get the tier with minimum amount
+                tier = self.env['tier.tier'].search([
+                    ('company_id', '=', lead.company_id.id)
+                ], order='amount asc', limit=1)
+            print(tier,"tier")
             if tier:
                 lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
             else:
@@ -448,10 +454,6 @@ class Lead(models.Model):
     def _compute_total_commercial_commission(self):
         """Calculate the total commercial commission for the current lead based on the payout tier."""
         for lead in self:
-            if not lead.user_id:
-                lead.agent_payout_tier = 0.0
-                continue
-
             # Fetch previous year
             today = date.today()
             last_year_start = date(today.year - 1, 1, 1)
@@ -473,6 +475,11 @@ class Lead(models.Model):
                 ('company_id', '=', lead.company_id.id),
                 ('amount', '<=', total_previous_year_sales)
             ], order='amount desc', limit=1)
+            if not tier:
+                # If no tier found (sales < all tier amounts), get the tier with minimum amount
+                tier = self.env['tier.tier'].search([
+                    ('company_id', '=', lead.company_id.id)
+                ], order='amount asc', limit=1)
             if tier:
                 lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
             else:
@@ -520,6 +527,7 @@ class Lead(models.Model):
                     "Unknown transaction type: %s" % transaction_type)
 
             # Compute all commercial related fields
+            lead._compute_agent_payout_tier()
             lead._compute_balance_for_distribution()
             lead._compute_commercial_co_agent_commission()
             lead._compute_eo_insurance_portions()

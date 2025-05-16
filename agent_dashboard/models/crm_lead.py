@@ -177,9 +177,11 @@ class CRMDashboard(models.Model):
         total_amount_past_year = sum(
             payment.price_total for payment in payments)
 
+
         # Search for tiers in ascending order of amount
         tiers = self.env['tier.tier'].search(
             [('company_id', '=', self.env.company.id)], order='amount asc')
+
         # Determine the commission rate based on tiers
         commission_rate = 0.0
         for tier in tiers:

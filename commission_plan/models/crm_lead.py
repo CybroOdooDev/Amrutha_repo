@@ -202,7 +202,8 @@ class Lead(models.Model):
                                        store=True)
     planned_revenue = fields.Float(string="Amount",
                                    help="This field represents the overall amount from which the commission is calculated.")
-    external_referral_fee = fields.Float(string="Referral Fee", readonly=True)
+    external_referral_fee = fields.Float(string="External Referral Fee",
+                                         readonly=True)
     total_commercial_commission_earned = fields.Float(
         string="Commission earned",
         readonly=True)
@@ -226,6 +227,9 @@ class Lead(models.Model):
         default=lambda self: self._default_commercial_referral_fee_rate()
     )
     # Add these new fields to the Lead class in crm_lead.py
+    external_marketing_agency = fields.Many2one('res.partner',
+                                                string="External Marketing "
+                                                       "Agency")
     marketing_fee = fields.Float(string="Marketing Fee")
     co_agent_percentage = fields.Float(string="Co-Agent Percentage",
                                        default=30.0)  # This already exists, just noting it's used
@@ -607,9 +611,15 @@ class Lead(models.Model):
 
     def generate_pdf_attachment(self):
         # Use the report rendering method to generate the PDF
-        pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
-            self.env.ref('commission_plan.action_report_crm_lead'),
-            self.id)
+        if self.is_calculate_commission:
+            pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
+                self.env.ref('commission_plan.action_report_crm_lead'),
+                self.id)
+        else:
+            pdf_content, _ = self.env[
+                "ir.actions.report"].sudo()._render_qweb_pdf(
+                self.env.ref('commission_plan.action_report_crm_lead_commercial'),
+                self.id)
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')

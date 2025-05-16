@@ -416,6 +416,8 @@
                             <tr>
                                 <td>
                                     <strong>Marketing Fee:</strong>
+                                    <t t-esc="' '"/> <!-- Add space -->
+                                    <span t-field="o.external_marketing_agency.name"/>
                                 </td>
                                 <td>
                                     <span t-field="o.marketing_fee"

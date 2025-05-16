@@ -167,7 +167,7 @@
                                    invisible="is_sale_lead"/>
                             <field name="marketing_fee" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"/>
-                            <field name="is_manual_marketing_fee"/>
+                            <field name="external_marketing_agency"/>
                         </group>
                         <group string="Commission Calculation">
                             <field name="agent_payout_tier" readonly="1"/>

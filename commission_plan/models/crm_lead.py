@@ -149,14 +149,17 @@ class Lead(models.Model):
             lead.co_agent_commission = total * (lead.co_agent_percentage / 100)
 
     @api.depends('residential_commission_earned', 'agent_pass_thru_income',
-                 'minimum_commission_due',
+                 'commission_to_be_converted_by_agent',
                  'transaction_coordinator_fee', 'referral_fee',
-                 'inside_sale_fee', 'mentor_fee', 'flat_fee')
+                 'inside_sale_fee', 'mentor_fee', 'flat_fee','co_agent_commission')
     def _compute_payable_to_agent(self):
         for lead in self:
-            lead.payable_to_agent = ((lead.residential_commission_earned +
+            lead.payable_to_agent = (((lead.residential_commission_earned +
                                       lead.agent_pass_thru_income) -
-                                     lead.minimum_commission_due) - lead.transaction_coordinator_fee - lead.referral_fee - lead.inside_sale_fee - lead.mentor_fee - lead.flat_fee
+                                     lead.commission_to_be_converted_by_agent) - lead.transaction_coordinator_fee
+                                     - lead.referral_fee -
+                                     lead.inside_sale_fee - lead.mentor_fee
+                                     - lead.flat_fee- lead.co_agent_commission)
 
     @api.depends('co_agent_commission','referral_fee','mentor_fee')
     def _compute_payable_to_co_agent(self):
@@ -173,7 +176,6 @@ class Lead(models.Model):
         self._compute_co_agent_commission()
         self._compute_payable_to_agent()
         self._compute_payable_to_co_agent()
-        # self.compute_commission()
         # pdf attachment creation
         self.generate_pdf_attachment()
 
@@ -508,8 +510,7 @@ class Lead(models.Model):
         for lead in self:
             transaction_type = lead.x_studio_opportunity_type_1.x_name
             if transaction_type == 'Sale':
-                # Logic for 'sale'
-                self.is_sale_lead = True
+                lead.is_sale_lead = True
                 self.handle_sale_commission(lead)
             elif transaction_type == 'Lease':
                 lead.is_sale_lead = False

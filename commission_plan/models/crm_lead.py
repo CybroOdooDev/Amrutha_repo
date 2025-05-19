@@ -191,8 +191,7 @@ class Lead(models.Model):
         related='company_id.is_calculate_commercial_commission',
         readonly=False,
     )
-    total_commercial_commission = fields.Float(string="Total Commission "
-                                                      "Received by LRE",
+    total_commercial_commission = fields.Float(string="Commission Earned",
                                                compute="_compute_total_commercial_commission")
     agent_payout_tier = fields.Float(string="Agent Payout Tier",
                                      compute="_compute_agent_payout_tier",
@@ -200,7 +199,7 @@ class Lead(models.Model):
     errors_omission_fee = fields.Float(string="Errors & Omission Fee",
                                        compute="_compute_errors_omission_fee",
                                        store=True)
-    planned_revenue = fields.Float(string="Amount",
+    planned_revenue = fields.Float(string="Total Commission Received by LRE",
                                    help="This field represents the overall amount from which the commission is calculated.")
     external_referral_fee = fields.Float(string="External Referral Fee",
                                          readonly=True)
@@ -264,12 +263,12 @@ class Lead(models.Model):
     # Computation Methods
     # --------------------------
 
-    @api.depends('total_commercial_commission', 'marketing_fee',
+    @api.depends('planned_revenue', 'marketing_fee',
                  'external_referral_fee')
     def _compute_balance_for_distribution(self):
         for lead in self:
             lead.balance_for_distribution = (
-                    lead.total_commercial_commission
+                    lead.planned_revenue
                     - lead.marketing_fee
                     - lead.external_referral_fee
             )
@@ -302,6 +301,7 @@ class Lead(models.Model):
                     - lead.eo_insurance_agent_portion
                     - lead.commercial_co_agent_commission
                     - lead.transaction_coordinator_fee
+                    - lead.referral_fee
                     - lead.flat_fee
             )
 

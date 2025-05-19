@@ -101,9 +101,9 @@
                 <page string="Commercial Commission"
                       invisible="not is_calculate_commercial_commission">
                     <group>
-                        <group>
-                            <field name="total_sales_price" widget="monetary"
-                                   options="{'currency_field': 'currency_id'}"/>
+                        <group string="Transaction Details">
+                            <field name="total_list_price"/>
+                            <field name="total_sales_price"/>
                             <field name="planned_revenue" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"
                                    invisible="not is_sale_lead"/>

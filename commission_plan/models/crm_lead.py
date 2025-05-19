@@ -40,7 +40,7 @@ class Lead(models.Model):
     transaction_coordinator_fee = fields.Float(
         string="Transaction Coordinator Fee")
     inside_sale_fee = fields.Float(string="Signage Fee")
-    referral_fee = fields.Float(string="Referral Fee")
+    referral_fee = fields.Float(string="Internal Referral Fee")
     co_agent_fee = fields.Float(string="Co-agent Fee")
     flat_fee = fields.Float(string="Other Fees",
                             help="Custom flat fee adjustment to the commission.")
@@ -73,7 +73,7 @@ class Lead(models.Model):
     pdf_report = fields.Binary('PDF')
 
     referral_fee_rate = fields.Float(
-        string="Referral rate",
+        string="External Referral rate",
         help="Percentage paid to the referral agent that brought in the lead.",
         default=lambda self: self._default_referral_fee_rate()
     )
@@ -149,17 +149,14 @@ class Lead(models.Model):
             lead.co_agent_commission = total * (lead.co_agent_percentage / 100)
 
     @api.depends('residential_commission_earned', 'agent_pass_thru_income',
-                 'commission_to_be_converted_by_agent',
+                 'minimum_commission_due',
                  'transaction_coordinator_fee', 'referral_fee',
-                 'inside_sale_fee', 'mentor_fee', 'flat_fee','co_agent_commission')
+                 'inside_sale_fee', 'mentor_fee', 'flat_fee')
     def _compute_payable_to_agent(self):
         for lead in self:
-            lead.payable_to_agent = (((lead.residential_commission_earned +
-                                      lead.agent_pass_thru_income) -
-                                     lead.commission_to_be_converted_by_agent) - lead.transaction_coordinator_fee
-                                     - lead.referral_fee -
-                                     lead.inside_sale_fee - lead.mentor_fee
-                                     - lead.flat_fee- lead.co_agent_commission)
+            lead.payable_to_agent = ((lead.residential_commission_earned +
+                                      lead.agent_pass_thru_income) - lead.co_agent_commission -
+                                     lead.commission_to_be_converted_by_agent - lead.transaction_coordinator_fee - lead.referral_fee - lead.inside_sale_fee - lead.mentor_fee - lead.flat_fee)
 
     @api.depends('co_agent_commission','referral_fee','mentor_fee')
     def _compute_payable_to_co_agent(self):
@@ -191,18 +188,18 @@ class Lead(models.Model):
         related='company_id.is_calculate_commercial_commission',
         readonly=False,
     )
-    total_commercial_commission = fields.Float(string="Commission Earned",
+    total_commercial_commission = fields.Float(string="Total Commission "
+                                                      "Received by LRE",
                                                compute="_compute_total_commercial_commission")
     agent_payout_tier = fields.Float(string="Agent Payout Tier",
                                      compute="_compute_agent_payout_tier",
-                                     store=True)
+                                     )
     errors_omission_fee = fields.Float(string="Errors & Omission Fee",
                                        compute="_compute_errors_omission_fee",
                                        store=True)
     planned_revenue = fields.Float(string="Total Commission Received by LRE",
                                    help="This field represents the overall amount from which the commission is calculated.")
-    external_referral_fee = fields.Float(string="External Referral Fee",
-                                         readonly=True)
+    external_referral_fee = fields.Float(string="Internal Referral Fee", readonly=True)
     total_commercial_commission_earned = fields.Float(
         string="Commission earned",
         readonly=True)
@@ -258,6 +255,9 @@ class Lead(models.Model):
         string="E&O Insurance (Co-Agent Portion)",
         compute="_compute_eo_insurance_portions",
         store=True)
+    external_referral_fee_calculation = fields.Monetary(
+        string="External Referral Fee",
+        compute='_compute_external_referral_fee')
 
     # --------------------------
     # Computation Methods
@@ -269,8 +269,8 @@ class Lead(models.Model):
         for lead in self:
             lead.balance_for_distribution = (
                     lead.planned_revenue
-                    - lead.marketing_fee
-                    - lead.external_referral_fee
+                    + lead.marketing_fee
+                    - lead.external_referral_fee_calculation
             )
 
     @api.depends('balance_for_distribution', 'co_agent_percentage')
@@ -286,8 +286,13 @@ class Lead(models.Model):
         for lead in self:
             total_eo = lead.errors_omission_fee
             co_agent_percent = lead.co_agent_percentage / 100
-            lead.eo_insurance_co_agent_portion = total_eo * co_agent_percent
-            lead.eo_insurance_agent_portion = total_eo * (1 - co_agent_percent)
+            if co_agent_percent != 0:
+                lead.eo_insurance_co_agent_portion = total_eo * co_agent_percent
+                lead.eo_insurance_agent_portion = total_eo * (1 - co_agent_percent)
+            else:
+                lead.eo_insurance_agent_portion = total_eo
+                lead.eo_insurance_co_agent_portion = 0.0
+
 
     @api.depends('balance_for_distribution', 'agent_payout_tier',
                  'eo_insurance_agent_portion',
@@ -603,3 +608,9 @@ class Lead(models.Model):
         })
         self.commission_attachment_id = attachment.id
         self.pdf_report = self.commission_attachment_id.datas
+
+    @api.depends('external_referral_fee', 'planned_revenue')
+    def _compute_external_referral_fee(self):
+        """ Compute the external refferal fee based on amount
+        received times the referral rate"""
+        self.external_referral_fee_calculation = self.planned_revenue * self.commercial_referral_fee_rate

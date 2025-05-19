@@ -198,6 +198,8 @@
                                     <strong>Minimum Commission Due:</strong>
                                 </td>
                                 <td>
+<!--                                    <span t-field="o.minimum_commission_due"-->
+<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
                                     <span t-field="o.commission_to_be_converted_by_agent"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
@@ -354,7 +356,7 @@
                                     <strong>Sales Price:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.planned_revenue"
+                                    <span t-field="o.total_sales_price"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -405,7 +407,7 @@
                         <table class="table table-sm">
                             <tr>
                                 <td>
-                                    <strong>Amount:
+                                    <strong>Total Commission Received by LRE:
                                     </strong>
                                 </td>
                                 <td>
@@ -432,7 +434,7 @@
                                     </t>
                                 </td>
                                 <td>
-                                    <span t-field="o.external_referral_fee"
+                                    <span t-field="o.external_referral_fee_calculation"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -441,7 +443,7 @@
                                     <strong>Balance for Distribution:</strong>
                                 </td>
                                 <td>
-                                    <span t-esc="o.planned_revenue - o.marketing_fee - o.external_referral_fee"
+                                    <span t-esc="o.balance_for_distribution"
                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
@@ -518,8 +520,8 @@
                                     <strong>Payable to Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.commercial_payable_to_agent"
-                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+<!--                                    <span t-field="o.payable_to_agent_commercial"-->
+<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
                                 </td>
                             </tr>
                         </table>

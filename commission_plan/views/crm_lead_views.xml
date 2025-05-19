@@ -23,18 +23,6 @@
                 />
             </xpath>
 
-            <!--            <xpath expr="//field[@name='phone']" position="after">-->
-            <!--                <div class="o_row o_row_readonly">-->
-            <!--                    <label for="total_sales_price" string="Total Sales Price"/>-->
-
-            <!--                    <field name="total_sales_price"-->
-            <!--                           invisible="not is_calculate_commission"-->
-            <!--                           widget="monetary"-->
-            <!--                           options="{'currency_field': 'currency_id'}"/>-->
-            <!--                </div>-->
-
-            <!--            </xpath>-->
-
             <!-- Add Commission Information on Lead Form -->
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="referer_id"

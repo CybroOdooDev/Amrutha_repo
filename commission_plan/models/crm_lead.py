@@ -502,6 +502,7 @@ class Lead(models.Model):
             lead._compute_eo_insurance_portions()
             lead._compute_commercial_payable_to_agent()
             lead._compute_commercial_payable_to_co_agent()
+            lead.generate_pdf_attachment()
 
             self.generate_pdf_attachment()
 

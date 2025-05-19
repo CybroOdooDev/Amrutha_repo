@@ -441,56 +441,21 @@ class Lead(models.Model):
                 ('company_id', '=', lead.company_id.id),
                 ('amount', '<=', total_previous_year_sales)
             ], order='amount desc', limit=1)
-            print(tier, "tier")
-            print(total_previous_year_sales, "total_previous_year_sales")
             if not tier:
                 # If no tier found (sales < all tier amounts), get the tier with minimum amount
                 tier = self.env['tier.tier'].search([
                     ('company_id', '=', lead.company_id.id)
                 ], order='amount asc', limit=1)
-            print(tier,"tier")
             if tier:
                 lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
             else:
                 lead.agent_payout_tier = 0.0  # Default to 0 if no tier is found
 
-    @api.depends('agent_payout_tier', 'planned_revenue')
+    @api.depends('agent_payout_tier', 'balance_for_distribution')
     def _compute_total_commercial_commission(self):
         """Calculate the total commercial commission for the current lead based on the payout tier."""
         for lead in self:
-            # Fetch previous year
-            today = date.today()
-            last_year_start = date(today.year - 1, 1, 1)
-            last_year_end = date(today.year - 1, 12, 31)
-
-            # Get all leads won by the agent (user_id) in the previous year
-            previous_year_leads = self.env['crm.lead'].search([
-                ('user_id', '=', lead.user_id.id),
-                ('date_closed', '>=', last_year_start),
-                ('date_closed', '<=', last_year_end),
-                ('stage_id.is_won', '=', True),
-                # Only include "won" opportunities
-            ])
-            total_previous_year_sales = sum(
-                previous_year_leads.mapped('planned_revenue'))
-
-            # Fetch the correct tier for the total sales
-            tier = self.env['tier.tier'].search([
-                ('company_id', '=', lead.company_id.id),
-                ('amount', '<=', total_previous_year_sales)
-            ], order='amount desc', limit=1)
-            if not tier:
-                # If no tier found (sales < all tier amounts), get the tier with minimum amount
-                tier = self.env['tier.tier'].search([
-                    ('company_id', '=', lead.company_id.id)
-                ], order='amount asc', limit=1)
-            if tier:
-                lead.agent_payout_tier = tier.commission_percentage / 100.0  # Convert to decimal
-            else:
-                lead.agent_payout_tier = 0.0  # Default to 0 if no tier is found
-            lead.total_commercial_commission = (
-                                                       lead.planned_revenue or 0.0) * (
-                                                       lead.agent_payout_tier or 0.0)
+            lead.total_commercial_commission = (lead.balance_for_distribution or 0.0) * (lead.agent_payout_tier or 0.0)
             transaction_type = lead.x_studio_opportunity_type_1.x_name
             if transaction_type == 'Lease':
                 base_rent = lead.base_rent

@@ -472,8 +472,8 @@
                                     </strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.eo_insurance_agent"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.eo_insurance_agent_portion"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                             <tr>
@@ -481,8 +481,8 @@
                                     <strong>Co-Agent Commission:</strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.co_agent_commission_commercial"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.commercial_co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                             <tr>
@@ -518,8 +518,8 @@
                                     <strong>Payable to Agent:</strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.payable_to_agent_commercial"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.commercial_payable_to_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                         </table>
@@ -532,8 +532,8 @@
                                     <strong>Commission:</strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.co_agent_commission_commercial"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.commercial_co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                             <tr>
@@ -542,8 +542,8 @@
                                     </strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.eo_insurance_co_agent"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.eo_insurance_co_agent_portion"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                             <tr>
@@ -560,8 +560,8 @@
                                     <strong>Payable to Co-Agent:</strong>
                                 </td>
                                 <td>
-<!--                                    <span t-field="o.payable_to_co_agent_commercial"-->
-<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.commercial_payable_to_co_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                 </td>
                             </tr>
                         </table>

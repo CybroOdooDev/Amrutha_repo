@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="tier_view_form" model="ir.ui.view">
+        <field name="name">tier.view.form</field>
+        <field name="model">tier.tier</field>
+        <field name="arch" type="xml">
+            <form string="Tier">
+                <sheet>
+                    <group>
+<!--                        <field name="commission_id"/>-->
+                        <field name="company_id"/>
+                        <field name="amount"/>
+                        <field name="commission_percentage"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="tier_view_tree" model="ir.ui.view">
+        <field name="name">tier.view.tree</field>
+        <field name="model">tier.tier</field>
+        <field name="arch" type="xml">
+            <list string="Tier" >
+<!--                <field name="commission_id"/>-->
+                <field name="company_id"/>
+                <field name="amount"/>
+                <field name="commission_percentage"/>
+            </list>
+        </field>
+    </record>
+    <record id="actions_commission_tiers" model="ir.actions.act_window">
+        <field name="name">Tier</field>
+        <field name="res_model">tier.tier</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new Tier
+            </p>
+        </field>
+    </record>
+    <menuitem
+            parent="crm.crm_menu_root"
+            name="Commission"
+            id="commission_root"
+            sequence="2"/>
+    <menuitem name="Commission Tiers"
+              parent="commission_plan.commission_root"
+              id="menu_commission_tiers" action="actions_commission_tiers"
+              sequence="1"/>
+
+</odoo>

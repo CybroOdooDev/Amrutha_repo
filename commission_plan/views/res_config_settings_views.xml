@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.crm</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="5"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <block name="generate_lead_setting_container" position="after">
+                <block name=" Residential Commission " title="Commission">
+                    <setting help="Apply Commission for this company">
+                        <field name="is_calculate_commission"
+                               company_dependent="1"/>
+                    </setting>
+                    <setting help="Assign Transaction Coordinator Fee">
+                        <field name="is_tc_enabled" company_dependent="1"/>
+                    </setting>
+                    <setting help="Transaction Coordinator Threshold"
+                             invisible="not is_tc_enabled">
+                        <field name="tc_threshold" widget="monetary"
+                               company_dependent="1"/>
+                    </setting>
+                    <setting help="Transaction Coordinator Fee"
+                             invisible="not is_tc_enabled">
+                        <field name="tc_fee" widget="monetary"
+                               company_dependent="1"/>
+                    </setting>
+                    <setting>
+                        <field name="inside_sale_fee" widget="monetary"
+                               company_dependent="1"/>
+                    </setting>
+                    <setting help="Referral Fee Rate">
+                        <field name="referral_fee_rate" company_dependent="1"/>
+                    </setting>
+                    <setting help="Referral Fee Rate">
+                        <field name="co_agent_fee_rate" company_dependent="1"/>
+                    </setting>
+                </block>
+                <!--                commercial commission-->
+                <block name="Commercial Commission " title="Commission">
+                    <setting help="Apply Commission for this company">
+                        <field name="is_calculate_commercial_commission"
+                               company_dependent="1"/>
+                    </setting>
+                    <setting help="Referral Fee Rate">
+                        <field name="commercial_referral_fee_rate" company_dependent="1"/>
+                    </setting>
+                </block>
+            </block>
+        </field>
+    </record>
+</odoo>

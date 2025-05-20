@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+commission_plan.access_tier_tier,access_tier_tier,commission_plan.model_tier_tier,base.group_user,1,1,1,1
+commission_plan.access_commission_plan,access_commission_plan,commission_plan.model_commission_plan,base.group_user,1,1,1,1
+commission_plan.access_commission_amount,access_commission_amount,commission_plan.model_commission_amount,base.group_user,1,1,1,1
+commission_plan.access_eo_insurance,access_eo_insurance,commission_plan.model_eo_insurance,base.group_user,1,1,1,1
+
+
+
+

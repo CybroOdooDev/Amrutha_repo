@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--  Residential Commission Report -->
+    <template id="report_commission">
+        <t t-call="web.html_container">
+            <t t-call="web.internal_layout">
+                <t t-foreach="docs" t-as="o">
+                    <div class="oe_structure">
+                        <div class="col-12 mb-4">
+                            <img t-if="o.company_id.logo"
+                                 t-att-src="image_data_uri(o.company_id.logo)"
+                                 style="max-height: 45px;" alt="Logo"/>
+                        </div>
+                        <h2>COMMISSION PAYOUT</h2>
+
+                        <!-- Basic Info Section -->
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.user_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Co-Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.co_agent_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Date of Closing:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.date_deadline"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Sales Price:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.total_sales_price"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Seller/Buyer:</strong>
+                                </td>
+                                <td>
+                                    <t t-if="o.x_studio_sellerlandlord_name and o.x_studio_buyertenant_name">
+                                        <span t-field="o.x_studio_sellerlandlord_name"/>
+                                        /
+                                        <span t-field="o.x_studio_buyertenant_name"/>
+                                    </t>
+                                    <t t-elif="o.x_studio_sellerlandlord_name">
+                                        <span t-field="o.x_studio_sellerlandlord_name"/>
+                                    </t>
+                                    <t t-elif="o.x_studio_buyertenant_name">
+                                        <span t-field="o.x_studio_buyertenant_name"/>
+                                    </t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Property:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.x_studio_property_address"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Category:</strong>
+                                </td>
+                                <td>Residential</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Type:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.x_studio_opportunity_type_1"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Commission to Lange Real Estate -->
+                        <h3>Commission to Lange Real Estate</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Amount:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.total_amount"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Due From Agent to Meet Minimum
+                                        Commission Requirement:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.commission_to_be_converted_by_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>External Referral Fee:</strong>
+                                    <t t-esc="' '"/> <!-- Add space -->
+                                    <span t-field="o.referer_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="o.residential_external_referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total:</strong>
+                                </td>
+                                <td>
+                                    <span t-esc="o.total_amount + o.commission_to_be_converted_by_agent - o.residential_external_referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Agent Pass Thru Income:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.agent_pass_thru_income"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total Received by Lange Real
+                                        Estate:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.total_received_by_lre"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Distribution to Agent -->
+                        <h3>Distribution to Agent</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Tier:</strong>
+                                </td>
+                                <td>
+                                    <span t-esc="o.tier"/>
+                                    %
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Commission Earned:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.residential_commission_earned"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Agent Pass Thru Income:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.agent_pass_thru_income"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Co-Agent Commission:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Minimum Commission Due:</strong>
+                                </td>
+                                <td>
+<!--                                    <span t-field="o.minimum_commission_due"-->
+<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                    <span t-field="o.commission_to_be_converted_by_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Transaction Coordinator Fee:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.transaction_coordinator_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Internal Referral Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Signage Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.inside_sale_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Mentor Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.mentor_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Other Fees:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.flat_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Payable to Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.payable_to_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Distribution to Co-Agent -->
+                        <h3>Distribution to Co-Agent</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Commission:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Internal Referral Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Mentor Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.mentor_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Payable to Co-Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.payable_to_co_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p>All payments will be net of any outstanding charges
+                            on
+                            agent's account.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- New Commercial Commission Report -->
+    <template id="commercial_commission_report">
+        <t t-call="web.html_container">
+            <t t-call="web.internal_layout">
+                <t t-foreach="docs" t-as="o">
+                    <div class="oe_structure">
+                        <div class="col-12 mb-4">
+                            <img t-if="o.company_id.logo"
+                                 t-att-src="image_data_uri(o.company_id.logo)"
+                                 style="max-height: 45px;" alt="Logo"/>
+                        </div>
+                        <h2>COMMERCIAL COMMISSION PAYOUT</h2>
+
+                        <!-- Basic Info Section -->
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.user_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Co-Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.co_agent_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Date of Closing:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.date_deadline"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Sales Price:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.total_sales_price"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Seller/Buyer:</strong>
+                                </td>
+                                <td>
+                                    <t t-if="o.x_studio_sellerlandlord_name and o.x_studio_buyertenant_name">
+                                        <span t-field="o.x_studio_sellerlandlord_name"/>
+                                        /
+                                        <span t-field="o.x_studio_buyertenant_name"/>
+                                    </t>
+                                    <t t-elif="o.x_studio_sellerlandlord_name">
+                                        <span t-field="o.x_studio_sellerlandlord_name"/>
+                                    </t>
+                                    <t t-elif="o.x_studio_buyertenant_name">
+                                        <span t-field="o.x_studio_buyertenant_name"/>
+                                    </t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Property:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.x_studio_property_address"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Category:</strong>
+                                </td>
+                                <td>Commercial</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Type:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.x_studio_opportunity_type_1"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Commission to Lange Real Estate -->
+                        <h3>Commission to Lange Real Estate</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Total Commission Received by LRE:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.planned_revenue"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Marketing Fee:</strong>
+                                    <t t-esc="' '"/> <!-- Add space -->
+                                    <span t-field="o.external_marketing_agency.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="o.marketing_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>External Referral Fee:</strong>
+                                    <t t-if="o.referer_id">(<span
+                                            t-field="o.referer_id.name"/>)
+                                    </t>
+                                </td>
+                                <td>
+                                    <span t-field="o.external_referral_fee_calculation"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Balance for Distribution:</strong>
+                                </td>
+                                <td>
+                                    <span t-esc="o.balance_for_distribution"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Distribution to Agent -->
+                        <h3>Distribution to Agent</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Tier:</strong>
+                                </td>
+                                <td><span t-esc="o.agent_payout_tier * 100"/>%
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Commission Earned:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.total_commercial_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Errors &amp; Omissions Insurance:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.eo_insurance_agent_portion"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Co-Agent Commission:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.commercial_co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Transaction Coordinator Fee:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.transaction_coordinator_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Internal Referral Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Other Fees:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.flat_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Payable to Agent:</strong>
+                                </td>
+                                <td>
+<!--                                    <span t-field="o.payable_to_agent_commercial"-->
+<!--                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>-->
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Distribution to Co-Agent -->
+                        <h3>Distribution to Co-Agent</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>
+                                    <strong>Commission:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.commercial_co_agent_commission"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Errors &amp; Omissions Insurance:
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.eo_insurance_co_agent_portion"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Internal Referral Fee:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.referral_fee"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Payable to Co-Agent:</strong>
+                                </td>
+                                <td>
+                                    <span t-field="o.commercial_payable_to_co_agent"
+                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p>All payments will be net of any outstanding charges
+                            on agent's account.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

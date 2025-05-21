@@ -199,7 +199,7 @@ class Lead(models.Model):
                                        store=True)
     planned_revenue = fields.Float(string="Total Commission Received by LRE",
                                    help="This field represents the overall amount from which the commission is calculated.")
-    external_referral_fee = fields.Float(string="Internal Referral Fee", readonly=True)
+    external_referral_fee = fields.Float(string="External Referral Fee", readonly=True,  compute='_compute_external_referral_fee')
     total_commercial_commission_earned = fields.Float(
         string="Commission earned",
         readonly=True)
@@ -217,7 +217,7 @@ class Lead(models.Model):
         help="The percentage of the lease base rent charged to the landlord.",
     )
     commercial_referral_fee_rate = fields.Float(
-        string="Referral Fee rate",
+        string="External Referral rate",
         help="Percentage paid to the  referral agent that brought in the "
              "lead.",
         default=lambda self: self._default_commercial_referral_fee_rate()
@@ -255,9 +255,7 @@ class Lead(models.Model):
         string="E&O Insurance (Co-Agent Portion)",
         compute="_compute_eo_insurance_portions",
         store=True)
-    external_referral_fee_calculation = fields.Monetary(
-        string="External Referral Fee",
-        compute='_compute_external_referral_fee')
+    lease_commencement_date = fields.Date(string="Lease Commencement")
 
     # --------------------------
     # Computation Methods
@@ -269,8 +267,8 @@ class Lead(models.Model):
         for lead in self:
             lead.balance_for_distribution = (
                     lead.planned_revenue
-                    + lead.marketing_fee
-                    - lead.external_referral_fee_calculation
+                    - lead.marketing_fee
+                    - lead.external_referral_fee
             )
 
     @api.depends('balance_for_distribution', 'co_agent_percentage')
@@ -297,12 +295,11 @@ class Lead(models.Model):
     @api.depends('balance_for_distribution', 'agent_payout_tier',
                  'eo_insurance_agent_portion',
                  'commercial_co_agent_commission',
-                 'transaction_coordinator_fee', 'flat_fee')
+                 'transaction_coordinator_fee','referral_fee', 'flat_fee')
     def _compute_commercial_payable_to_agent(self):
         for lead in self:
-            commission_earned = lead.balance_for_distribution * lead.agent_payout_tier
             lead.commercial_payable_to_agent = (
-                    commission_earned
+                    lead.total_commercial_commission
                     - lead.eo_insurance_agent_portion
                     - lead.commercial_co_agent_commission
                     - lead.transaction_coordinator_fee
@@ -317,20 +314,18 @@ class Lead(models.Model):
         for lead in self:
             lead.commercial_payable_to_co_agent = (
                     lead.commercial_co_agent_commission
-                    + lead.eo_insurance_co_agent_portion
+                    - lead.eo_insurance_co_agent_portion
                     + lead.referral_fee
             )
 
-    @api.depends('total_sales_price')
+    @api.depends('minimum_commission_due', 'total_amount')
     def _compute_commission_to_be_converted_by_agent(self):
         for lead in self:
-            print("_compute_commission_to_be_converted_by_agent")
-            lead.commission_to_be_converted_by_agent = 0.0
             if lead.total_amount < lead.minimum_commission_due:
                 lead.commission_to_be_converted_by_agent = (
                         lead.minimum_commission_due - lead.total_amount)
-                print(lead.commission_to_be_converted_by_agent,
-                      "lead.commission_to_be_converted_by_agent")
+            else:
+                lead.commission_to_be_converted_by_agent = 0.0
 
     @api.depends('total_sales_price', 'x_studio_opportunity_type_1')
     def _compute_minimum_commission_due(self):
@@ -386,7 +381,6 @@ class Lead(models.Model):
             ('create_date', '>=', last_year_date),
             ('move_id.state', '=', 'posted')
         ])
-        print(payments,"lead")
         # Calculate the total amount paid in the past year
         total_amount_past_year = sum(
             payment.price_total for payment in payments)
@@ -418,7 +412,6 @@ class Lead(models.Model):
 
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):
-        print("_compute_agent_payout_tier")
         """Compute the Agent Payout Tier dynamically using tier.tier."""
         for lead in self:
             if not lead.user_id:
@@ -543,7 +536,6 @@ class Lead(models.Model):
         )
 
     def create_commercial_invoice(self):
-        print("invoice")
         tax = self.env['account.tax'].search(
             [('company_id', '=', self.env.company.id),
              ('amount', '=', float(0.00)),
@@ -594,7 +586,6 @@ class Lead(models.Model):
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')
-        print(base64.b64encode(pdf_content), "base64.b64encode(pdf_content)")
         # Create the attachment with the PDF content
         attachment = self.env['ir.attachment'].create({
             'name': attachment_name,
@@ -609,8 +600,13 @@ class Lead(models.Model):
         self.commission_attachment_id = attachment.id
         self.pdf_report = self.commission_attachment_id.datas
 
-    @api.depends('external_referral_fee', 'planned_revenue')
+    @api.depends('external_referral_fee', 'planned_revenue', 'base_rent',
+                 'landlord_percentage' )
     def _compute_external_referral_fee(self):
         """ Compute the external refferal fee based on amount
         received times the referral rate"""
-        self.external_referral_fee_calculation = self.planned_revenue * self.commercial_referral_fee_rate
+        for lead in self:
+            if lead.x_studio_opportunity_type_1.x_name == "Lease":
+                lead.external_referral_fee =( ((lead.base_rent * lead.landlord_percentage)/100) * lead.commercial_referral_fee_rate) / 100
+            else:
+                lead.external_referral_fee = lead.planned_revenue * (lead.commercial_referral_fee_rate / 100)

@@ -30,4 +30,19 @@
         <field name="domain"
                eval="[('company_id.is_calculate_commercial_commission', '=', True)]"/>
     </record>
+
+     <!-- Lease Commission Payout -->
+    <record id="action_report_crm_lead_lease_payout" model="ir.actions.report">
+        <field name="name">Lease Commission payout</field>
+        <field name="model">crm.lead</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">commission_plan.lease_commission_payout</field>
+        <field name="report_file">commission_plan.lease_commission_payout</field>
+        <field name="print_report_name">'Commercial Commission Report - %s' % (object.name)
+        </field>
+        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_type">report</field>
+        <field name="domain"
+               eval="[('is_sale_lead', '=', False)]"/>
+    </record>
 </odoo>

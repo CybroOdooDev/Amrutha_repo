@@ -103,7 +103,7 @@
                     <group>
                         <group string="Transaction Details">
                             <field name="total_list_price"/>
-                            <field name="total_sales_price"/>
+                            <field name="total_sales_price" invisible="not is_sale_lead"/>
                             <field name="planned_revenue" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"
                                    invisible="not is_sale_lead"/>
@@ -111,6 +111,8 @@
                                    options="{'currency_field': 'currency_id'}"
                                    invisible="is_sale_lead"/>
                             <field name="lease_duration"
+                                   invisible="is_sale_lead"/>
+                            <field name="lease_commencement_date"
                                    invisible="is_sale_lead"/>
                             <field name="landlord_percentage"
                                    invisible="is_sale_lead"/>

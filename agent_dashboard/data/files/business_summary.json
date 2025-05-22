@@ -1,0 +1,202 @@
+{
+  "version": 21,
+  "sheets": [
+    {
+      "id": "Sheet1",
+      "name": "Dashboard",
+      "colNumber": 7,
+      "rowNumber": 82,
+      "cells": {
+        "A1": {
+          "content": "Business Summary Dashboard",
+          "style": 1,
+          "width": 1,
+          "height": 1
+        },
+        "A3": {
+          "content": "Salesperson Performance (2023-2025)",
+          "width": 1,
+          "height": 1
+        },
+        "A5": {
+          "content": "[Sales by Month](odoo://view/{\"viewType\":\"graph\",\"action\":{\"domain\":[[\"create_date\",\">=\",\"2023-01-01\"],[\"create_date\",\"<\",\"2026-01-01\"]],\"context\":{\"group_by\":[\"user_id\",\"create_date:month\"],\"graph_measure\":\"__count\",\"graph_mode\":\"bar\",\"graph_groupbys\":[\"user_id\",\"create_date:month\"]},\"modelName\":\"crm.lead\",\"views\":[[false,\"kanban\"],[false,\"list\"],[false,\"calendar\"],[false,\"pivot\"],[false,\"graph\"],[false,\"map\"],[false,\"form\"],[false,\"activity\"],[false,\"search\"]]},\"threshold\":0,\"name\":\"Sales by Month\",\"positional\":true})",
+          "width": 1,
+          "height": 1
+        },
+        "A7": {
+          "content": "=_t(\"Salesperson\")",
+          "style": 2,
+          "width": 1,
+          "height": 1
+        },
+        "B7": {
+          "content": "=_t(\"Month\")",
+          "style": 2,
+          "width": 1,
+          "height": 1
+        },
+        "C7": {
+          "content": "=_t(\"# Leads\")",
+          "style": 2,
+          "width": 1,
+          "height": 1
+        },
+        "A8": {
+          "content": "=PIVOT.HEADER(1, \"#user_id\", 1)",
+          "width": 1,
+          "height": 1
+        },
+        "A9": {
+          "content": "=PIVOT.HEADER(1, \"#user_id\", 2)",
+          "width": 1,
+          "height": 1
+        },
+        "A10": {
+          "content": "=PIVOT.HEADER(1, \"#user_id\", 3)",
+          "width": 1,
+          "height": 1
+        },
+        "A11": {
+          "content": "=PIVOT.HEADER(1, \"#user_id\", 4)",
+          "width": 1,
+          "height": 1
+        },
+        "A12": {
+          "content": "=PIVOT.HEADER(1, \"#user_id\", 5)",
+          "width": 1,
+          "height": 1
+        },
+        "B8": {
+          "content": "=PIVOT.HEADER(1, \"#create_date:month\", 1)",
+          "width": 1,
+          "height": 1
+        },
+        "B9": {
+          "content": "=PIVOT.HEADER(1, \"#create_date:month\", 2)",
+          "width": 1,
+          "height": 1
+        },
+        "B10": {
+          "content": "=PIVOT.HEADER(1, \"#create_date:month\", 3)",
+          "width": 1,
+          "height": 1
+        },
+        "C8": {
+          "content": "=PIVOT.VALUE(1, \"__count\", \"#user_id\", 1, \"#create_date:month\", 1)",
+          "width": 1,
+          "height": 1
+        },
+        "C9": {
+          "content": "=PIVOT.VALUE(1, \"__count\", \"#user_id\", 2, \"#create_date:month\", 2)",
+          "width": 1,
+          "height": 1
+        },
+        "C10": {
+          "content": "=PIVOT.VALUE(1, \"__count\", \"#user_id\", 3, \"#create_date:month\", 3)",
+          "width": 1,
+          "height": 1
+        }
+      },
+      "styles": {
+        "1": {
+          "textColor": "#01666b",
+          "bold": true,
+          "fontSize": 16
+        },
+        "2": {
+          "bold": true,
+          "fillColor": "#f8f9fa",
+          "align": "center"
+        }
+      },
+      "borders": {
+        "A7:C7": {
+          "bottom": {
+            "style": "thin",
+            "color": "#CCCCCC"
+          }
+        }
+      },
+      "mergeCells": {
+        "A1:C1": true
+      }
+    }
+  ],
+  "settings": {
+    "locale": {
+      "name": "English (US)",
+      "code": "en_US",
+      "thousandsSeparator": ",",
+      "decimalSeparator": ".",
+      "dateFormat": "mm/dd/yyyy",
+      "timeFormat": "hh:mm:ss",
+      "formulaArgSeparator": ",",
+      "weekStart": 7
+    }
+  },
+  "pivots": {
+    "1": {
+      "id": "1",
+      "model": "crm.lead",
+      "measures": [
+        {
+          "id": "__count",
+          "fieldName": "__count"
+        }
+      ],
+      "rows": [
+        {
+          "fieldName": "user_id"
+        },
+        {
+          "fieldName": "create_date:month"
+        }
+      ],
+      "domain": [
+        [
+          "create_date",
+          ">=",
+          "2023-01-01"
+        ],
+        [
+          "create_date",
+          "<",
+          "2026-01-01"
+        ]
+      ],
+      "context": {
+        "group_by": [
+          "user_id",
+          "create_date:month"
+        ]
+      },
+      "sortedColumn": {
+        "groupId": [
+          [],
+          []
+        ],
+        "measure": "__count",
+        "order": "desc"
+      }
+    }
+  },
+  "odooVersion": 12,
+  "globalFilters": [
+    {
+      "id": "date_filter",
+      "type": "date",
+      "label": "Period",
+      "defaultValue": "last_year",
+      "rangeType": "relative"
+    },
+    {
+      "id": "salesperson_filter",
+      "type": "relation",
+      "label": "Salesperson",
+      "modelName": "res.users",
+      "defaultValue": [],
+      "rangeType": "year"
+    }
+  ],
+  "lists": {}
+}

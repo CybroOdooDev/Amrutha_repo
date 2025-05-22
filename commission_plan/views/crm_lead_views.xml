@@ -44,6 +44,7 @@
                 <field name="is_calculate_commission"/>
                 <field name="is_calculate_commercial_commission"/>
                 <field name="is_sale_lead"/>
+                <field name="is_lease_lead"/>
                 <page string="Commission"
                       invisible="not is_calculate_commission">
                     <field name="currency_id" invisible="1"/>

@@ -204,6 +204,7 @@ class Lead(models.Model):
         string="Commission earned",
         readonly=True)
     is_sale_lead = fields.Boolean()
+    is_lease_lead = fields.Boolean()
     base_rent = fields.Float(
         string="Base Rent",
         help="The base rent amount for the lease.",
@@ -407,8 +408,17 @@ class Lead(models.Model):
         if transaction_type == 'Sale':
             # Logic for 'sale'
             self.is_sale_lead = True
+            print("self.env",self.env.company)
         else:
             self.is_sale_lead = False
+
+    @api.onchange('x_studio_opportunity_type_1')
+    def _onchange_lease_x_studio_opportunity_type_1(self):
+        transaction_type = self.x_studio_opportunity_type_1.x_name
+        if transaction_type == 'Lease':
+            self.is_lease_lead = True
+        else:
+            self.is_lease_lead = False
 
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):
@@ -489,8 +499,10 @@ class Lead(models.Model):
             elif transaction_type == 'Lease':
                 lead.is_sale_lead = False
                 self.handle_lease_commission(lead)
+            elif transaction_type == 'Commercial':
+                self.handle_lease_commission(lead)
             else:
-                raise ValueError(
+                raise ValidationError(
                     "Unknown transaction type: %s" % transaction_type)
 
             # Compute all commercial related fields
@@ -578,10 +590,15 @@ class Lead(models.Model):
             pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead'),
                 self.id)
-        else:
+        if self.x_studio_opportunity_type_1.x_name == "Sale" or "Commercial":
             pdf_content, _ = self.env[
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_commercial'),
+                self.id)
+        if self.x_studio_opportunity_type_1.x_name == "Lease":
+            pdf_content, _ = self.env[
+                "ir.actions.report"].sudo()._render_qweb_pdf(
+                self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
                 self.id)
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(

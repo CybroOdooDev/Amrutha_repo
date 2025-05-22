@@ -1,0 +1,424 @@
+<templates xml:space="preserve">
+    <t t-name="agent_dashboard.CRMDashboard" owl="1">
+        <div class="crm_dashboard"
+             style="background-color: #f5f6fa; padding: 20px; font-family: Arial, sans-serif; overflow-y : auto;">
+            <div class="header"
+                 style="display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <h1 class="agent-name"
+                    style="margin: 0; font-size: 24px; color: #2c3e50;"><t
+                        t-esc="state.agentName"/> <!-- Dynamic agent name -->
+                        </h1>
+                <div class="closings" style="text-align: right;">
+                    <p style="margin: 0; font-size: 14px; color: #34495e;">Closing this Week: <strong
+                            style="color: #27ae60;"><t t-esc="state.closingThisWeek"/></strong></p>
+                    <p style="margin: 0; font-size: 14px; color: #34495e;">Closing this Month: <strong
+                            style="color: #27ae60;"><t t-esc="state.closingThisMonth"/></strong></p>
+                </div>
+                <div class="payout-box"
+                     style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center;">
+                    <span style="font-size: 16px;">Current Payout: <strong><t t-esc="state.currentPayout"/></strong></span>
+                    <p style="margin: 5px 0; font-size: 14px;">LTM Commissions: <strong><t t-esc="state.ltmCommissions"/></strong></p>
+                    <p style="margin: 5px 0; font-size: 14px;">Expiring this Month: <strong><t t-esc="state.expiringThisMonth"/></strong></p>
+                    <button class="btn btn-primary"
+                            t-on-click="openPayoutSummary"
+                            style="background-color: #2980b9; border: none; color: #ffffff; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        Payout Summary
+                    </button>
+                </div>
+            </div>
+
+            <div class="current-deals"
+                 style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <h2 style="color: #2c3e50; font-size: 20px;">Current Open Deals</h2>
+                <div class="deals-overview"
+                     style="display: flex; justify-content: space-between; align-items: center;">
+                    <p style="margin: 0; font-size: 14px; color: #34495e;">Total Asking Price: <strong
+                            style="color: #27ae60;"><t t-esc="state.totalAskingPrice"/></strong></p>
+                    <p style="margin: 0; font-size: 14px; color: #34495e;">Total Properties: <strong
+                            style="color: #27ae60;"><t t-esc="state.totalProperties"/></strong></p>
+                </div>
+                <!-- Chart Section -->
+                <div class="chart-section"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #2c3e50; font-size: 20px;">Deals by Stage</h2>
+                    <PieChart labels="state.stageLabels"
+                              data="state.stageData"/>
+                </div>
+                <div class="property-details" style="margin-top: 20px;">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Property Details</h3>
+                    <table class="table"
+                           style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #3498db; color: #ffffff;">
+                                <th style="padding: 10px; text-align: left;">Client Name</th>
+                                <th style="padding: 10px; text-align: left;">Property</th>
+                                <th style="padding: 10px; text-align: left;">City</th>
+                                <th style="padding: 10px; text-align: left;">Price</th>
+                                <th style="padding: 10px; text-align: left;">Estimated Commission</th>
+                                <th style="padding: 10px; text-align: left;">Estimated Closing Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.propertyDetails"
+                               t-as="property"
+                               t-key="property.clientName">
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.clientName"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.property"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.city"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.price"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.estimatedCommission"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.estimatedClosingDate"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="goal-vs-actual"
+                 style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <div class="goal-vs-actual"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Goal vs. Actual</h3>
+                    <GoalVsActualChart goalData="state.goalData"
+                                       actualData="state.actualData"/>
+                </div>
+                <div class="real-estate-ratios" style="margin-top: 15px;">
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Average Days to Close:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.avgDaysToClose"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Average Close Price:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.avgClosePrice"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Sales Volume:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.salesVolume"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Closed Transactions:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.closedTransactions"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        Lead-to-Client Count:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.leadToClientCount"/>
+                        </strong>
+                    </p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #34495e;">
+                        % Change from List Price:
+                        <strong style="color: #27ae60;">
+                            <t t-esc="state.priceChangePercentage"/>%
+                        </strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="historical-sales"
+                 style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #2c3e50; font-size: 18px;">Historical Sales</h3>
+                <table class="table"
+                       style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #3498db; color: #ffffff;">
+                            <th style="padding: 10px; text-align: left;">Client Name</th>
+                            <th style="padding: 10px; text-align: left;">Property</th>
+                            <th style="padding: 10px; text-align: left;">City</th>
+                            <th style="padding: 10px; text-align: left;">Price</th>
+                            <th style="padding: 10px; text-align: left;">Estimated Commission</th>
+                            <th style="padding: 10px; text-align: left;">Estimated Closing Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            <t t-foreach="state.propertyDetails"
+                               t-as="property"
+                               t-key="property.clientName">
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.clientName"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.property"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.city"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.price"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.estimatedCommission"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="property.estimatedClosingDate"/></td>
+                                </tr>
+                            </t>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Weekly Planner Section -->
+            <div class="weekly-planner"
+                 style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 20px; margin-bottom: 20px;">
+                            Weekly Planner - Week of <t
+                            t-esc="state.weekStartDate"/>
+                    </h3>
+
+                <!-- Add Task Form -->
+                <div class="add-task" style="margin-bottom: 30px;">
+                    <select t-model="state.selectedDay"
+                            style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 10px; font-size: 14px;">
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                        <option value="saturday">Saturday</option>
+                        <option value="sunday">Sunday</option>
+                    </select>
+                    <input type="text" t-model="state.newTask"
+                           placeholder="Add a new task"
+                           style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 300px; margin-right: 10px; font-size: 14px;"/>
+                    <br/>
+                    <br/>
+                    <button class="btn btn-primary" t-on-click="addTask"
+                            style="background-color: #3498db; border: none; color: #ffffff; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">Add Task</button>
+                </div>
+
+                <!-- Days Grid -->
+                <div class="days-grid"
+                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(850px, 1fr)); gap: 20px;">
+                    <!-- Monday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Monday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.monday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'monday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Tuesday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Tuesday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.tuesday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'tuesday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Wednesday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Wednesday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.wednesday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"  t-att-data-id="task.id"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'wednesday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Thursday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Thursday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.thursday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'thursday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Friday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Friday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.friday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'friday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Saturday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Saturday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.saturday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'saturday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Sunday -->
+                    <div class="day-card"
+                         style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <h4 style="color: #2c3e50; font-size: 16px; margin-bottom: 15px;">Sunday</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li t-foreach="state.tasks.sunday" t-as="task"
+                                t-key="task.id"
+                                style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding: 10px; background-color: #ffffff; border-radius: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                                <div style="display: flex; align-items: flex-start; flex: 1; margin-right: 10px;">
+                                    <input type="checkbox"
+                                           t-att-checked="task.completed"
+                                           t-on-click="() => toggleTaskCompletion(task.id)"
+                                           style="margin-right: 10px; cursor: pointer; margin-top: 3px;"/>
+                                    <span t-att-class="task.completed ? 'completed-task' : ''"
+                                          t-esc="task.name"
+                                          style="font-size: 14px; color: #34495e; word-wrap: break-word; flex: 1;"/>
+                                </div>
+                                <button class="btn btn-danger"
+                                        t-on-click="() => removeTask(task.id, 'sunday')"
+                                        style="background-color: #e74c3c; border: none; color: #ffffff; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; flex-shrink: 0;">Remove</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Planner Section -->
+            <div>
+                <div class="activity-summary"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Activity Summary</h3>
+                    <div class="activity-counts"
+                         style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Total Activities</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.totalActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Planned</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.plannedActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1; margin-right: 10px;">
+                            <span style="font-size: 16px;">Overdue</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.overdueActivities"/></p>
+                        </div>
+                        <div class="count-box"
+                             style="background-color: #3498db; padding: 15px; border-radius: 10px; color: #ffffff; text-align: center; flex: 1;">
+                            <span style="font-size: 16px;">Today</span>
+                            <p style="margin: 5px 0; font-size: 24px;"><t t-esc="state.todayActivities"/></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="activity-list"
+                     style="background-color: #ffffff; margin-top: 20px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <h3 style="color: #2c3e50; font-size: 18px;">Activity List</h3>
+                    <table class="table"
+                           style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #3498db; color: #ffffff;">
+                                <th style="padding: 10px; text-align: left;">Summary</th>
+                                <th style="padding: 10px; text-align: left;">Due Date</th>
+                                <th style="padding: 10px; text-align: left;">State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.activityList" t-as="activity"
+                               t-key="activity.id">
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.summary"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.date_deadline"/></td>
+                                    <td style="padding: 10px; color: #34495e;"><t t-esc="activity.state"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </t>
+    <t t-name="PieChart" owl="1">
+        <canvas t-ref="canvas" style="width: 100%; height: 300px;"></canvas>
+    </t>
+    <!-- Add the GoalVsActualChart template -->
+    <t t-name="GoalVsActualChart" owl="1">
+        <canvas t-ref="canvas" style="width: 400px; height: 300px;"></canvas>
+    </t>
+</templates>

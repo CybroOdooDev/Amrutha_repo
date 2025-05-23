@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_sign_template_tag_tree" model="ir.ui.view">
+        <field name="name">sign.template.tag.inherit</field>
+        <field name="model">sign.template.tag</field>
+        <field name="inherit_id" ref="sign.sign_template_tag_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+               <field name="is_residential_sale"/>
+               <field name="is_residential_purchase"/>
+               <field name="is_commercial_sale"/>
+               <field name="is_commercial_purchase"/>
+               <field name="is_auction_sale"/>
+               <field name="is_auction_purchase"/>
+           </xpath>
+        </field>
+    </record>
+</odoo>

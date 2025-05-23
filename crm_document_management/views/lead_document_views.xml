@@ -1,0 +1,39 @@
+<odoo>
+    <record id="view_crm_lead_documents_kanban" model="ir.ui.view">
+        <field name="name">crm.lead.documents.kanban</field>
+        <field name="model">crm.lead.document</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name"/>
+                <field name="stage"/>
+                <field name="status"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="o_kanban_card">
+                            <div class="o_kanban_image">
+                                <img t-att-src="kanban_record.uploaded_file"/>
+                            </div>
+                            <div class="o_kanban_details">
+                                <field name="name"/>
+                                <field name="status"/>
+                                <button name="action_send_for_signature"
+                                        type="object"
+                                        string="Send for Signature"
+                                        class="btn-primary"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Action for the Smart Button -->
+    <record id="action_view_lead_documents" model="ir.actions.act_window">
+        <field name="name">Lead Documents</field>
+        <field name="res_model">crm.lead.document</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_crm_lead_documents_kanban"/>
+        <field name="domain">[('lead_id', '=', active_id)]</field>
+    </record>
+</odoo>

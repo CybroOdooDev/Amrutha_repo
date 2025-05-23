@@ -38,7 +38,7 @@
                     </setting>
                 </block>
                 <!--                commercial commission-->
-                <block name="Commercial Commission " title="Commission">
+                <block name="Commercial Commission" title="Commercial Commission">
                     <setting help="Apply Commission for this company">
                         <field name="is_calculate_commercial_commission"
                                company_dependent="1"/>

@@ -234,8 +234,7 @@ class Lead(models.Model):
     # New fields for commercial commission calculations
     balance_for_distribution = fields.Float(
         string="Balance for Distribution",
-        compute="_compute_balance_for_distribution",
-        store=True)
+        compute="_compute_balance_for_distribution")
     commercial_co_agent_commission = fields.Float(
         string="Commercial Co-Agent Commission",
         compute="_compute_commercial_co_agent_commission",
@@ -262,8 +261,8 @@ class Lead(models.Model):
     # Computation Methods
     # --------------------------
 
-    @api.depends('planned_revenue', 'marketing_fee',
-                 'external_referral_fee')
+    @api.depends('planned_revenue',
+                 'external_referral_fee', 'marketing_fee')
     def _compute_balance_for_distribution(self):
         for lead in self:
             lead.balance_for_distribution = (
@@ -271,6 +270,11 @@ class Lead(models.Model):
                     - lead.marketing_fee
                     - lead.external_referral_fee
             )
+            # )lead.balance_for_distribution = (
+            #         lead.planned_revenue
+            #         + lead.marketing_fee
+            #         - lead.external_referral_fee
+            # )
 
     @api.depends('balance_for_distribution', 'co_agent_percentage')
     def _compute_commercial_co_agent_commission(self):
@@ -307,6 +311,7 @@ class Lead(models.Model):
                     - lead.referral_fee
                     - lead.flat_fee
             )
+            print("lead.commercial_payable_to_agent", lead.commercial_payable_to_agent)
 
     @api.depends('commercial_co_agent_commission',
                  'eo_insurance_co_agent_portion',
@@ -408,7 +413,6 @@ class Lead(models.Model):
         if transaction_type == 'Sale':
             # Logic for 'sale'
             self.is_sale_lead = True
-            print("self.env",self.env.company)
         else:
             self.is_sale_lead = False
 

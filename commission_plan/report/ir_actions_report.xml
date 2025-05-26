@@ -28,7 +28,7 @@
         <field name="binding_model_id" ref="crm.model_crm_lead"/>
         <field name="binding_type">report</field>
         <field name="domain"
-               eval="[('company_id.is_calculate_commercial_commission', '=', True)]"/>
+               eval="[('company_id.is_calculate_commercial_commission', '=', True), ('is_not_commercial_lead', '=', False )]"/>
     </record>
 
      <!-- Lease Commission Payout -->

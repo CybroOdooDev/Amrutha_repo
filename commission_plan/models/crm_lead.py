@@ -205,6 +205,7 @@ class Lead(models.Model):
         readonly=True)
     is_sale_lead = fields.Boolean()
     is_lease_lead = fields.Boolean()
+    is_not_commercial_lead = fields.Boolean()
     base_rent = fields.Float(
         string="Base Rent",
         help="The base rent amount for the lease.",
@@ -262,14 +263,19 @@ class Lead(models.Model):
     # --------------------------
 
     @api.depends('planned_revenue',
-                 'external_referral_fee', 'marketing_fee')
+                 'external_referral_fee', 'marketing_fee', 'base_rent', 'landlord_percentage')
     def _compute_balance_for_distribution(self):
         for lead in self:
-            lead.balance_for_distribution = (
-                    lead.planned_revenue
-                    - lead.marketing_fee
-                    - lead.external_referral_fee
-            )
+            if lead.x_studio_opportunity_type_1.x_name == "Lease":
+                lead.balance_for_distribution = ((lead.base_rent * lead.landlord_percentage / 100)
+                                                 - lead.external_referral_fee)
+            else:
+                lead.balance_for_distribution = (
+                        lead.planned_revenue
+                        - lead.marketing_fee
+                        - lead.external_referral_fee
+                )
+
             # )lead.balance_for_distribution = (
             #         lead.planned_revenue
             #         + lead.marketing_fee
@@ -311,7 +317,6 @@ class Lead(models.Model):
                     - lead.referral_fee
                     - lead.flat_fee
             )
-            print("lead.commercial_payable_to_agent", lead.commercial_payable_to_agent)
 
     @api.depends('commercial_co_agent_commission',
                  'eo_insurance_co_agent_portion',
@@ -407,22 +412,28 @@ class Lead(models.Model):
         # Return the referral_fee_rate from the current company
         return self.env.company.commercial_referral_fee_rate
 
-    @api.onchange('x_studio_opportunity_type_1')
-    def _onchange_x_studio_opportunity_type_1(self):
-        transaction_type = self.x_studio_opportunity_type_1.x_name
-        if transaction_type == 'Sale':
-            # Logic for 'sale'
-            self.is_sale_lead = True
-        else:
-            self.is_sale_lead = False
+    # @api.onchange('x_studio_opportunity_type_1')
+    # def _onchange_x_studio_opportunity_type_1(self):
+    #     transaction_type = self.x_studio_opportunity_type_1.x_name
+    #     if transaction_type == 'Sale':
+    #         # Logic for 'sale'
+    #         self.is_sale_lead = True
+    #     else:
+    #         self.is_sale_lead = False
 
     @api.onchange('x_studio_opportunity_type_1')
     def _onchange_lease_x_studio_opportunity_type_1(self):
         transaction_type = self.x_studio_opportunity_type_1.x_name
+        self.is_lease_lead = False
+        self.is_not_commercial_lead = False
+        self.is_sale_lead = False
+
         if transaction_type == 'Lease':
             self.is_lease_lead = True
+        elif transaction_type == 'Residential' or transaction_type == 'Personal Property':
+            self.is_not_commercial_lead = True
         else:
-            self.is_lease_lead = False
+            self.is_sale_lead = True
 
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):

@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_sign_document_wizard_form" model="ir.ui.view">
+        <field name="name">sign.document.wizard.form</field>
+        <field name="model">crm.sign.document.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Send Signature Request">
+                <group>
+                    <field name="crm_lead_id" readonly="1"/>
+                    <field name="sign_template_id" />
+<!--                    <field name="partner_ids" invisible="1"/>-->
+<!--                    <field name="partner_id" />-->
+                    <field name="message" placeholder="Optional message for the recipient"/>
+                </group>
+                <footer>
+                    <button name="validate_signature" string="Send Request" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="sign_document_wizard_action" model="ir.actions.act_window">
+        <field name="name">Send Signature Request</field>
+        <field name="res_model">crm.sign.document.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

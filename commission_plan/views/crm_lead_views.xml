@@ -11,7 +11,7 @@
                 <button name="action_commission" string="Commission"
                         type="object"
                         class="btn btn-primary me-1"
-                        invisible="not is_calculate_commission"/>
+                        invisible="not is_calculate_commission or is_not_residential_lead"/>
                 <button name="action_commercial_commission" string="Commission"
                         type="object"
                         class="btn btn-primary me-1"
@@ -45,9 +45,13 @@
                 <field name="is_calculate_commercial_commission"/>
                 <field name="is_sale_lead"/>
                 <field name="is_lease_lead"/>
+                <field name="is_not_residential_lead"/>
                 <field name="is_not_commercial_lead"/>
+                <field name="company_id"/>
+                <field name="is_restricted_company"/>
+                <field name="existing_company"/>
                 <page string="Commission"
-                      invisible="not is_calculate_commission">
+                      invisible="not is_calculate_commission or is_not_residential_lead">
                     <field name="currency_id" invisible="1"/>
                     <group>
                         <group>
@@ -172,7 +176,7 @@
                     </group>
                 </page>
                 <page string="Commission Report"
-                      invisible="not is_calculate_commission">
+                      invisible="not is_calculate_commission or is_not_residential_lead">
                     <group string="Commission Report">
                         <group>
                             <field name="pdf_report" widget="pdf_viewer"/>

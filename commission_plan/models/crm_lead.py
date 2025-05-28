@@ -113,6 +113,9 @@ class Lead(models.Model):
     payable_to_co_agent = fields.Float(string="Payable to Co-Agent",
                                        compute="_compute_payable_to_co_agent",
                                        store=True)
+    company_id = fields.Many2one('res.company', required=True)
+    existing_company = fields.Char(compute="_compute_is_restricted_company")
+    is_restricted_company = fields.Boolean()
 
     @api.depends('minimum_commission_due', 'referral_fee_rate')
     def _compute_residential_external_referral_fee(self):
@@ -188,8 +191,7 @@ class Lead(models.Model):
         related='company_id.is_calculate_commercial_commission',
         readonly=False,
     )
-    total_commercial_commission = fields.Float(string="Total Commission "
-                                                      "Received by LRE",
+    total_commercial_commission = fields.Float(string="Commission Earned by Agent",
                                                compute="_compute_total_commercial_commission")
     agent_payout_tier = fields.Float(string="Agent Payout Tier",
                                      compute="_compute_agent_payout_tier",
@@ -206,6 +208,7 @@ class Lead(models.Model):
     is_sale_lead = fields.Boolean()
     is_lease_lead = fields.Boolean()
     is_not_commercial_lead = fields.Boolean()
+    is_not_residential_lead = fields.Boolean()
     base_rent = fields.Float(
         string="Base Rent",
         help="The base rent amount for the lease.",
@@ -427,13 +430,25 @@ class Lead(models.Model):
         self.is_lease_lead = False
         self.is_not_commercial_lead = False
         self.is_sale_lead = False
+        self.is_not_residential_lead = False
 
+        print("enable_auction_sale")
         if transaction_type == 'Lease':
             self.is_lease_lead = True
-        elif transaction_type == 'Residential' or transaction_type == 'Personal Property':
+        if transaction_type in ('Residential', 'Personal Property'):
             self.is_not_commercial_lead = True
+        if transaction_type in ('Personal Property', 'Commercial'):
+            self.is_not_residential_lead = True
         else:
             self.is_sale_lead = True
+        # if transaction_type == 'Lease':
+        #     self.is_lease_lead = True
+        # if transaction_type in ('Residential', 'Personal Property'):
+        #     self.is_not_commercial_lead = True
+        # if transaction_type in ('Personal Property', 'Commercial'):
+        #     self.is_not_residential_lead = True
+        # if transaction_type not in ('Lease', 'Residential', 'Personal Property', 'Commercial'):
+        #     self.is_sale_lead = True
 
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):
@@ -605,7 +620,7 @@ class Lead(models.Model):
             pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead'),
                 self.id)
-        if self.x_studio_opportunity_type_1.x_name == "Sale" or "Commercial":
+        if self.x_studio_opportunity_type_1.x_name in ('Sale', 'Commercial'):
             pdf_content, _ = self.env[
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_commercial'),
@@ -615,6 +630,11 @@ class Lead(models.Model):
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
                 self.id)
+        # if self.x_studio_opportunity_type_1.x_name == "Residential":
+        #     pdf_content, _ = self.env[
+        #         "ir.actions.report"].sudo()._render_qweb_pdf(
+        #         self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
+        #         self.id)
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')
@@ -642,3 +662,17 @@ class Lead(models.Model):
                 lead.external_referral_fee =( ((lead.base_rent * lead.landlord_percentage)/100) * lead.commercial_referral_fee_rate) / 100
             else:
                 lead.external_referral_fee = lead.planned_revenue * (lead.commercial_referral_fee_rate / 100)
+
+    # # @api.depends('company_id')
+    # def _compute_is_restricted_company(self):
+    #     """ Function to hide New Quotation and New Rental
+    #     buttons for specific companies"""
+    #     print("llllllllllllllllllllllll")
+    #     self.existing_company = self.env.company.name
+    #     print("self.is_restricted_company", self.existing_company)
+    #
+    #     # restricted_companies = ["Auctions", "Residential", "Commercial"]
+    #     # print("fffffffffffff", self.company_id.name)
+    #     # for record in self:
+    #     #     record.is_restricted_company = self.env.company.name in restricted_companies
+    #     #     print("record.is_restricted_company", record.is_restricted_company)

@@ -12,7 +12,7 @@
         <field name="binding_model_id" ref="crm.model_crm_lead"/>
         <field name="binding_type">report</field>
         <field name="domain"
-               eval="[('company_id.is_calculate_commission', '=', True)]"/>
+               eval="[('company_id.is_calculate_commission', '=', True), ('is_not_residential_lead', '=', False )]"/>
 
     </record>
 
@@ -38,7 +38,7 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">commission_plan.lease_commission_payout</field>
         <field name="report_file">commission_plan.lease_commission_payout</field>
-        <field name="print_report_name">'Commercial Commission Report - %s' % (object.name)
+        <field name="print_report_name">'lease Commission Payout - %s' % (object.name)
         </field>
         <field name="binding_model_id" ref="crm.model_crm_lead"/>
         <field name="binding_type">report</field>

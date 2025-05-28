@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="product_commission" model="product.product">
+            <field name="name">Commission</field>
+            <field name="default_code">COMMISSION</field>
+            <field name="categ_id" ref="product.product_category_all"/>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="True"/>
+        </record>
+        <record id="product_referral" model="product.product">
+            <field name="name">Referral</field>
+            <field name="default_code">REFERRAL</field>
+            <field name="categ_id" ref="product.product_category_all"/>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="True"/>
+        </record>
+        <record id="product_inside_sale" model="product.product">
+            <field name="name">Inside sales</field>
+            <field name="default_code">INSIDE_SALE</field>
+            <field name="categ_id" ref="product.product_category_all"/>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="True"/>
+        </record>
+    </data>
+</odoo>

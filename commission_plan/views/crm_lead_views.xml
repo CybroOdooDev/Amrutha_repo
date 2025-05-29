@@ -47,9 +47,9 @@
                 <field name="is_lease_lead"/>
                 <field name="is_not_residential_lead"/>
                 <field name="is_not_commercial_lead"/>
+                <field name="is_company_allowed"/>
                 <field name="company_id"/>
-                <field name="is_restricted_company"/>
-                <field name="existing_company"/>
+                <field name="company_check"/>
                 <page string="Commission"
                       invisible="not is_calculate_commission or is_not_residential_lead">
                     <field name="currency_id" invisible="1"/>
@@ -191,6 +191,28 @@
                         </group>
                     </group>
                 </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_modify_quotation_invisible" model="ir.ui.view">
+        <field name="name">crm.lead.modify.quotation.invisible</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="sale_crm.crm_case_form_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_sale_quotations_new']" position="attributes">
+                <attribute name="invisible">type == 'lead' or (probability == 0 and not active) or is_company_allowed</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_new_rental_invisible" model="ir.ui.view">
+        <field name="name">crm.lead.modify.quotation.invisible</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="sale_renting_crm.crm_case_form_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_rental_quotations_new']" position="attributes">
+                <attribute name="invisible">type == 'lead' or (probability == 0 and not active) or is_company_allowed</attribute>
             </xpath>
         </field>
     </record>

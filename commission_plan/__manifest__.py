@@ -1,6 +1,6 @@
 {
     "name": "Commission Plan",
-    "depends": ["base", 'crm'],
+    "depends": ["base", 'crm','sale_crm','sale_renting_crm'],
     "category": "Sales/CRM",
     "version": '18.0.1.0.0',
     'author': 'The Lange Companies',

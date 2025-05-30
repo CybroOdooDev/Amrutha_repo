@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_line_rental_form" model="ir.ui.view">
+        <field name="name">sale.order.line.rental.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='tax_id']" position="after">
+                <field name="rental_available_lot_ids" column_invisible="1"/>
+                <field name="rental_pickable_lot_ids" string="Serial Numbers" widget="many2many_tags"
+                       column_invisible=" not parent.is_rental_order"
+                       options="{'no_create':1, 'no_edit':1}" width="120px"/>
+                <!--                       options="{'no_create':1, 'no_edit':1}" width="120px" readonly="rental_status  in ['rent','sale','finish','cancel']"/>-->
+                <field name="rental_start_date" column_invisible="not parent.is_rental_order" width="120px"/>
+                <field name="rental_end_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="rental_days" column_invisible=" not parent.is_rental_order or parent.company_id !=7 " width="100px"/>
+                <field name="next_bill_date" column_invisible=" not parent.is_rental_order" width="120px"/>
+                <field name="warehouse_id" column_invisible="not parent.is_rental_order"
+                       readonly="parent.state == 'sale'"
+                       domain="[('company_id', 'in', [company_id, False])]"/>
+                <field name="rental_status"
+                       widget="label" width="120px" column_invisible=" not parent.is_rental_order"/>
+                <field name="parent_line" column_invisible="True"/>
+                <field name="importing_external_id" column_invisible="True"/>
+                <field name="need_bill_importing" column_invisible="not parent.is_rental_order or not parent.imported_order"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='price_subtotal']" position="after">
+                <!--                <field name="line_signature_status" />-->
+                <button name="action_send_delivery_signature" string="Delivery Signature" type="object"
+                                    class="btn-primary"
+                                    invisible="not parent.is_rental_order or parent.state != 'sale' or is_service_charge"/>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='name']" position="after">
+                <field name="is_sale" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                       widget="toggle"/>
+                <field name="is_rental" column_invisible=" not parent.is_rental_order" style="white-space: nowrap;"
+                       widget="toggle"/>
+                <field name="is_service_charge" column_invisible=" not parent.is_rental_order"
+                       style="white-space: nowrap;"
+                       widget="toggle"/>
+            </xpath>
+
+            <xpath expr="//field[@name='payment_term_id']" position="after" invisible="not is_rental_order">
+                <field name="bill_terms" invisible="not is_rental_order" required="1"/>
+                <field name="recurring_plan_id" invisible="not is_rental_order" required="1" readonly="state == 'sale'" options="{'no_open': True}"/>
+                <field name="show_update_button" invisible="1 or not is_rental_order"/>
+            </xpath>
+
+            <xpath expr="//field[@name='payment_term_id']" position="before" invisible="not is_rental_order">
+                <label for="warehouse_id" invisible="not is_rental_order"/>
+                <div>
+                    <field name="warehouse_id" invisible="not is_rental_order" readonly="state == 'sale'"/>
+                </div>
+                <label for="location_id" invisible="not is_rental_order or company_id !=8"/>
+                <div>
+                    <field name="location_id" invisible="not is_rental_order or company_id !=8" />
+                </div>
+            </xpath>
+
+            <xpath expr="//field[@name='validity_date']" position="attributes">
+                <attribute name="invisible">is_rental_order</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='rental_start_date']" position="after">
+                <div/>
+                <div class="oe_inline">
+                    <button name="update_dates" type="object"
+                            string="Apply in order lines"
+                            help="Re-assign dates in the order lines"
+                            class="btn-link mb-1 px-0" icon="fa-refresh"
+                            invisible="show_update_button != True or not is_rental_order"/>
+                </div>
+            </xpath>
+
+            <xpath expr="//button[@name='action_open_pickup']" position="after">
+                <button name="action_add_sale_order" string="Sale Order" type="object"
+                        invisible="state != 'sale' or not is_rental_order"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Date Details" name='date_details' invisible="not is_rental_order">
+                    <field name="date_records_line">
+                        <!--<list create="false" edit="false" editable="bottom">-->
+                        <list editable="bottom">
+                            <field name="order_line_id"  width="150px" readonly="1"/>
+                            <field name="product_id" string="Product" width="150px" readonly="1"/>
+                            <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
+                            <field name="per_day_charges" width="100px"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
+                            <field name="delivery_date" string="Delivery Date" width="120px"/>
+                            <field name="return_date" string="Return Date" width="120px"/>
+                            <field name="delivery_driver" width="120px"/>
+                            <field name="pickup_driver" width="120px"/>
+                            <field name="total_days" string="Total Days"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
+                            <field name="total_price" string="Total Price"
+                                   column_invisible="parent.bill_terms == 'advance'"/>
+                            <field name="signature_status" />
+<!--                            <button name="action_send_delivery_signature" string="Delivery Signature" type="object"-->
+<!--                                    class="btn-primary"-->
+<!--                                    invisible="signature_status != 'initial' or not parent.is_rental_order"/>-->
+                            <button name="action_send_pickup_signature" string="Pick-Up Signature" type="object"
+                                    class="btn-primary"
+                                    invisible="signature_status != 'delivery' or not parent.is_rental_order"/>
+                            <button name="action_signature_msg" string="Sent for Signatures" type="object"
+                                    class="btn-secondary"
+                                    invisible="signature_status in ['initial','delivery'] or not parent.is_rental_order"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="BOL Notes" name="bol_notes">
+                    <field name="date_records_line">
+                        <list editable="bottom">
+                            <field name="product_id" string="Product" width="150px" readonly="1"/>
+                            <field name="serial_number" string="Serial No." width="100px" readonly="1"/>
+                            <field name="description" placeholder="Add a description..." width="100px"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+            <xpath expr="//field[@name='date_order']" position="after">
+                <label for="mileage" invisible="not mileage_enabled"/>
+                <div invisible="not mileage_enabled">
+                    <tr>
+                        <td>
+                            <field name="mileage"/>
+                        </td>
+                        <td>
+                            <field name="mileage_unit"/>
+                        </td>
+                    </tr>
+                </div>
+                <label for="fuel_surcharge_percentage" invisible="not is_rental_order"/>
+                <div invisible="not is_rental_order">
+                    <tr>
+                        <td width="10%">
+                            <field name="fuel_surcharge_percentage" readonly="state == 'sale'"/>
+                        </td>
+                        <td>
+                            <field name="fuel_surcharge_unit"/>
+                        </td>
+                    </tr>
+                </div>
+            </xpath>
+
+            <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <label for="imported_order" invisible="0"/>
+                <div>
+                    <field name="imported_order" invisible="0" readonly="1"/>
+                </div>
+                <label for="close_order" invisible="0"/>
+                <div>
+                    <field name="close_order" invisible="0" readonly="1"/>
+                </div>
+            </xpath>
+
+            <xpath expr="//field[@name='order_line']//list//field[@name='price_unit']" position="before">
+                <field name="daily_rate" column_invisible="not parent.is_rental_order or parent.company_id !=7 "/>
+                <field name="extended_amount" column_invisible="not parent.is_rental_order or parent.company_id !=7" width="120px"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rental_order_primary_form_view" model="ir.ui.view">
+        <field name="name">sale.order.line.rental.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_primary_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='order_lines']/field/list/field[@name='product_template_id']"
+                   position='attributes'>
+                <attribute name="domain">['|',('rent_ok', '=', True),('charges_ok', '=', True), '|', '|', ('company_id', '=', False), ('company_id',
+                    '=', parent.company_id), ('company_id', '=', parent.parent_company_id)]
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rental_order_pricelist_domain_view" model="ir.ui.view">
+        <field name="name">sale.order.line.rental.form.inherit_pricelist</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='pricelist_id']" position='attributes'>
+                <attribute name="domain">
+                    ['|', '|',
+                    ('company_id', '=', company_id),
+                    ('company_ids', '=', company_id),
+                    '&amp;',
+                    ('company_id', '=', False),
+                    ('company_ids', '=', False)
+                    ]
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- To hide the rental status at the header level -->
+    <record id="view_order_rental_form" model="ir.ui.view">
+        <field name="name">sale.order.rental.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_renting.rental_order_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('text-bg-success')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-danger')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-warning')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+
+            <xpath expr="//div[hasclass('text-bg-default')]" position="replace">
+                <div>
+                </div>
+            </xpath>
+            <xpath expr="//button[@name='action_open_pickup']" position="attributes">
+                <attribute name="string">Delivery</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="rental_product_pricelist_action" model="ir.actions.act_window">
+        <field name="name">Pricelists</field>
+        <field name="res_model">product.pricelist</field>
+        <field name="view_mode">list,kanban,form</field>
+        <!--        <field name="search_view_id" ref="product_pricelist_view_search" />-->
+        <field name="context">{"rental_order":True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new pricelist
+            </p>
+            <p>
+                A price is a set of sales prices or rules to compute the price of sales order lines based on products,
+                product categories, dates and ordered quantities.
+                This is the perfect tool to handle several pricings, seasonal discounts, etc.
+            </p>
+            <p>
+                You can assign pricelists to your customers or select one when creating a new sales quotation.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="rental_menu_pricelist_main"
+              name="Pricelists"
+              action="rental_customization.rental_product_pricelist_action"
+              groups="product.group_product_pricelist"
+              parent="sale_renting.menu_rental_products"
+              sequence="35"/>
+
+    <menuitem id="menu_rental_products"
+              name="Products"
+              action="sale_renting.rental_product_template_action"
+              parent="sale_renting.menu_rental_products"
+              sequence="4"/>
+</odoo>

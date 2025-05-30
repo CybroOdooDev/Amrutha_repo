@@ -374,42 +374,42 @@ class Lead(models.Model):
 
         Returns:
             float: The current payout percentage (e.g., 10.0 for 10%)
-        """
-        # Find the product for Commission
-        product = self.env['product.product'].search(
-            [('name', '=', 'Commission'),
-             ('default_code', '=', 'COMMISSION')], limit=1)
-        if not product:
-            return 0.0  # If no Commission product is found, return 0%
-
-        # Calculate the date for one year ago
-        last_year_date = datetime.now() - timedelta(days=365)
-        # Search for payments in the past year
-        payments = self.env['account.move.line'].search([
-            ('product_id', '=', product.id),
-            ('move_id.move_type', '=', 'in_invoice'),
-            ('move_id.partner_id', '=',
-             self.env.user.secondary_related_partner_id.id
-             if self.env.user.secondary_related_partner_id else
-             self.env.user.partner_id.id),
-            ('create_date', '>=', last_year_date),
-            ('move_id.state', '=', 'posted')
-        ])
-        # Calculate the total amount paid in the past year
-        total_amount_past_year = sum(
-            payment.price_total for payment in payments)
-
-        # Search for tiers in ascending order of amount
-        tiers = self.env['tier.tier'].search(
-            [('company_id', '=', self.env.company.id)], order='amount asc')
-
-        # Determine the commission rate based on tiers
-        commission_rate = 0.0
-        for tier in tiers:
-            if total_amount_past_year >= tier.amount:
-                commission_rate = tier.commission_percentage / 100.0
-                self.tier = commission_rate *100  # Update tier to reflect the
-                # enforced minimum
+        # """
+        # # Find the product for Commission
+        # product = self.env['product.product'].search(
+        #     [('name', '=', 'Commission'),
+        #      ('default_code', '=', 'COMMISSION')], limit=1)
+        # if not product:
+        #     return 0.0  # If no Commission product is found, return 0%
+        #
+        # # Calculate the date for one year ago
+        # last_year_date = datetime.now() - timedelta(days=365)
+        # # Search for payments in the past year
+        # payments = self.env['account.move.line'].search([
+        #     ('product_id', '=', product.id),
+        #     ('move_id.move_type', '=', 'in_invoice'),
+        #     ('move_id.partner_id', '=',
+        #      self.env.user.secondary_related_partner_id.id
+        #      if self.env.user.secondary_related_partner_id else
+        #      self.env.user.partner_id.id),
+        #     ('create_date', '>=', last_year_date),
+        #     ('move_id.state', '=', 'posted')
+        # ])
+        # # Calculate the total amount paid in the past year
+        # total_amount_past_year = sum(
+        #     payment.price_total for payment in payments)
+        #
+        # # Search for tiers in ascending order of amount
+        # tiers = self.env['tier.tier'].search(
+        #     [('company_id', '=', self.env.company.id)], order='amount asc')
+        #
+        # # Determine the commission rate based on tiers
+        # commission_rate = 0.0
+        # for tier in tiers:
+        #     if total_amount_past_year >= tier.amount:
+        #         commission_rate = tier.commission_percentage / 100.0
+        #         self.tier = commission_rate *100  # Update tier to reflect the
+        #         # enforced minimum
 
     def _default_commercial_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company

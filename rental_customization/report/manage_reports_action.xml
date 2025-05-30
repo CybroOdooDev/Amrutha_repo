@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Delivery PDF Slip -->
+    <record id="action_delivery_pdf_slip" model="ir.actions.report">
+        <field name="name">Delivery PDF</field>
+        <field name="model">product.return.dates</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">rental_customization.delivery_pdf_templates</field>
+        <field name="report_file">rental_customization.delivery_pdf_templates</field>
+        <field name="paperformat_id" ref="rental_customization.paperformat_slip"/>
+    </record>
+    <!-- Pick-Up PDF Slip -->
+    <record id="action_pickup_pdf_slip" model="ir.actions.report">
+        <field name="name">Pick UP PDF</field>
+        <field name="model">product.return.dates</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">rental_customization.pickup_pdf_templates</field>
+        <field name="report_file">rental_customization.pickup_pdf_templates</field>
+        <field name="paperformat_id" ref="rental_customization.paperformat_slip"/>
+    </record>
+</odoo>

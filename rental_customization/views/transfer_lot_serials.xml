@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="lot_serial_transfer_action" model="ir.actions.act_window">
+        <field name="name">Transfer Lot/Serial Number</field>
+        <field name="res_model">transfer.lot.serial.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <menuitem id="transfer_menu" name="Transfer"
+              parent="sale_renting.rental_menu_root" sequence="7" action="rental_customization.lot_serial_transfer_action"/>
+</odoo>

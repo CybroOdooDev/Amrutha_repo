@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="import_file_wizard_form" model="ir.ui.view">
+       <field name="name">import.file.wizard.form</field>
+       <field name="model">import.file.wizard</field>
+       <field name="arch" type="xml">
+           <form string="Import Active Rental Orders">
+               <group>
+                   <group>
+                       <field name="file"/>
+                   </group>
+               </group>
+               <footer>
+                   <button name="action_import_rental_order" string="Import" type="object" class="btn-primary"/>
+               </footer>
+           </form>
+       </field>
+   </record>
+    <record id="import_invoice_wizard_form" model="ir.ui.view">
+       <field name="name">import.invoice.wizard.form</field>
+       <field name="model">import.invoices.wizard</field>
+       <field name="arch" type="xml">
+           <form string="Import Invoices">
+               <group>
+                   <group>
+                       <field name="file"/>
+                   </group>
+               </group>
+               <footer>
+                   <button name="action_import_invoices" string="Import" type="object" class="btn-primary"/>
+               </footer>
+           </form>
+       </field>
+   </record>
+    <record id="import_lot_serial_wizard_form" model="ir.ui.view">
+       <field name="name">import.lot.serial.wizard.form</field>
+       <field name="model">import.lot.serial.wizard</field>
+       <field name="arch" type="xml">
+           <form string="Import Invoices">
+               <group>
+                   <group>
+                       <field name="file"/>
+                   </group>
+               </group>
+               <footer>
+                   <button name="action_import_lot_serial" string="Import" type="object" class="btn-primary"/>
+               </footer>
+           </form>
+       </field>
+   </record>
+    <record id="transfer_lot_serial_wizard_form" model="ir.ui.view">
+       <field name="name">transfer.lot.serial.wizard.form</field>
+       <field name="model">transfer.lot.serial.wizard</field>
+       <field name="arch" type="xml">
+           <form string="Transfer Lot/Serial Numbers">
+               <group>
+                   <group>
+                       <field name="upload_file"/>
+                   </group>
+                   <group>
+                      <field name="upload_details"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="file" invisible="not upload_file"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="lot_ids" widget="many2many_tags" invisible="not upload_details"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="destination_company_id" invisible="not upload_details"/>
+                   </group>
+               </group>
+               <group>
+                   <group>
+                       <field name="destination_location_id" invisible="not upload_details"/>
+                   </group>
+               </group>
+                   <group>
+                       <field name="location_ids" invisible="1"/>
+                   </group>
+               <footer>
+                   <button name="action_transfer_lot_serial" string="Transfer" type="object" class="btn-primary"/>
+               </footer>
+           </form>
+       </field>
+   </record>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data noupdate="0">
+<!-- to create default rental recurring plan - M28 - sitebox storage -->
+        <record id="default_rental_recurring_plan_sitebox" model="rental.recurring.plan">
+            <field name="name">M28</field>
+            <field name="billing_period_value">28</field>
+            <field name="billing_period_unit">day</field>
+            <field name="is_default">True</field>
+            <field name="company_id">8</field>
+        </record>
+<!-- to create default rental recurring plan - M28 -LeaseFleet -->
+        <record id="default_rental_recurring_plan_leasefleet" model="rental.recurring.plan">
+            <field name="name">M28</field>
+            <field name="billing_period_value">28</field>
+            <field name="billing_period_unit">day</field>
+            <field name="is_default">True</field>
+            <field name="company_id">7</field>
+        </record>
+<!-- to create rental periods - M28  -->
+        <record id="default_rental_periods" model="sale.temporal.recurrence">
+            <field name="name">M28</field>
+            <field name="duration">28</field>
+            <field name="unit">day</field>
+        </record>
+    </data>
+</odoo>

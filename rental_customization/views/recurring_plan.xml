@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rental_recurring_plan_view_form" model="ir.ui.view">
+        <field name="name">rental.recurring.plan.view.form</field>
+        <field name="model">rental.recurring.plan</field>
+        <field name="arch" type="xml">
+            <form string="Recurring Plan">
+                <sheet>
+                    <div name="button_box" class="oe_button_box">
+                        <button name="action_open_active_rental" type="object"
+                                class="oe_stat_button" icon="fa-dollar">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Rental Orders</span>
+                                <field name="active_rental_count" class="o_stat_value"/>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Monthly" class="d-block"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="sale_info" string="Details">
+                            <label for="billing_period_value" string="Billing Period"/>
+                            <div>
+                                <field name="billing_period_value" style="width: 3rem;"/>
+                                <field name="billing_period_unit" class="oe_inline"/>
+                            </div>
+                            <field name="company_id" options="{'no_create': True}" groups="base.group_multi_company"/>
+                            <field name="is_default"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="rental_recurring_plan_view_tree" model="ir.ui.view">
+        <field name="name">rental.recurring.plan.view.list</field>
+        <field name="model">rental.recurring.plan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="billing_period_value"/>
+                <field name="billing_period_unit"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="rental_recurring_plan_action" model="ir.actions.act_window">
+        <field name="name">Rental Recurring</field>
+        <field name="res_model">rental.recurring.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="rental_recurring_menu" name="Rental Recurring Plan" parent="sale_renting.menu_rental_config"
+              action="rental_recurring_plan_action"/>
+
+</odoo>

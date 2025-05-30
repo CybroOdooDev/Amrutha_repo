@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data noupdate="0">
+        <!-- to create default product for Delivery-->
+        <record id="default_delivery_product" model="product.product">
+            <field name="name">Rental Delivery</field>
+            <field name="charges_ok">True</field>
+            <field name="service_category">delivery</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="type">service</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+            <field name="service_policy">delivered_manual</field>
+        </record>
+
+        <!-- to create default product for DWPP-->
+        <record id="default_dwpp_product" model="product.product">
+            <field name="name">Rental DWPP</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="charges_ok">True</field>
+            <field name="service_category">dwpp</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+        <!-- to create default product for Pick-Up-->
+        <record id="default_pickup_product" model="product.product">
+            <field name="name">Rental Pick-Up</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="charges_ok">True</field>
+            <field name="service_category">pickup</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+        <!-- to create default product for Delivery Fuel Surcharge-->
+        <record id="delivery_fuel_surcharge_product" model="product.product">
+            <field name="name">Delivery Fuel Surcharge</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="charges_ok">True</field>
+            <field name="service_category">delivery-fuel</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
+
+        <!-- to create default product for Pick up Fuel Surcharge-->
+        <record id="pickup_fuel_surcharge_product" model="product.product">
+            <field name="name">Pick Up Fuel Surcharge</field>
+            <field name="lst_price">0.00</field>
+            <field name="standard_price">0.00</field>
+            <field name="charges_ok">True</field>
+            <field name="service_category">pickup-fuel</field>
+            <field name="type">service</field>
+            <field name="service_policy">delivered_manual</field>
+            <field name="sale_ok">False</field>
+            <field name="rent_ok">False</field>
+            <field name="purchase_ok">False</field>
+        </record>
+    </data>
+</odoo>

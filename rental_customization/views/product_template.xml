@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_rental_form" model="ir.ui.view">
+        <field name="name">product.template.rental.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="sale_renting.product_template_form_view_rental"/>
+        <field name="arch" type="xml">
+            <group name="extra_rental" position="after">
+                <group string="Rental Charges" name="rental_charges" invisible="not rent_ok">
+                    <label for="charges_in_first_invoice"/>
+                    <div>
+                        <field name="charges_in_first_invoice"/>
+                    </div>
+                    <label for="charges_ids"/>
+                    <div>
+                        <field name="charges_ids"
+                               widget="many2many_tags"
+                               domain="[('charges_ok', '=', True),
+                                       ('name', 'not in', ('Delivery Fuel Surcharge', 'Pick Up Fuel Surcharge')),
+                                       '|', ('company_id', '=', company_id), ('company_id', '=', False)]"/>
+                    </div>
+                </group>
+            </group>
+            <xpath expr="//div[@name='options']" position='inside'>
+                <span class="d-inline-block">
+                    <field name="charges_ok" help="charges to be applied for renting"/>
+                    <label for="charges_ok"/>
+                </span>
+                 <span class="d-inline-block">
+                    <label for="service_category" invisible="not charges_ok"/>
+                    <field name="service_category" invisible="not charges_ok" />
+                </span>
+            </xpath>
+            <xpath expr="//field[@name='lot_valuated']" position="after">
+                <field name="transportation_rate"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

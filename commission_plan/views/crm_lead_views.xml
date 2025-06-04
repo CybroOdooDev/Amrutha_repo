@@ -141,7 +141,7 @@
                                    readonly="1"/>
                             <field name="errors_omission_fee" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"
-                                   readonly="1"/>
+                                   readonly="0"/>
                             <field name="eo_insurance_agent_portion"
                                    widget="monetary"
                                    options="{'currency_field': 'currency_id'}"

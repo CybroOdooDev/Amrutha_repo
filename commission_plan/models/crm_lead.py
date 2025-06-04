@@ -28,8 +28,10 @@ class Lead(models.Model):
                                     help="This field represents the "
                                          "calculated commission based on the total amount and applicable percentage.",
                                     readonly=True)
-    tier = fields.Float(string="Tier", compute="_compute_tier",
-                        store=True)
+    # tier = fields.Float(string="Tier", compute="_compute_tier",
+    #                     store=True)
+    tier = fields.Float(string="Tier",  default=lambda self: self.env.user.min_commission_percentage,
+                       )
     commission_to_be_paid = fields.Float(string="Commission Paid",
                                          help="Commission to be paid")
     omissions_insurance = fields.Float(string="Omissions Insurance",
@@ -269,7 +271,7 @@ class Lead(models.Model):
                  'external_referral_fee', 'marketing_fee', 'base_rent', 'landlord_percentage')
     def _compute_balance_for_distribution(self):
         for lead in self:
-            if lead.x_studio_opportunity_type_1.x_name == "Lease":
+            if lead.x_studio_opportunity_type_1.x_name == "Commercial Lease":
                 lead.balance_for_distribution = ((lead.base_rent * lead.landlord_percentage / 100)
                                                  - lead.external_referral_fee)
             else:
@@ -361,53 +363,58 @@ class Lead(models.Model):
                     lead.minimum_commission_due = lead.total_sales_price * (
                             3 / 100)
 
-    @api.depends('total_amount')
-    def _compute_tier(self):
-        """
-        Calculate the current payout percentage based on the agent's past year payments and tiers.
-
-        Steps:
-        1. Find the Commission product
-        2. Get all payments to this agent in the past year
-        3. Sum the total amount paid
-        4. Determine commission rate based on tier thresholds
-
-        Returns:
-            float: The current payout percentage (e.g., 10.0 for 10%)
-        # """
-        # # Find the product for Commission
-        # product = self.env['product.product'].search(
-        #     [('name', '=', 'Commission'),
-        #      ('default_code', '=', 'COMMISSION')], limit=1)
-        # if not product:
-        #     return 0.0  # If no Commission product is found, return 0%
-        #
-        # # Calculate the date for one year ago
-        # last_year_date = datetime.now() - timedelta(days=365)
-        # # Search for payments in the past year
-        # payments = self.env['account.move.line'].search([
-        #     ('product_id', '=', product.id),
-        #     ('move_id.move_type', '=', 'in_invoice'),
-        #     ('move_id.partner_id', '=',
-        #      self.env.user.secondary_related_partner_id.id
-        #      if self.env.user.secondary_related_partner_id else
-        #      self.env.user.partner_id.id),
-        #     ('create_date', '>=', last_year_date),
-        #     ('move_id.state', '=', 'posted')
-        # ])
-        # # Calculate the total amount paid in the past year
-        # total_amount_past_year = sum(
-        #     payment.price_total for payment in payments)
-        #
-        # # Search for tiers in ascending order of amount
-        # tiers = self.env['tier.tier'].search(
-        #     [('company_id', '=', self.env.company.id)], order='amount asc')
-        #
-        # # Determine the commission rate based on tiers
-        # commission_rate = 0.0
-        # for tier in tiers:
-        #     if total_amount_past_year >= tier.amount:
-        #         commission_rate = tier.commission_percentage / 100.0
+    # @api.depends('total_amount')
+    # def _compute_tier(self):
+    #     """
+    #     Calculate the current payout percentage based on the agent's past year payments and tiers.
+    #
+   #     Steps:
+    #     1. Find the Commission product
+    #     2. Get all payments to this agent in the past year
+    #     3. Sum the total amount paid
+    #     4. Determine commission rate based on tier thresholds
+    #
+    #     Returns:
+    #         float: The current payout percentage (e.g., 10.0 for 10%)
+    #     """
+    #
+    #     print("tier test", self.env.user.min_commission_percentage)
+    #     self.tier = self.env.user.min_commission_percentage
+    #
+    #     # ////////////////////
+    #     # Find the product for Commission
+    #     # product = self.env['product.product'].search(
+    #     #     [('name', '=', 'Commission'),
+    #     #      ('default_code', '=', 'COMMISSION')], limit=1)
+    #     # if not product:
+    #     #     return 0.0  # If no Commission product is found, return 0%
+    #     #
+    #     # # Calculate the date for one year ago
+    #     # last_year_date = datetime.now() - timedelta(days=365)
+    #     # # Search for payments in the past year
+    #     # payments = self.env['account.move.line'].search([
+    #     #     ('product_id', '=', product.id),
+    #     #     ('move_id.move_type', '=', 'in_invoice'),
+    #     #     ('move_id.partner_id', '=',
+    #     #      self.env.user.secondary_related_partner_id.id
+    #     #      if self.env.user.secondary_related_partner_id else
+    #     #      self.env.user.partner_id.id),
+    #     #     ('create_date', '>=', last_year_date),
+    #     #     ('move_id.state', '=', 'posted')
+    #     # ])
+    #     # # Calculate the total amount paid in the past year
+    #     # total_amount_past_year = sum(
+    #     #     payment.price_total for payment in payments)
+    #     #
+    #     # # Search for tiers in ascending order of amount
+    #     # tiers = self.env['tier.tier'].search(
+    #     #     [('company_id', '=', self.env.company.id)], order='amount asc')
+    #     #
+    #     # # Determine the commission rate based on tiers
+    #     # commission_rate = 0.0
+    #     # for tier in tiers:
+    #     #     if total_amount_past_year >= tier.amount:
+    #     #         commission_rate = tier.commission_percentage / 100.0
         #         self.tier = commission_rate *100  # Update tier to reflect the
         #         # enforced minimum
 
@@ -432,7 +439,7 @@ class Lead(models.Model):
         self.is_sale_lead = False
         self.is_not_residential_lead = False
 
-        if transaction_type == 'Lease':
+        if transaction_type == 'Commercial Lease':
             self.is_lease_lead = True
         if transaction_type in ('Residential', 'Personal Property'):
             self.is_not_commercial_lead = True
@@ -493,16 +500,21 @@ class Lead(models.Model):
         """Calculate the total commercial commission for the current lead based on the payout tier."""
         for lead in self:
             lead.total_commercial_commission = (lead.balance_for_distribution or 0.0) * (lead.agent_payout_tier or 0.0)
-            transaction_type = lead.x_studio_opportunity_type_1.x_name
-            if transaction_type == 'Lease':
-                base_rent = lead.base_rent
-                lease_duration = lead.lease_duration
-                landlord_percentage = lead.landlord_percentage
-                # if not base_rent or not lease_duration or not landlord_percentage:
-                #     raise UserError(
-                #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
-                lead.total_commercial_commission = base_rent * (
-                        landlord_percentage / 100)
+            # transaction_type = lead.x_studio_opportunity_type_1.x_name
+            # if transaction_type == 'Commercial Lease':
+            #     print("yesyyyyy")
+            #     base_rent = lead.base_rent
+            #     lease_duration = lead.lease_duration
+            #     landlord_percentage = lead.landlord_percentage
+            #     # if not base_rent or not lease_duration or not landlord_percentage:
+            #     #     raise UserError(
+            #     #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
+            #     # lead.total_commercial_commission = base_rent * (
+            #     #         landlord_percentage / 100)
+            #     lead.total_commercial_commission =
+            # print("total_commercial_commission", lead.total_commercial_commission)
+            # print("balance_for_distribution", lead.balance_for_distribution)
+            # print("agent_payout_tier", lead.agent_payout_tier)
 
     @api.depends('total_commercial_commission')
     def _compute_errors_omission_fee(self):
@@ -525,7 +537,7 @@ class Lead(models.Model):
             if transaction_type == 'Sale':
                 lead.is_sale_lead = True
                 self.handle_sale_commission(lead)
-            elif transaction_type == 'Lease':
+            elif transaction_type == 'Commercial Lease':
                 lead.is_sale_lead = False
                 self.handle_lease_commission(lead)
             elif transaction_type == 'Commercial':
@@ -624,7 +636,7 @@ class Lead(models.Model):
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_commercial'),
                 self.id)
-        if self.x_studio_opportunity_type_1.x_name == "Lease":
+        if self.x_studio_opportunity_type_1.x_name == "Commercial Lease":
             pdf_content, _ = self.env[
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
@@ -657,7 +669,7 @@ class Lead(models.Model):
         """ Compute the external refferal fee based on amount
         received times the referral rate"""
         for lead in self:
-            if lead.x_studio_opportunity_type_1.x_name == "Lease":
+            if lead.x_studio_opportunity_type_1.x_name == "Commercial Lease":
                 lead.external_referral_fee =( ((lead.base_rent * lead.landlord_percentage)/100) * lead.commercial_referral_fee_rate) / 100
             else:
                 lead.external_referral_fee = lead.planned_revenue * (lead.commercial_referral_fee_rate / 100)
@@ -665,7 +677,8 @@ class Lead(models.Model):
     @api.depends('company_id')
     def _compute_check_company(self):
         """Function to find the current company is Auctions,
-         Residential and Commercial"""
+         Residential, or Commercial"""
         self.company_check = False
+
         if self.env.company.id in [4,3,2]:
             self.is_company_allowed = True

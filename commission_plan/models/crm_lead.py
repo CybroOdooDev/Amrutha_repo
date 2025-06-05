@@ -28,10 +28,8 @@ class Lead(models.Model):
                                     help="This field represents the "
                                          "calculated commission based on the total amount and applicable percentage.",
                                     readonly=True)
-    # tier = fields.Float(string="Tier", compute="_compute_tier",
-    #                     store=True)
-    tier = fields.Float(string="Tier",  default=lambda self: self.env.user.min_commission_percentage,
-                       )
+    tier = fields.Float(string="Tier", compute="_compute_tier",
+                        store=True)
     commission_to_be_paid = fields.Float(string="Commission Paid",
                                          help="Commission to be paid")
     omissions_insurance = fields.Float(string="Omissions Insurance",
@@ -350,9 +348,9 @@ class Lead(models.Model):
             if lead.total_sales_price:
                 if lead.user_id.has_minimum_commission:
                     opportunity_type = lead.x_studio_opportunity_type_1.x_name if lead.x_studio_opportunity_type_1 else False
-                    if opportunity_type == 'Buy' and lead.total_sales_price <= 67000:
+                    if opportunity_type == 'Residential Buy' and lead.total_sales_price <= 67000:
                         lead.minimum_commission_due = 2000.0
-                    elif opportunity_type == 'Sell' and lead.total_sales_price <= 134000:
+                    elif opportunity_type == 'Residential Sale' and lead.total_sales_price <= 134000:
                         lead.minimum_commission_due = 4000.0
                     else:
                         # Fall back to 3% calculation if conditions aren't met
@@ -363,60 +361,60 @@ class Lead(models.Model):
                     lead.minimum_commission_due = lead.total_sales_price * (
                             3 / 100)
 
-    # @api.depends('total_amount')
-    # def _compute_tier(self):
-    #     """
-    #     Calculate the current payout percentage based on the agent's past year payments and tiers.
-    #
-   #     Steps:
-    #     1. Find the Commission product
-    #     2. Get all payments to this agent in the past year
-    #     3. Sum the total amount paid
-    #     4. Determine commission rate based on tier thresholds
-    #
-    #     Returns:
-    #         float: The current payout percentage (e.g., 10.0 for 10%)
-    #     """
-    #
-    #     print("tier test", self.env.user.min_commission_percentage)
-    #     self.tier = self.env.user.min_commission_percentage
-    #
-    #     # ////////////////////
-    #     # Find the product for Commission
-    #     # product = self.env['product.product'].search(
-    #     #     [('name', '=', 'Commission'),
-    #     #      ('default_code', '=', 'COMMISSION')], limit=1)
-    #     # if not product:
-    #     #     return 0.0  # If no Commission product is found, return 0%
-    #     #
-    #     # # Calculate the date for one year ago
-    #     # last_year_date = datetime.now() - timedelta(days=365)
-    #     # # Search for payments in the past year
-    #     # payments = self.env['account.move.line'].search([
-    #     #     ('product_id', '=', product.id),
-    #     #     ('move_id.move_type', '=', 'in_invoice'),
-    #     #     ('move_id.partner_id', '=',
-    #     #      self.env.user.secondary_related_partner_id.id
-    #     #      if self.env.user.secondary_related_partner_id else
-    #     #      self.env.user.partner_id.id),
-    #     #     ('create_date', '>=', last_year_date),
-    #     #     ('move_id.state', '=', 'posted')
-    #     # ])
-    #     # # Calculate the total amount paid in the past year
-    #     # total_amount_past_year = sum(
-    #     #     payment.price_total for payment in payments)
-    #     #
-    #     # # Search for tiers in ascending order of amount
-    #     # tiers = self.env['tier.tier'].search(
-    #     #     [('company_id', '=', self.env.company.id)], order='amount asc')
-    #     #
-    #     # # Determine the commission rate based on tiers
-    #     # commission_rate = 0.0
-    #     # for tier in tiers:
-    #     #     if total_amount_past_year >= tier.amount:
-    #     #         commission_rate = tier.commission_percentage / 100.0
-        #         self.tier = commission_rate *100  # Update tier to reflect the
-        #         # enforced minimum
+    @api.depends('total_amount')
+    def _compute_tier(self):
+        """
+        Calculate the current payout percentage based on the agent's past year payments and tiers.
+
+       Steps:
+        1. Find the Commission product
+        2. Get all payments to this agent in the past year
+        3. Sum the total amount paid
+        4. Determine commission rate based on tier thresholds
+
+        Returns:
+            float: The current payout percentage (e.g., 10.0 for 10%)
+        """
+
+        # ////////////////////
+        # Find the product for Commission
+        product = self.env['product.product'].search(
+            [('name', '=', 'Commission'),
+             ('default_code', '=', 'COMMISSION')], limit=1)
+        if not product:
+            return 0.0  # If no Commission product is found, return 0%
+
+        # Calculate the date for one year ago
+        last_year_date = datetime.now() - timedelta(days=365)
+        # Search for payments in the past year
+        payments = self.env['account.move.line'].search([
+            ('product_id', '=', product.id),
+            ('move_id.move_type', '=', 'in_invoice'),
+            ('move_id.partner_id', '=',
+             self.env.user.secondary_related_partner_id.id
+             if self.env.user.secondary_related_partner_id else
+             self.env.user.partner_id.id),
+            ('create_date', '>=', last_year_date),
+            ('move_id.state', '=', 'posted')
+        ])
+        # Calculate the total amount paid in the past year
+        total_amount_past_year = sum(
+            payment.price_total for payment in payments)
+
+        # Search for tiers in ascending order of amount
+        tiers = self.env['tier.tier'].search(
+            [('company_id', '=', self.env.company.id)], order='amount asc')
+
+        # Determine the commission rate based on tiers
+        commission_rate = 0.0
+        for tier in tiers:
+            if total_amount_past_year >= tier.amount:
+                commission_rate = tier.commission_percentage / 100.0
+                self.tier = commission_rate *100  # Update tier to reflect the
+                # enforced minimum
+
+            else:
+                self.tier = self.env.user.min_commission_percentage
 
     def _default_commercial_referral_fee_rate(self):
         # Return the referral_fee_rate from the current company
@@ -534,7 +532,7 @@ class Lead(models.Model):
     def action_commercial_commission(self):
         for lead in self:
             transaction_type = lead.x_studio_opportunity_type_1.x_name
-            if transaction_type == 'Sale':
+            if transaction_type == 'Commercial Sale':
                 lead.is_sale_lead = True
                 self.handle_sale_commission(lead)
             elif transaction_type == 'Commercial Lease':
@@ -631,7 +629,7 @@ class Lead(models.Model):
             pdf_content, _ = self.env["ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead'),
                 self.id)
-        if self.x_studio_opportunity_type_1.x_name in ('Sale', 'Commercial'):
+        if self.x_studio_opportunity_type_1.x_name in ('Commercial Sale', 'Commercial'):
             pdf_content, _ = self.env[
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_commercial'),

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--<odoo>-->
+<!--    <record id="crm_lead_stage_probability_automation" model="base.automation">-->
+<!--        <field name="name">Set Probability by Stage</field>-->
+<!--        <field name="model_id" ref="crm.model_crm_lead"/>-->
+<!--        <field name="trigger">on_write</field>-->
+<!--&lt;!&ndash;        <field name="state">code</field>&ndash;&gt;-->
+<!--        <field name="code"><![CDATA[-->
+<!--stage = record.stage_id.name-->
+
+<!--if stage == "New":-->
+<!--    record.probability = 0-->
+<!--elif stage == "Cold":-->
+<!--    record.probability = 50-->
+<!--elif stage == "Warm":-->
+<!--    record.probability = 80-->
+<!--elif stage == "Hot":-->
+<!--    record.probability = 100-->
+<!--elif stage == "Won":-->
+<!--    record.probability = 100-->
+<!--elif stage == "Lost":-->
+<!--    record.probability = 20-->
+<!--        ]]></field>-->
+<!--    </record>-->
+<!--</odoo>-->
+
+<!--<odoo>-->
+<!--    &lt;!&ndash; Server Action on Stock Picking Done &ndash;&gt;-->
+<!--    <record id="crm_lead_stage_probability_automation" model="ir.actions.server">-->
+<!--        <field name="name">Set Probability by Stage</field>-->
+<!--        <field name="model_id" ref="crm.model_crm_lead"/>-->
+<!--        <field name="type">code</field>-->
+<!--        <field name="code">-->
+<!--            print("yyyyy")-->
+<!--&lt;!&ndash;            stage = record.stage_id.name&ndash;&gt;-->
+<!--&lt;!&ndash;                if stage == "Cold":&ndash;&gt;-->
+<!--&lt;!&ndash;                    record.probability = 50&ndash;&gt;-->
+<!--&lt;!&ndash;                elif stage == "Warm":&ndash;&gt;-->
+<!--&lt;!&ndash;                    record.probability = 80&ndash;&gt;-->
+<!--&lt;!&ndash;                elif stage == "Hot":&ndash;&gt;-->
+<!--&lt;!&ndash;                    record.probability = 100&ndash;&gt;-->
+<!--&lt;!&ndash;                elif stage == "Won":&ndash;&gt;-->
+<!--&lt;!&ndash;                    record.probability = 100&ndash;&gt;-->
+<!--&lt;!&ndash;                elif stage == "Lost":&ndash;&gt;-->
+<!--&lt;!&ndash;                    record.probability = 20&ndash;&gt;-->
+<!--        </field>-->
+<!--    </record>-->
+<!--    &lt;!&ndash; Automated Action on Stock Picking Done &ndash;&gt;-->
+<!--    <record id="automated_action_create_invoice_on_picking_done" model="base.automation">-->
+<!--        <field name="name">Set Probability by Stage</field>-->
+<!--        <field name="model_id" ref="crm.model_crm_lead"/>-->
+<!--        <field name="trigger">on_write</field>-->
+<!--&lt;!&ndash;        <field name="filter_domain">[('state', '=', 'done')]</field>&ndash;&gt;-->
+<!--        <field name="action_server_ids" eval="[(4, ref('crm_lead_stage_probability_automation'))]"/>-->
+<!--    </record>-->
+
+<!--</odoo>-->
+
+
+<odoo>
+    <!-- Server Action: Update Lead Probability by Stage -->
+    <record id="crm_lead_stage_probability_automation" model="ir.actions.server">
+        <field name="name">Set Probability by Stage</field>
+        <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="state">code</field>
+        <field name="code">model._update_lead_probabilities()</field>
+    </record>
+
+    <!-- Automated Action to Trigger Server Action on Write -->
+    <record id="automated_action_crm_probability_update" model="base.automation">
+        <field name="name">Auto-Update Probability by Stage</field>
+        <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="trigger">on_write</field>
+<!--        <field name="filter_domain">[('stage_id', '!=', False)]</field>-->
+        <field name="action_server_ids" eval="[(4, ref('crm_lead_stage_probability_automation'))]"/>
+    </record>
+</odoo>

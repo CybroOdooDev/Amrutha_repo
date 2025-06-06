@@ -192,6 +192,17 @@
                     </group>
                 </page>
             </xpath>
+
+            <xpath expr="//field[@name='team_id']" position="after">
+<!--                <label for="lead_source"/>-->
+                    <field name="lead_source"/>
+                    <field name="lead_classification"/>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+<!--                <label for="lead_source"/>-->
+                    <field name="lead_source"/>
+                    <field name="lead_classification"/>
+            </xpath>
         </field>
     </record>
 
@@ -216,4 +227,15 @@
             </xpath>
         </field>
     </record>
+
+     <record id="crm_lead_view_kanban_forecast" model="ir.ui.view">
+            <field name="name">crm.lead.view.kanban.forecast</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@widget='kanban_activity']" position="after">
+                        <field name="crm_change_stage"/>
+                </xpath>
+            </field>
+     </record>
 </odoo>

@@ -13,12 +13,16 @@
         # "views/eo_insurance_tier_views.xml",
         # "views/res_config_settings_views.xml",
         # "views/res_partner_views.xml",
-        # "views/res_user_views.xml",
+        "views/crm_stage_view.xml",
         # "report/commission_report.xml",
+        "data/ir_cron_data.xml",
         "data/crm_stage_automation.xml",
+        "data/crm_stage_data.xml",
     ],
     "license": "LGPL-3",
     "summary": "Lange Real Estate (RE) Residential and Commercial Commissions",
     "application": False,
     "installable": True,
+    # 'post_init_hook': 'post_init_hook',
+
 }

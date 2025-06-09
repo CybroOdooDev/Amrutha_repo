@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import base64
 
-from lxml import etree
-
 from odoo import fields, models, api, _, Command
 from datetime import datetime, timedelta
 from odoo.exceptions import ValidationError, UserError
@@ -126,7 +124,7 @@ class Lead(models.Model):
                                     ('registered bidder', 'Registered Bidder - Auction'), ('signage', 'Signage'), ('social media', 'Social Media'),
                                     ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)')], string='Lead Source')
     lead_classification = fields.Selection([('exponential', 'Exponential'), ('agent sourced', 'Agent Sourced')], string='Lead Classification')
-    crm_change_stage = fields.Char(compute="_compute_crm_stage")
+    # crm_change_stage = fields.Char(compute="_compute_crm_stage")
 
 
     @api.depends('minimum_commission_due', 'referral_fee_rate')
@@ -222,6 +220,7 @@ class Lead(models.Model):
     is_not_commercial_lead = fields.Boolean()
     is_not_residential_lead = fields.Boolean()
     is_company_allowed = fields.Boolean()
+    find_company_lange = fields.Boolean()
     base_rent = fields.Float(
         string="Base Rent",
         help="The base rent amount for the lease.",
@@ -692,6 +691,12 @@ class Lead(models.Model):
 
         if self.env.company.id in [4,3,2]:
             self.is_company_allowed = True
+        if self.env.company.id in [1,2,3,4,5]:
+            self.find_company_lange = True
+
+        # if self.env.comapny.id in[]
+
+        # if self.env.company.id in []
 
     # @api.onchange('company_id')
     # def _onchange_company_id(self):
@@ -727,29 +732,29 @@ class Lead(models.Model):
     #     self._onchange_company_id()
 
 
-    @api.depends('company_id')
-    def _compute_crm_stage(self):
-        print("ayana")
-        current_company = self.env.company
-        if current_company.name == 'Residential':
-            print("yes residential")
-            for stage in self.env['crm.stage'].search([]):
-                if stage.name == 'New':
-                    stage.name = 'Cold'
-                elif stage.name == 'Qualified':
-                    stage.name = 'Warm'
-                elif stage.name == 'Proposition':
-                    stage.name = 'Hot'
-        else:
-            for stage in self.env['crm.stage'].search([]):
-                print("yes anther")
-                if stage.name == 'Cold':
-                    stage.name = 'New'
-                elif stage.name == 'Warm':
-                    stage.name = 'Qualified'
-                elif stage.name == 'Hot':
-                    stage.name = 'Proposition'
-        self.crm_change_stage = "0"
+    # @api.depends('company_id')
+    # def _compute_crm_stage(self):
+    #     print("ayana")
+    #     current_company = self.env.company
+    #     if current_company.name == 'Residential':
+    #         print("yes residential")
+    #         for stage in self.env['crm.stage'].search([]):
+    #             if stage.name == 'New':
+    #                 stage.name = 'Cold'
+    #             elif stage.name == 'Qualified':
+    #                 stage.name = 'Warm'
+    #             elif stage.name == 'Proposition':
+    #                 stage.name = 'Hot'
+    #     else:
+    #         for stage in self.env['crm.stage'].search([]):
+    #             print("yes anther")
+    #             if stage.name == 'Cold':
+    #                 stage.name = 'New'
+    #             elif stage.name == 'Warm':
+    #                 stage.name = 'Qualified'
+    #             elif stage.name == 'Hot':
+    #                 stage.name = 'Proposition'
+    #     self.crm_change_stage = "0"
 
 
         # Correct ways to invalidate cache:

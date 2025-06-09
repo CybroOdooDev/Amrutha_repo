@@ -1,0 +1,43 @@
+<odoo>
+    <record id="view_crm_stage_form_inherit" model="ir.ui.view">
+        <field name="name">crm.stage.form.inherit</field>
+        <field name="model">crm.stage</field>
+        <field name="inherit_id" ref="crm.crm_stage_form"/>
+        <field name="arch" type="xml">
+             <xpath expr="//field[@name='fold']" position="after">
+                <field name="company_id"/>
+                <field name="is_lange_real_estate"/>
+                <field name="check_company_boolean"/>
+            </xpath>
+        </field>
+    </record>
+
+
+
+        <record id="crm_lead_view_form_inherit_crm_stage" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.crm.stage</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+             <xpath expr="//field[@name='stage_id']" position="attributes">
+                 <attribute name="domain">[('company_id','=', False)]</attribute>
+<!--                <field name="company_id"/>-->
+<!--                <field name="is_lange_real_estate"/>-->
+<!--                <field name="check_company_boolean"/>-->
+            </xpath>
+        </field>
+    </record>
+
+<!--    <record id="view_crm_stage_tree_inherit" model="ir.ui.view">-->
+<!--        <field name="name">crm.stage.tree.inherit</field>-->
+<!--        <field name="model">crm.stage</field>-->
+<!--        <field name="inherit_id" ref="crm.crm_stage_tree"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--             <xpath expr="//field[@name='is_won']" position="after">-->
+<!--                <field name="company_id"/>-->
+<!--                <field name="is_lange_real_estate"/>-->
+<!--                <field name="check_company_boolean"/>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+</odoo>

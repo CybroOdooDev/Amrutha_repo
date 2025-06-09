@@ -50,6 +50,7 @@
                 <field name="is_company_allowed"/>
                 <field name="company_id"/>
                 <field name="company_check"/>
+                <field name="find_company_lange"/>
                 <page string="Commission"
                       invisible="not is_calculate_commission or is_not_residential_lead">
                     <field name="currency_id" invisible="1"/>
@@ -195,13 +196,13 @@
 
             <xpath expr="//field[@name='team_id']" position="after">
 <!--                <label for="lead_source"/>-->
-                    <field name="lead_source"/>
-                    <field name="lead_classification"/>
+                    <field name="lead_source" invisible="not find_company_lange"/>
+                    <field name="lead_classification" invisible="not find_company_lange"/>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
 <!--                <label for="lead_source"/>-->
-                    <field name="lead_source"/>
-                    <field name="lead_classification"/>
+                    <field name="lead_source" invisible="not find_company_lange"/>
+                    <field name="lead_classification" invisible="not find_company_lange"/>
             </xpath>
         </field>
     </record>
@@ -228,14 +229,14 @@
         </field>
     </record>
 
-     <record id="crm_lead_view_kanban_forecast" model="ir.ui.view">
-            <field name="name">crm.lead.view.kanban.forecast</field>
-            <field name="model">crm.lead</field>
-            <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@widget='kanban_activity']" position="after">
-                        <field name="crm_change_stage"/>
-                </xpath>
-            </field>
-     </record>
+<!--     <record id="crm_lead_view_kanban_forecast" model="ir.ui.view">-->
+<!--            <field name="name">crm.lead.view.kanban.forecast</field>-->
+<!--            <field name="model">crm.lead</field>-->
+<!--            <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <xpath expr="//field[@widget='kanban_activity']" position="after">-->
+<!--                        <field name="crm_change_stage"/>-->
+<!--                </xpath>-->
+<!--            </field>-->
+<!--     </record>-->
 </odoo>

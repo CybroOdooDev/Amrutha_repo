@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="option_no" model="incentives.selection">
+            <field name="name">No</field>
+        </record>
+        <record id="option_irb" model="incentives.selection">
+            <field name="name">IRB</field>
+        </record>
+        <record id="option_cid" model="incentives.selection">
+            <field name="name">CID</field>
+        </record>
+        <record id="option_sbd" model="incentives.selection">
+            <field name="name">TBD</field>
+        </record>
+    </data>
+</odoo>

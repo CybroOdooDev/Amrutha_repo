@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="approval_purchase_request_view_form_inherit_custom" model="ir.ui.view">
+        <field name="name">approval.purchase.request.view.form.inherit</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approvals.approval_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location']" position="after">
+                <field name="incentive_ids" widget="many2many_tags"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,31 @@
+<odoo>
+    <record id="crm_stage_lang_2" model="crm.stage">
+        <field name="name">Cold</field>
+        <field name="sequence">20</field>
+        <field name="company_ids" eval="[(6, 0, [1,2, 3, 4, 5])]"/>
+    </record>
+
+    <record id="crm_stage_lang_3" model="crm.stage">
+        <field name="name">Warm</field>
+        <field name="sequence">30</field>
+        <field name="company_ids" eval="[(6, 0, [1,2, 3, 4, 5])]"/>
+    </record>
+
+    <record id="crm_stage_lang_4" model="crm.stage">
+        <field name="name">Hot</field>
+        <field name="sequence">30</field>
+        <field name="company_ids" eval="[(6, 0, [1,2, 3, 4, 5])]"/>
+    </record>
+
+    <record id="custom_crm_stage_company_rule" model="ir.rule">
+        <field name="name">User can only see CRM stages in their allowed companies</field>
+        <field name="model_id" ref="crm.model_crm_stage"/>
+        <field name="domain_force">[('company_ids', 'in', user.company_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

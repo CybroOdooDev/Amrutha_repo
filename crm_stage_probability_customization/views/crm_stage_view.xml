@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_crm_stage_form_inherit" model="ir.ui.view">
+        <field name="name">crm.stage.form.inherit</field>
+        <field name="model">crm.stage</field>
+        <field name="inherit_id" ref="crm.crm_stage_form"/>
+        <field name="arch" type="xml">
+             <xpath expr="//field[@name='fold']" position="after">
+                <field name="company_ids" widget="many2many_tags"/>
+                <field name="is_lange_real_estate"/>
+            </xpath>
+        </field>
+    </record>
+
+<record id="crm_lead_view_form_inherit_crm_stage" model="ir.ui.view">
+    <field name="name">crm.lead.form.inherit.crm.stage</field>
+    <field name="model">crm.lead</field>
+    <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='tag_ids']" position="after">
+            <field name="stage_company_ids" widget="many2many_tags"/>
+        </xpath>
+        <xpath expr="//field[@name='stage_id']" position="attributes">
+            <attribute name="domain">[('company_ids', 'in', stage_company_ids)]</attribute>
+        </xpath>
+    </field>
+</record>
+</odoo>

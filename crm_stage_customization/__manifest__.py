@@ -1,5 +1,5 @@
 {
-    "name": "CRM Stage Probability Automation",
+    "name": "CRM Stage Customization",
     "depends": ["base", 'crm'],
     "category": "CRM",
     "version": '18.0.1.0.0',

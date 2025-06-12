@@ -15,19 +15,19 @@ class CRMLead(models.Model):
         for record in self:
             prob = record.probability
             if 0 <= prob < 20:
-                record._origin.stage_id = 5
+                record._origin.stage_id = (self.env.ref('crm_stage_customization.crm_stage_lang_5').id)
 
             elif 20 <= prob < 50:
-                record._origin.stage_id = 19
+                record._origin.stage_id = (self.env.ref('crm_stage_customization.crm_stage_lang_2').id)
 
             elif 50 <= prob < 80:
-                record._origin.stage_id = 16
+                record._origin.stage_id = (self.env.ref('crm_stage_customization.crm_stage_lang_3').id)
 
             elif 80 <= prob < 100:
-                record._origin.stage_id = 20
+                record._origin.stage_id = (self.env.ref('crm_stage_customization.crm_stage_lang_4').id)
 
             elif prob == 100:
-                record._origin.stage_id = 4
+                record._origin.stage_id = (self.env.ref('crm.stage_lead4').id)
 
 
     @api.depends('tag_ids','probability','expected_revenue')
@@ -52,14 +52,14 @@ class CRMLead(models.Model):
                                 UPDATE crm_lead
                                 SET stage_id = %s
                                 WHERE id = %s
-                            """, (self.env.ref('crm_stage_probability_customization.crm_stage_lang_2').id, record.id))
+                            """, ((self.env.ref('crm_stage_customization.crm_stage_lang_5').id), record.id))
             elif 20 <= prob < 50:
                 print('kkkkaaa')
                 self.env.cr.execute("""
                                 UPDATE crm_lead
                                 SET stage_id = %s
                                 WHERE id = %s
-                            """, (19, record.id))
+                            """, ((self.env.ref('crm_stage_customization.crm_stage_lang_2').id), record.id))
 
             elif 50 <= prob < 80:
                 print("16")
@@ -67,7 +67,7 @@ class CRMLead(models.Model):
                                 UPDATE crm_lead
                                 SET stage_id = %s
                                 WHERE id = %s
-                            """, (16, record.id))
+                            """, ((self.env.ref('crm_stage_customization.crm_stage_lang_3').id), record.id))
 
             elif 80 <= prob < 100:
                 print("20")
@@ -75,14 +75,14 @@ class CRMLead(models.Model):
                                UPDATE crm_lead
                                SET stage_id = %s
                                WHERE id = %s
-                           """, (20, record.id))
+                           """, ((self.env.ref('crm_stage_customization.crm_stage_lang_4').id), record.id))
 
             elif prob == 100:
                 self.env.cr.execute("""
                                UPDATE crm_lead
                                SET stage_id = %s
                                WHERE id = %s
-                           """, (4, record.id))
+                           """, ((self.env.ref('crm.stage_lead4').id), record.id))
 
         team_id = self._context.get('default_team_id')
         if team_id:
@@ -92,10 +92,14 @@ class CRMLead(models.Model):
 
         # switch kanban pipeline states for lang real estate and it's branches
         if self.env.company.id in [1, 2, 3, 4, 5]:
-            return stages.browse([19, 16, 20, 4, 5])
+            # return stages.browse([19, 16, 20, 4, 5])
+            return stages.browse([(self.env.ref('crm_stage_customization.crm_stage_lang_5').id), (self.env.ref('crm_stage_customization.crm_stage_lang_2').id), (self.env.ref('crm_stage_customization.crm_stage_lang_3').id),
+                                  (self.env.ref('crm_stage_customization.crm_stage_lang_4').id), (self.env.ref('crm.stage_lead4').id)])
         else:
             stage_ids = stages.sudo()._search(search_domain, order=stages._order)
-            stage_ids = [stage_id for stage_id in stage_ids if stage_id not in [19, 16, 20]]
+            # stage_ids = [stage_id for stage_id in stage_ids if stage_id not in [19, 16, 20]]
+            stage_ids = [stage_id for stage_id in stage_ids if stage_id not in [(self.env.ref('crm_stage_customization.crm_stage_lang_2').id), (self.env.ref('crm_stage_customization.crm_stage_lang_3').id),
+                                                                                (self.env.ref('crm_stage_customization.crm_stage_lang_4').id)]]
             return stages.browse(stage_ids)
 
     def change_stages_for_lange(self):
@@ -105,8 +109,8 @@ class CRMLead(models.Model):
         target_stage = self.env['crm.lead'].search([('company_id', 'in', [1,2,3,4,5])])
         for lead_stage in target_stage:
             if lead_stage.stage_id.name == "New":
-                lead_stage.write({'stage_id': 19})
+                lead_stage.write({'stage_id': (self.env.ref('crm_stage_customization.crm_stage_lang_2').id)})
             if lead_stage.stage_id.name == "Qualified":
-                lead_stage.write({'stage_id': 16})
+                lead_stage.write({'stage_id': (self.env.ref('crm_stage_customization.crm_stage_lang_3').id)})
             if lead_stage.stage_id.name == "Proposition":
-                lead_stage.write({'stage_id': 20})
+                lead_stage.write({'stage_id': (self.env.ref('crm_stage_customization.crm_stage_lang_4').id)})

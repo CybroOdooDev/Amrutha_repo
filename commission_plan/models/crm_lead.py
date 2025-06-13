@@ -118,13 +118,14 @@ class Lead(models.Model):
     lead_source = fields.Selection([('after hours', 'After Hours'), ('brokerage call', 'Brokerage Call'), ('broker', 'Broker'), ('cold calls', 'Cold Calls'),
                                     ('derby movie theater', 'Derby Movie Theater'), ('development deals', 'Development Deals'), ('family/friend', 'Family/Friend'),
                                     ('FSBO lead', 'FSBO Lead'), ('ihomefinder', 'ihomefinder'), ('inbound call', 'Inbound Call'), ('inside sales networking', 'Inside Sales Networking'),
-                                    ('LANGE affiliate company', 'LANGE Affiliate Company (TCRS, JBL, etc.)'), ('LANGE employee program', 'LANGE Employee Program'), ('lead generation paid by agent', 'Lead Generation Paid By Agent (Zillow.com, realtor.com, etc)'),
+                                    ('LANGE affiliate company', 'LANGE Affiliate Company (TCRS, JBL, etc.)'), ('LANGE employee program', 'LANGE Employee Program'), ('lead generation paid by agent', 'Lead Generation Paid By Agent (Zillow.com, Relator.com, etc)'),
                                     ('lre event lead form', 'LRE Event Lead Form'), ('open house', 'Open House'), ('past client', 'Past Client'), ('personal contact', 'Personal Contact'),
                                     ('personal transaction', 'Personal Transaction'), ('realtor.com', 'Realtor.com (Paid By Brokerage)'), ('referral', 'Referral'),
                                     ('registered bidder', 'Registered Bidder - Auction'), ('signage', 'Signage'), ('social media', 'Social Media'),
                                     ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)')], string='Lead Source')
-    lead_classification = fields.Selection([('exponential', 'Exponential Lead'), ('agent sourced', 'Agent Lead')], string='Lead Classification')
+    lead_classification = fields.Selection([('exponential', 'Exponential'), ('agent sourced', 'Agent Sourced')], string='Lead Classification')
     # crm_change_stage = fields.Char(compute="_compute_crm_stage")
+
 
 
     @api.depends('minimum_commission_due', 'referral_fee_rate')

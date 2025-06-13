@@ -118,13 +118,14 @@ class Lead(models.Model):
     lead_source = fields.Selection([('after hours', 'After Hours'), ('brokerage call', 'Brokerage Call'), ('broker', 'Broker'), ('cold calls', 'Cold Calls'),
                                     ('derby movie theater', 'Derby Movie Theater'), ('development deals', 'Development Deals'), ('family/friend', 'Family/Friend'),
                                     ('FSBO lead', 'FSBO Lead'), ('ihomefinder', 'ihomefinder'), ('inbound call', 'Inbound Call'), ('inside sales networking', 'Inside Sales Networking'),
-                                    ('LANGE affiliate company', 'LANGE Affiliate Company (TCRS, JBL, etc.)'), ('LANGE employee program', 'LANGE Employee Program'), ('lead generation paid by agent', 'Lead Generation Paid By Agent (Zillow.com, Relator.com, etc)'),
+                                    ('LANGE affiliate company', 'LANGE Affiliate Company (TCRS, JBL, etc.)'), ('LANGE employee program', 'LANGE Employee Program'), ('lead generation paid by agent', 'Lead Generation Paid By Agent (Zillow.com, realtor.com, etc)'),
                                     ('lre event lead form', 'LRE Event Lead Form'), ('open house', 'Open House'), ('past client', 'Past Client'), ('personal contact', 'Personal Contact'),
                                     ('personal transaction', 'Personal Transaction'), ('realtor.com', 'Realtor.com (Paid By Brokerage)'), ('referral', 'Referral'),
                                     ('registered bidder', 'Registered Bidder - Auction'), ('signage', 'Signage'), ('social media', 'Social Media'),
                                     ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)')], string='Lead Source')
-    lead_classification = fields.Selection([('exponential', 'Exponential'), ('agent sourced', 'Agent Sourced')], string='Lead Classification')
-    # crm_change_stage = fields.Char(compute="_compute_crm_stage")
+    lead_classification = fields.Selection([('exponential', 'Exponential Lead'), ('agent sourced', 'Agent Lead')], string='Lead Classification')
+    override_minimum_commission = fields.Boolean(string="Override Minimum Commission")
+
 
 
 
@@ -231,22 +232,19 @@ class Lead(models.Model):
         help="The duration of the lease in months.",
     )
     landlord_percentage = fields.Float(
-        string="Landlord Percentage (%)",
+        string="Agent Commission % Charged",
         help="The percentage of the lease base rent charged to the landlord.",
     )
     commercial_referral_fee_rate = fields.Float(
         string="External Referral rate",
         help="Percentage paid to the  referral agent that brought in the "
-             "lead.",
-        default=lambda self: self._default_commercial_referral_fee_rate()
-    )
+             "lead.")
     # Add these new fields to the Lead class in crm_lead.py
     external_marketing_agency = fields.Many2one('res.partner',
                                                 string="External Marketing "
                                                        "Agency")
     marketing_fee = fields.Float(string="Marketing Fee")
-    co_agent_percentage = fields.Float(string="Co-Agent Percentage",
-                                       default=30.0)  # This already exists, just noting it's used
+    co_agent_percentage = fields.Float(string="Co-Agent Percentage")  # This already exists, just noting it's used
     is_manual_marketing_fee = fields.Boolean(string="Manual Marketing Fee")
     # New fields for commercial commission calculations
     balance_for_distribution = fields.Float(
@@ -347,6 +345,7 @@ class Lead(models.Model):
 
     @api.depends('minimum_commission_due', 'total_amount')
     def _compute_commission_to_be_converted_by_agent(self):
+        print("changed minimum", self.minimum_commission_due)
         for lead in self:
             if lead.total_amount < lead.minimum_commission_due:
                 lead.commission_to_be_converted_by_agent = (
@@ -428,9 +427,10 @@ class Lead(models.Model):
             else:
                 self.tier = self.env.user.min_commission_percentage
 
-    def _default_commercial_referral_fee_rate(self):
-        # Return the referral_fee_rate from the current company
-        return self.env.company.commercial_referral_fee_rate
+    # def _default_commercial_referral_fee_rate(self):
+    #     # Return the referral_fee_rate from the current company
+    #     print("amrutha", self.env.company.commercial_referral_fee_rate)
+    #     return self.env.company.commercial_referral_fee_rate
 
     # @api.onchange('x_studio_opportunity_type_1')
     # def _onchange_x_studio_opportunity_type_1(self):
@@ -695,136 +695,23 @@ class Lead(models.Model):
         if self.env.company.id in [1,2,3,4,5]:
             self.find_company_lange = True
 
-        # if self.env.comapny.id in[]
+    @api.onchange('override_minimum_commission')
+    def _onchange_override_minimum_commission(self):
+        """allow users to override the minimum commission due"""
 
-        # if self.env.company.id in []
+        if self.override_minimum_commission == True:
+            print("override minimum commision")
+            self.minimum_commission_due = 0.0
 
-    # @api.onchange('company_id')
-    # def _onchange_company_id(self):
-    #     """Trigger a page refresh when company_id changes."""
-    #     if self.env.company:
-    #         print("just refreshhh")
-    #         # Return a client action to reload the page
-    #         return {
-    #             'type': 'ir.actions.client',
-    #             'tag': 'reload',
-    #         }
-    #
-    # @api.depends('company_id')
-    # def _compute_crm_stage(self):
-    #     """"""
-    #     print("ayana")
-    #     current_company = self.env.company
-    #     if current_company.name == 'Residential':
-    #         print("yes residential")
-    #         for stage in self.env['crm.stage'].search([]):
-    #             if stage.name == 'New':
-    #                 stage.name = 'Hot'
-    #             elif stage.name == 'Qualified':
-    #                 stage.name = 'Cold'
-    #     else:
-    #         for stage in self.env['crm.stage'].search([]):
-    #             print("yes anther")
-    #             if stage.name == 'Hot':
-    #                 stage.name = 'New'
-    #             elif stage.name == 'Cold':
-    #                 stage.name = 'Qualified'
-    #     self.crm_change_stage = "0"
-    #     self._onchange_company_id()
+    @api.model
+    def _get_view(self, view_id=None, view_type='form', **options):
+        arch, view = super()._get_view(view_id, view_type, **options)
+        active_company = self.env.company
+        if view_type == 'form' and active_company.id in [1, 2, 3, 4, 5]:
+            for node in arch.xpath("//field[@name='expected_revenue']"):
+                node.set('string', 'Expected Commission')
 
-
-    # @api.depends('company_id')
-    # def _compute_crm_stage(self):
-    #     print("ayana")
-    #     current_company = self.env.company
-    #     if current_company.name == 'Residential':
-    #         print("yes residential")
-    #         for stage in self.env['crm.stage'].search([]):
-    #             if stage.name == 'New':
-    #                 stage.name = 'Cold'
-    #             elif stage.name == 'Qualified':
-    #                 stage.name = 'Warm'
-    #             elif stage.name == 'Proposition':
-    #                 stage.name = 'Hot'
-    #     else:
-    #         for stage in self.env['crm.stage'].search([]):
-    #             print("yes anther")
-    #             if stage.name == 'Cold':
-    #                 stage.name = 'New'
-    #             elif stage.name == 'Warm':
-    #                 stage.name = 'Qualified'
-    #             elif stage.name == 'Hot':
-    #                 stage.name = 'Proposition'
-    #     self.crm_change_stage = "0"
-
-
-        # Correct ways to invalidate cache:
-        # self.env['crm.stage'].invalidate_model()  # For the entire model
-        # OR
-        # self.env.invalidate_all()  # For all models
-        # OR
-        # self._cache.clear()  # Clear cache for this recordset
-
-    # @api.model
-    # def _get_view(self, view_id=None, view_type='form', **options):
-    #     arch, view = super()._get_view(view_id, view_type, **options)
-    #     active_company = self.env.company
-    #
-    #     if view_type == 'form' and active_company.name == 'Residential':
-    #         for node in self.stage_id:
-    #             node.set('string', 'Order Reference')
-    #     return arch, view
-
-    # # Only modify kanban views
-        # if view_type == 'kanban':
-        #     current_company = self.env.company
-        #
-        #     if current_company.name == 'Residential':
-        #         print("resodddddd", arch)
-        #         # Replace stage names in kanban view for Residential company
-        #         # arch = arch.replace('New', 'Hot')
-        #         # arch = arch.replace('Qualified', 'Cold')
-        #         # arch = arch.replace('Proposition', 'Warm')
-        #         # arch = arch.replace('Won', 'Closed Won')
-        #     else:
-        #         print("not rssss")
-        #         # Revert back to original names for other companies
-        #         # arch = arch.replace('Hot', 'New')
-        #         # arch = arch.replace('Cold', 'Qualified')
-        #         # arch = arch.replace('Warm', 'Proposition')
-        #         # arch = arch.replace('Closed Won', 'Won')
-
-        # return arch, view
-
-    # @api.model
-    # def _get_view(self, view_id=None, view_type='kanban', **options):
-    #     arch, view = super()._get_view(view_id, view_type, **options)
-    #
-    #     if view_type == 'kanban':
-    #         current_company = self.env.company
-    #
-    #         # Define stage mappings for the Residential company
-    #         stage_mapping = {
-    #             'New': 'Hot',
-    #             'Qualified': 'Cold',
-    #             'Proposition': 'Warm',
-    #             'Won': 'Closed Won'
-    #         } if current_company.name == 'Residential' else {}
-    #
-    #         if stage_mapping:
-    #             # Parse the arch XML
-    #             arch_tree = etree.fromstring(arch)
-    #             # Find the stage_id field in the Kanban view
-    #             stage_field = arch_tree.xpath("//field[@name='stage_id']")
-    #             if stage_field:
-    #                 # Add a context to the stage_id field to pass the custom stage names
-    #                 stage_field[0].set('context', f"{{'stage_mapping': {stage_mapping}}}")
-    #                 arch = etree.tostring(arch_tree, encoding='unicode')
-    #
-    #             # Optionally, filter stages to show only those for the current company
-    #             stage_domain = [('company_id', 'in', (False, current_company.id))]
-    #             arch_tree.xpath("//field[@name='stage_id']")[0].set('domain', str(stage_domain))
-    #             arch = etree.tostring(arch_tree, encoding='unicode')
-    #
-    #     return arch, view
-
+        if view_type == 'list' and active_company.id in [1, 2, 3, 4, 5]:
+            for node in arch.xpath("//field[@name='expected_revenue']"):
+                node.set('string', 'Expected Commission')
+        return arch, view

@@ -38,6 +38,7 @@
                 <field name="inside_sale_person_id" invisible="1"/>
                 <field name="required_approvers" widget="many2many_tags"
                        invisible="not is_calculate_commission and not is_calculate_commercial_commission"/>
+                <field name="override_minimum_commission" invisible="not is_calculate_commission"/>
             </xpath>
 
             <xpath expr="//notebook/page[@name='extra']" position="after">
@@ -193,6 +194,10 @@
                     </group>
                 </page>
             </xpath>
+<!--            <xpath expr="//field[@name='expected_revenue']" position="attributes">-->
+<!--                 <attribute name="invisible">not find_company_lange</attribute>-->
+<!--                 <attribute name="string">Expected Commission</attribute>-->
+<!--            </xpath>-->
 
             <xpath expr="//field[@name='team_id']" position="after">
 <!--                <label for="lead_source"/>-->
@@ -204,6 +209,11 @@
                     <field name="lead_source" invisible="not find_company_lange"/>
                     <field name="lead_classification" invisible="not find_company_lange"/>
             </xpath>
+<!--            <field name="expected_revenue" position="attributes">-->
+<!--            <xpath expr="//field[@name='expected_revenue']" position="attributes">-->
+<!--                 <attribute name="invisible">not find_company_lange</attribute>-->
+<!--            </field>-->
+
         </field>
     </record>
 

@@ -28,7 +28,8 @@
                                     <strong>Co-Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.co_agent_id.name"/>
+<!--                                    <span t-field="o.co_agent_id.name"/>-->
+                                    <span t-field="o.co_agent_user_id.name"/>
                                 </td>
                             </tr>
                             <tr>
@@ -340,7 +341,8 @@
                                     <strong>Co-Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.co_agent_id.name"/>
+<!--                                    <span t-field="o.co_agent_id.name"/>-->
+                                    <span t-field="o.co_agent_user_id.name"/>
                                 </td>
                             </tr>
                             <tr>
@@ -605,7 +607,8 @@
                                     <strong>Co-Agent:</strong>
                                 </td>
                                 <td>
-                                    <span t-field="o.co_agent_id.name"/>
+                                    <span t-field="o.co_agent_user_id.name"/>
+<!--                                    <span t-field="o.co_agent_id.name"/>-->
                                 </td>
                             </tr>
                             <tr>

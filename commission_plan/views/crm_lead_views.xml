@@ -31,7 +31,11 @@
                        invisible="not is_calculate_commission"/>
                 <field name="commercial_referral_fee_rate"
                        invisible="not is_calculate_commercial_commission"/>
+<!--                <field name="co_agent_id"-->
+<!--                       invisible="not is_calculate_commission and not is_calculate_commercial_commission"/> -->
                 <field name="co_agent_id"
+                       invisible="1"/>
+                <field name="co_agent_user_id"
                        invisible="not is_calculate_commission and not is_calculate_commercial_commission"/>
                 <field name="co_agent_percentage"
                        invisible="not is_calculate_commission and not is_calculate_commercial_commission"/>
@@ -174,6 +178,7 @@
                                    widget="monetary"
                                    options="{'currency_field': 'currency_id'}"
                                    readonly="1"/>
+                            <field name="co_agent_payout" widget="monetary"/>
                         </group>
                     </group>
                 </page>

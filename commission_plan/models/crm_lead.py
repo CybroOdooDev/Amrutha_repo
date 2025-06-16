@@ -47,6 +47,7 @@ class Lead(models.Model):
     referer_id = fields.Many2one('res.partner', string="External Referral "
                                                        "Agent")
     co_agent_id = fields.Many2one('res.partner', string="Co-Agent ")
+    co_agent_user_id = fields.Many2one('res.users', string="Co-Agent User")
     inside_sale_person_id = fields.Many2one('res.users',
                                             string="Inside Sale Person ")
     required_approvers = fields.Many2many('res.users',
@@ -125,8 +126,7 @@ class Lead(models.Model):
                                     ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)')], string='Lead Source')
     lead_classification = fields.Selection([('exponential', 'Exponential Lead'), ('agent sourced', 'Agent Lead')], string='Lead Classification')
     override_minimum_commission = fields.Boolean(string="Override Minimum Commission")
-
-
+    co_agent_payout = fields.Float(string="Co Agent Payout", compute="_compute_co_agent_payout")
 
 
     @api.depends('minimum_commission_due', 'referral_fee_rate')
@@ -345,7 +345,6 @@ class Lead(models.Model):
 
     @api.depends('minimum_commission_due', 'total_amount')
     def _compute_commission_to_be_converted_by_agent(self):
-        print("changed minimum", self.minimum_commission_due)
         for lead in self:
             if lead.total_amount < lead.minimum_commission_due:
                 lead.commission_to_be_converted_by_agent = (
@@ -509,22 +508,8 @@ class Lead(models.Model):
     def _compute_total_commercial_commission(self):
         """Calculate the total commercial commission for the current lead based on the payout tier."""
         for lead in self:
-            lead.total_commercial_commission = (lead.balance_for_distribution or 0.0) * (lead.agent_payout_tier or 0.0)
-            # transaction_type = lead.x_studio_opportunity_type_1.x_name
-            # if transaction_type == 'Commercial Lease':
-            #     print("yesyyyyy")
-            #     base_rent = lead.base_rent
-            #     lease_duration = lead.lease_duration
-            #     landlord_percentage = lead.landlord_percentage
-            #     # if not base_rent or not lease_duration or not landlord_percentage:
-            #     #     raise UserError(
-            #     #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
-            #     # lead.total_commercial_commission = base_rent * (
-            #     #         landlord_percentage / 100)
-            #     lead.total_commercial_commission =
-            # print("total_commercial_commission", lead.total_commercial_commission)
-            # print("balance_for_distribution", lead.balance_for_distribution)
-            # print("agent_payout_tier", lead.agent_payout_tier)
+            print("((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100", ((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100)
+            lead.total_commercial_commission = ((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100 * (lead.agent_payout_tier or 0.0)
 
     @api.depends('total_commercial_commission')
     def _compute_errors_omission_fee(self):
@@ -715,3 +700,11 @@ class Lead(models.Model):
             for node in arch.xpath("//field[@name='expected_revenue']"):
                 node.set('string', 'Expected Commission')
         return arch, view
+
+    @api.depends('co_agent_percentage', 'balance_for_distribution', 'co_agent_user_id')
+    def _compute_co_agent_payout(self):
+        """computer co-agent payout using tier as users min_commission_percentage"""
+        self.co_agent_payout = 0
+        for lead in self:
+            lead.co_agent_payout = (((lead.balance_for_distribution or 0.0) * (lead.co_agent_percentage))/100 *
+                                    (lead.co_agent_user_id.min_commission_percentage or 0.0)/100)

@@ -13,7 +13,6 @@
         <field name="binding_type">report</field>
         <field name="domain"
                eval="[('company_id.is_calculate_commission', '=', True), ('is_not_residential_lead', '=', False )]"/>
-
     </record>
 
     <!-- Commercial Commission Report -->

@@ -51,7 +51,7 @@ class Lead(models.Model):
     inside_sale_person_id = fields.Many2one('res.users',
                                             string="Inside Sale Person ")
     required_approvers = fields.Many2many('res.users',
-                                          string="Required Approvers")
+                                          string="Required Approvers", default=lambda self: self._get_default_approvers())
     is_manual_omissions_insurance = fields.Boolean(
         string="Manual Omissions Insurance",
         help="Indicates if omissions insurance was manually set.")
@@ -75,8 +75,7 @@ class Lead(models.Model):
 
     referral_fee_rate = fields.Float(
         string="External Referral rate",
-        help="Percentage paid to the referral agent that brought in the lead.",
-        default=lambda self: self._default_referral_fee_rate()
+        help="Percentage paid to the referral agent that brought in the lead."
     )
     total_sales_price = fields.Float(string="Total Sales Price",
                                      help="Total Sales price")
@@ -190,10 +189,6 @@ class Lead(models.Model):
         self._compute_payable_to_co_agent()
         # pdf attachment creation
         self.generate_pdf_attachment()
-
-    def _default_referral_fee_rate(self):
-        # Return the referral_fee_rate from the current company
-        return self.env.company.referral_fee_rate
 
     # Commercial commission plan
 
@@ -426,20 +421,6 @@ class Lead(models.Model):
             else:
                 self.tier = self.env.user.min_commission_percentage
 
-    # def _default_commercial_referral_fee_rate(self):
-    #     # Return the referral_fee_rate from the current company
-    #     print("amrutha", self.env.company.commercial_referral_fee_rate)
-    #     return self.env.company.commercial_referral_fee_rate
-
-    # @api.onchange('x_studio_opportunity_type_1')
-    # def _onchange_x_studio_opportunity_type_1(self):
-    #     transaction_type = self.x_studio_opportunity_type_1.x_name
-    #     if transaction_type == 'Sale':
-    #         # Logic for 'sale'
-    #         self.is_sale_lead = True
-    #     else:
-    #         self.is_sale_lead = False
-
     @api.onchange('x_studio_opportunity_type_1')
     def _onchange_lease_x_studio_opportunity_type_1(self):
         transaction_type = self.x_studio_opportunity_type_1.x_name
@@ -508,7 +489,6 @@ class Lead(models.Model):
     def _compute_total_commercial_commission(self):
         """Calculate the total commercial commission for the current lead based on the payout tier."""
         for lead in self:
-            print("((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100", ((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100)
             lead.total_commercial_commission = ((lead.balance_for_distribution or 0.0) * (100 - lead.co_agent_percentage))/100 * (lead.agent_payout_tier or 0.0)
 
     @api.depends('total_commercial_commission')
@@ -708,3 +688,13 @@ class Lead(models.Model):
         for lead in self:
             lead.co_agent_payout = (((lead.balance_for_distribution or 0.0) * (lead.co_agent_percentage))/100 *
                                     (lead.co_agent_user_id.min_commission_percentage or 0.0)/100)
+
+    @api.model
+    def _get_default_approvers(self):
+        """set default approvers"""
+        if self.env.company.id == 2:
+            names = [" Dana Miotto", "Bethany Webster", "Heather Stevenson "]
+            approvers = self.env['res.users'].search([('name', 'in', names)]).ids
+        else:
+            approvers = []
+        return approvers

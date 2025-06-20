@@ -117,16 +117,23 @@ class Lead(models.Model):
     company_check = fields.Char(compute="_compute_check_company")
     lead_source = fields.Selection([('after hours', 'After Hours'), ('brokerage call', 'Brokerage Call'), ('broker', 'Broker'), ('cold calls', 'Cold Calls'),
                                     ('derby movie theater', 'Derby Movie Theater'), ('development deals', 'Development Deals'), ('family/friend', 'Family/Friend'),
-                                    ('FSBO lead', 'FSBO Lead'), ('ihomefinder', 'ihomefinder'), ('inbound call', 'Inbound Call'), ('inside sales networking', 'Inside Sales Networking'),
+                                    ('FSBO lead', 'FSBO Lead'), ('ihomefinder', 'ihomefinder'), ('inside sales networking', 'Inside Sales Networking'),
                                     ('LANGE affiliate company', 'LANGE Affiliate Company (TCRS, JBL, etc.)'), ('LANGE employee program', 'LANGE Employee Program'), ('lead generation paid by agent', 'Lead Generation Paid By Agent (Zillow.com, realtor.com, etc)'),
                                     ('lre event lead form', 'LRE Event Lead Form'), ('open house', 'Open House'), ('past client', 'Past Client'), ('personal contact', 'Personal Contact'),
                                     ('personal transaction', 'Personal Transaction'), ('realtor.com', 'Realtor.com (Paid By Brokerage)'), ('referral', 'Referral'),
                                     ('registered bidder', 'Registered Bidder - Auction'), ('signage', 'Signage'), ('social media', 'Social Media'),
-                                    ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)')], string='Lead Source')
-    lead_classification = fields.Selection([('exponential', 'Exponential Lead'), ('agent sourced', 'Agent Lead')], string='Lead Classification')
+                                    ('website chat', 'Website Chat'), ('website email', 'Website Email'), ('zillow.com', 'Zillow.com (Paid By Brokerage)'), ('google', 'Google'), ('hero program', 'Hero Program'), ('teacher program', 'Teacher Program'), ('billboard', 'Billboard'), ('chamber/networking group', 'Chamber/Networking Group'), ('development call', 'Development Call')], string='Lead Source')
+    lead_classification = fields.Selection([('exponential', 'Exponential'), ('agent sourced', 'Agent Sourced')], string='Lead Classification')
     override_minimum_commission = fields.Boolean(string="Override Minimum Commission")
     co_agent_payout = fields.Float(string="Co Agent Payout", compute="_compute_co_agent_payout")
-
+    seller_attn = fields.Char(string="Attn")
+    seller_address = fields.Char(string="Address")
+    buyer_attn = fields.Char(string="Attn")
+    buyer_address = fields.Char(string="Address")
+    brokerage_name = fields.Char(string="Brokerage Name")
+    brokerage_address = fields.Char(string="Brokerage Address")
+    buyer_brokerage_name = fields.Char(string="Brokerage Name")
+    buyer_brokerage_address = fields.Char(string="Brokerage Address")
 
     @api.depends('minimum_commission_due', 'referral_fee_rate')
     def _compute_residential_external_referral_fee(self):
@@ -218,6 +225,7 @@ class Lead(models.Model):
     is_not_residential_lead = fields.Boolean()
     is_company_allowed = fields.Boolean()
     find_company_lange = fields.Boolean()
+    is_company_commercial = fields.Boolean()
     base_rent = fields.Float(
         string="Base Rent",
         help="The base rent amount for the lease.",
@@ -284,12 +292,6 @@ class Lead(models.Model):
                         - lead.marketing_fee
                         - lead.external_referral_fee
                 )
-
-            # )lead.balance_for_distribution = (
-            #         lead.planned_revenue
-            #         + lead.marketing_fee
-            #         - lead.external_referral_fee
-            # )
 
     @api.depends('balance_for_distribution', 'co_agent_percentage')
     def _compute_commercial_co_agent_commission(self):
@@ -437,14 +439,6 @@ class Lead(models.Model):
             self.is_not_residential_lead = True
         else:
             self.is_sale_lead = True
-        # if transaction_type == 'Lease':
-        #     self.is_lease_lead = True
-        # if transaction_type in ('Residential', 'Personal Property'):
-        #     self.is_not_commercial_lead = True
-        # if transaction_type in ('Personal Property', 'Commercial'):
-        #     self.is_not_residential_lead = True
-        # if transaction_type not in ('Lease', 'Residential', 'Personal Property', 'Commercial'):
-        #     self.is_sale_lead = True
 
     @api.depends('user_id')
     def _compute_agent_payout_tier(self):
@@ -544,9 +538,6 @@ class Lead(models.Model):
         )
 
     def handle_lease_commission(self, lead):
-        # if not lead.base_rent or not lead.lease_duration or not lead.landlord_percentage:
-        #     raise UserError(
-        #         _("Base Rent, Lease Duration, and Landlord Percentage must be specified for a lease."))
 
         lead.total_commercial_commission = lead.base_rent * (
                     lead.landlord_percentage / 100)
@@ -616,11 +607,6 @@ class Lead(models.Model):
                 "ir.actions.report"].sudo()._render_qweb_pdf(
                 self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
                 self.id)
-        # if self.x_studio_opportunity_type_1.x_name == "Residential":
-        #     pdf_content, _ = self.env[
-        #         "ir.actions.report"].sudo()._render_qweb_pdf(
-        #         self.env.ref('commission_plan.action_report_crm_lead_lease_payout'),
-        #         self.id)
         # Generate a unique attachment name
         attachment_name = "Commission Report - %s.pdf" % time.strftime(
             '%Y-%m-%d - %H:%M:%S')
@@ -659,13 +645,14 @@ class Lead(models.Model):
             self.is_company_allowed = True
         if self.env.company.id in [1,2,3,4,5]:
             self.find_company_lange = True
+        if self.env.company.id == 3:
+            self.is_company_commercial = True
 
     @api.onchange('override_minimum_commission')
     def _onchange_override_minimum_commission(self):
         """allow users to override the minimum commission due"""
 
         if self.override_minimum_commission == True:
-            print("override minimum commision")
             self.minimum_commission_due = 0.0
 
     @api.model

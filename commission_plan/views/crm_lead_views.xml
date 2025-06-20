@@ -56,6 +56,7 @@
                 <field name="company_id"/>
                 <field name="company_check"/>
                 <field name="find_company_lange"/>
+                <field name="is_company_commercial"/>
                 <page string="Commission"
                       invisible="not is_calculate_commission or is_not_residential_lead">
                     <field name="currency_id" invisible="1"/>
@@ -201,12 +202,10 @@
             </xpath>
 
             <xpath expr="//field[@name='team_id']" position="after">
-<!--                <label for="lead_source"/>-->
                     <field name="lead_source" invisible="not find_company_lange"/>
                     <field name="lead_classification" invisible="not find_company_lange"/>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
-<!--                <label for="lead_source"/>-->
                     <field name="lead_source" invisible="not find_company_lange"/>
                     <field name="lead_classification" invisible="not find_company_lange"/>
             </xpath>
@@ -231,6 +230,30 @@
         <field name="arch" type="xml">
             <xpath expr="//button[@name='action_rental_quotations_new']" position="attributes">
                 <attribute name="invisible">type == 'lead' or (probability == 0 and not active) or is_company_allowed</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_form_custom_inherit" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.studio</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="studio_customization.odoo_studio_crm_lead_5a5ed75c-a2fc-4e1e-9400-0bac48de27a4"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='x_studio_sellerlandlord_name']" position="after">
+                <field name="seller_attn" invisible="not is_company_commercial"/>
+                <field name="seller_address" invisible="not is_company_commercial"/>
+            </xpath>
+            <xpath expr="//field[@name='x_studio_buyertenant_name']" position="after">
+                <field name="buyer_attn" invisible="not is_company_commercial"/>
+                <field name="buyer_address" invisible="not is_company_commercial"/>
+            </xpath>
+             <xpath expr="//field[@name='x_studio_listinglandlord_agent']" position="after">
+                <field name="brokerage_name" invisible="not is_company_commercial"/>
+                <field name="brokerage_address" invisible="not is_company_commercial"/>
+            </xpath>
+            <xpath expr="//field[@name='x_studio_buyertenant_rep_agent']" position="after">
+                <field name="buyer_brokerage_name" invisible="not is_company_commercial"/>
+                <field name="buyer_brokerage_address" invisible="not is_company_commercial"/>
             </xpath>
         </field>
     </record>
